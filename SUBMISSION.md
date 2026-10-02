@@ -1,46 +1,19 @@
 # Submission
 
-Deadline: Sunday 4 Oct 2026. Submit by tweet tagging @zksnarks_.
+Bounty only. Tweet the live URL and tag @zksnarks_ before Sunday 4 Oct 2026.
 
-## Live URL
-
-TODO: add after deploy.
-
-## Before posting
-
-- [ ] Every item under "Done means" in README.md is true.
-- [ ] Ran /1 to /6 on a phone with a fresh Zodl testnet wallet.
-- [ ] Faucet links in RESOURCES.md checked on the day. Any dead link is recorded in README.md.
-- [ ] The note sent in the test run shows up in Activity on the builder's receive wallet.
-- [ ] Screen recording exported.
-
-## Screen recording
-
-- Full path: /1 through /6.
-- Show Zender and Zodl side by side, or cut between them.
-- Show the note typed on /4 appearing in Zodl Activity on /5.
-- Never show a recovery phrase.
-- Keep it short enough to post as a single tweet video. Export MP4, H.264.
-
-## Tweet
-
-Attach the recording. Draft:
+Post text:
 
 ```
-Zender: zero to a shielded Zcash send in six steps, with a guide video on each.
+Zender. Zero to a shielded testnet send.
 
-Install Zodl, get testnet ZEC, shield, send a shielded note by QR, read it back, unshield.
+Wallet, faucet, shield, send, receive, unshield. A guide video on each step.
 
-No account. No tracking. Testnet only.
+https://YOUR-URL
 
-<live URL>
-
-@zksnarks_ #ZECATHON
+@zksnarks_
 ```
 
-The URL counts as 23 characters. Check the length before posting.
+Attach a screen recording of the six steps, including a real faucet drip and a real send whose memo matches the typed note.
 
-## After posting
-
-- Tweet link: TODO
-- Posted at: TODO
+Do not claim mainnet. Do not claim the site detected the transaction. The visitor confirms it in Zodl.

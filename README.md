@@ -30,3 +30,18 @@ Source: https://x.com/zksnarks_/status/2104718302606205130
 - Send step produces a real ZIP-321 URI with a memo, as a QR and a copyable link.
 - No analytics, no third-party scripts, no account, no seed field.
 - A screen recording of the full path exists for the tweet.
+
+## Build day status, 2 Oct 2026
+
+- Primary faucet https://zcashfaucet.jinolabs.xyz reset every connection from the build machine. Step 2 uses the fallback, https://zechub.wiki/tools?tool=faucet (fauzec.com), and drops the "0.1 TAZ" wording. To switch back, set `ACTIVE_FAUCET = "primary"` in config.js once the Jino faucet is confirmed to drip.
+- Store links taken from https://zodl.com/ on build day. The App Store listing URL still carries the old Zashi slug.
+- `RECEIVE_ADDRESS` in config.js is empty until a testnet unified address (`utest1…`) we control is added. Step 4 shows no QR until then.
+- Videos go in `videos/1.mp4` to `videos/6.mp4`. A missing clip shows "Video coming" with the step sentence.
+
+## Run locally
+
+Any static server that rewrites `/1` to `/6` to `index.html`. Unit tests: `node --test tests/*.mjs`.
+
+## Deploy
+
+Static. `vercel.json` holds the rewrites, the redirect from `/` to `/1`, and the CSP header. `_redirects` and `_headers` do the same on Cloudflare Pages or Netlify.

@@ -1,6 +1,6 @@
 # Submission
 
-Deadline: Sunday 4 Oct 2026.
+Deadline: Sunday 4 Oct 2026. Submit by tweet tagging @zksnarks_.
 
 ## Live URL
 
@@ -9,27 +9,27 @@ TODO: add after deploy.
 ## Before posting
 
 - [ ] Every item under "Done means" in README.md is true.
-- [ ] Ran the full path on a phone from a fresh Zodl testnet wallet.
-- [ ] Links in RESOURCES.md checked on the day of posting.
-- [ ] Screen recording of the full path is exported (see below).
+- [ ] Ran /1 to /6 on a phone with a fresh Zodl testnet wallet.
+- [ ] Faucet links in RESOURCES.md checked on the day. Any dead link is recorded in README.md.
+- [ ] The note sent in the test run shows up in Activity on the builder's receive wallet.
+- [ ] Screen recording exported.
 
 ## Screen recording
 
-- Record the full path: welcome, steps 1 to 6, done.
+- Full path: /1 through /6.
 - Show Zender and Zodl side by side, or cut between them.
-- Show the memo typed in step 4 appearing in Activity in step 5. This is the money shot.
-- Never show a recovery phrase on screen. Cover or skip that part of step 1.
-- Keep it under 2 minutes 20 seconds so it fits in a single tweet video.
-- Export as MP4, H.264.
+- Show the note typed on /4 appearing in Zodl Activity on /5.
+- Never show a recovery phrase.
+- Keep it short enough to post as a single tweet video. Export MP4, H.264.
 
 ## Tweet
 
-Attach the screen recording. Draft:
+Attach the recording. Draft:
 
 ```
-Zender: zero to your first shielded Zcash transaction in six steps.
+Zender: zero to a shielded Zcash send in six steps, with a guide video on each.
 
-Set up Zodl, get testnet ZEC, shield, send yourself a private note with a ZIP-321 QR, read it back, unshield.
+Install Zodl, get testnet ZEC, shield, send a shielded note by QR, read it back, unshield.
 
 No account. No tracking. Testnet only.
 
@@ -38,7 +38,7 @@ No account. No tracking. Testnet only.
 @zksnarks_ #ZECATHON
 ```
 
-Check the length before posting. The URL counts as 23 characters.
+The URL counts as 23 characters. Check the length before posting.
 
 ## After posting
 

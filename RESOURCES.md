@@ -1,59 +1,57 @@
 # Resources
 
-Check each link before the build ships. Mark it verified with the date. If a link is dead, find the official replacement. Do not link to an unofficial mirror.
+Use these. If a link is dead on build day, record that in the README and switch to the listed fallback. Do not invent a faucet.
 
 ## Bounty
 
-- Organiser post, 28 Sep 2026: https://x.com/zksnarks_/status/2104718302606205130
-
-## Zcash standards
-
-- ZIP-321, Payment Request URIs: https://zips.z.cash/zip-0321
-- ZIP-302, Standardized Memo Field Format: https://zips.z.cash/zip-0302
-- ZIP-316, Unified Addresses: https://zips.z.cash/zip-0316
+- Announcement: https://x.com/zksnarks_/status/2104718302606205130
+- Wildcard poster post it quotes: https://x.com/zksnarks_/status/2104699888957297040
+- Site: https://thezecathon.com
+- Submit by tweet, tag @zksnarks_, deadline Sunday 4 Oct 2026
+- Required topics: wallet setup, getting ZEC, shielding and unshielding, sending and receiving
 
 ## Wallet
 
-- Zodl, official site: TODO, add and verify.
-- Zodl, App Store: TODO, add and verify.
-- Zodl, Google Play: TODO, add and verify.
-- How to switch Zodl to testnet: TODO, confirm the exact steps in the current app and record them in SCREENS.md step 1.
+- Zodl site: https://zodl.com/
+- Zodl is the rebrand of Zashi. iOS rebrand post: https://zodl.com/zodl-is-live-on-app-store/
+- Android rebrand post: https://zodl.com/zodl-is-live-on-android/
+- Memo support in Zodl: https://support.zodl.com/article/41-using-the-zcash-memo-field
+- Org repo named in the hack brief: https://github.com/zodl-inc
+- Store buttons: take them from https://zodl.com/ on build day. Do not guess App Store or Play URLs.
 
-## Testnet ZEC
+Zodl memo facts from their support page, checked June 2026: memos ride on shielded sends, recipient can read them in Activity, max they document as 512 characters, no memo to a transparent address.
 
-- Testnet faucet: TODO, add and verify a faucet that is working this week.
+## Faucets
 
-## ZIP-321 notes for the send step
+- Primary: https://zcashfaucet.jinolabs.xyz
+- Stated drip: 0.1 TAZ per address every 24 hours, shielded z-to-z, browser puzzle instead of a captcha. Confirm the live page before shipping the copy.
+- Code: https://github.com/jinolabs-xyz/zcash-faucet
+- Forum note: https://forum.zcashcommunity.com/t/retroactive-grant-application-self-sovereign-zcash-testnet-faucet/57002
+- Fallback: https://zechub.wiki/tools?tool=faucet which requests from fauzec.com and says it never uses mainnet funds.
 
-Format used by Zender:
+## Payment request
 
-```
-zcash:<address>?amount=<decimal ZEC>&memo=<base64url memo>
-```
+- ZIP 321: https://zips.z.cash/zip-0321
+- Memo param is base64url, no = padding.
+- Decoded memo must be 512 bytes or less. Shorter memos are padded with zeros to 512 by the protocol.
+- A memo on a transparent address makes the URI invalid.
+- Example shape: zcash:<testnet-unified-address>?amount=0.001&memo=<base64url>&message=Zender
 
-- `address`: a testnet shielded address. Unified starts `utest1`, Sapling starts `ztestsapling1`.
-- `amount`: decimal ZEC, at most 8 decimal places, no trailing exponent form.
-- `memo`: the note as UTF-8 bytes, encoded base64url without padding. Max 512 bytes before encoding.
-- A memo must not be attached to a transparent address. That is why step 4 only accepts shielded addresses.
-- Optional `message` and `label` parameters are not used.
+Message is display text for the wallet. Memo is the note. Do not put the note only in message.
 
-Example:
+## Protocol
 
-```
-zcash:utest1...?amount=0.001&memo=SGVsbG8gZnJvbSBaZW5kZXI
-```
+- Zcash docs: https://zcash.readthedocs.io/en/latest/
+- Memo RPC notes: https://zcash.readthedocs.io/en/latest/rtd_pages/memos.html
+- ZIPs index: https://zips.z.cash/
+- Fee policy, do not set a custom fee: https://zips.z.cash/zip-0317
+- Lightwalletd: https://github.com/zcash/lightwalletd
+- Public light servers, including testnet.zec.rocks:443: https://github.com/ZecHub/zechub/blob/main/site/Zcash_Tech/Lightwallet_Nodes.md
 
-(`SGVsbG8gZnJvbSBaZW5kZXI` is base64url for `Hello from Zender`.)
+The site does not talk to lightwalletd. Zodl does.
 
-## Video clips
+## Do not copy
 
-| Step | File | Status |
-|------|------|--------|
-| 1 Set up | `public/videos/step-1.mp4` | not recorded |
-| 2 Get ZEC | `public/videos/step-2.mp4` | not recorded |
-| 3 Shield | `public/videos/step-3.mp4` | not recorded |
-| 4 Send | `public/videos/step-4.mp4` | not recorded |
-| 5 Read it back | `public/videos/step-5.mp4` | not recorded |
-| 6 Unshield | `public/videos/step-6.mp4` | not recorded |
-
-Recording guide: portrait phone screen, 20 to 45 seconds, no audio needed, H.264 MP4, under 5 MB each. Poster frames go next to them as `step-N.jpg`. Never show a real recovery phrase on screen.
+- First Shield, already submitted: https://www.firstshield.xyz/ and https://x.com/periagoge1/status/2105170267580645638
+- create-zcash-app: https://create-zcash-app.pages.dev/
+- ZCHAT site is zsend.xyz. Do not use that domain.

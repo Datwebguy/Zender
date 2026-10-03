@@ -17,14 +17,7 @@ export const EXCHANGES = [
   { label: "Kraken", href: "https://www.kraken.com/buy/zec" },
 ];
 
-// Also list ZEC (checked 3 Oct 2026). Named only, no links.
-export const MORE_EXCHANGES = "Withdraw to your t1. Also OKX, Bybit, Binance, or swap on THORChain.";
-
-// Other Zcash wallets (checked 3 Oct 2026). Named only, no links.
-export const OTHER_WALLETS = "Other Zcash wallets: Vizor, Zafu.";
-
 // Testnet practice round (checked 3 Oct 2026). Zodl has no testnet build, Zingo does.
 export const ZINGO_URL = "https://zingolabs.org/zingo/download/";
-export const TESTNET_SERVER = "testnet.zec.rocks:443";
 // fauzec sends to shielded testnet addresses only (utest1 or ztestsapling); transparent is on its roadmap.
 export const FAUCET_URL = "https://fauzec.com/";

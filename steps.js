@@ -1,4 +1,4 @@
-import { ZODL_URL, EXCHANGES, MORE_EXCHANGES, OTHER_WALLETS, ZINGO_URL, AMOUNT } from "./config.js";
+import { ZODL_URL, EXCHANGES, ZINGO_URL, AMOUNT } from "./config.js";
 
 // Step cards. Text supports **bold** and `code`. Keep it short: one line of why, then the taps.
 // kind: "confirm" (you say it's done), "verify" (we watch your public address),
@@ -112,7 +112,6 @@ export const ROUNDS = {
           "Back up your recovery phrase on paper: **Settings** → **Advanced**.",
         ],
         links: [{ label: "Get Zodl", href: ZODL_URL }],
-        more: OTHER_WALLETS,
         video: "/videos/1.mp4",
         kind: "confirm",
         confirm: "My wallet is ready",
@@ -126,7 +125,6 @@ export const ROUNDS = {
           "Paste it below, then withdraw to it.",
         ],
         links: EXCHANGES,
-        more: MORE_EXCHANGES,
         video: "/videos/2.mp4",
         kind: "verify",
         check: "arrive",

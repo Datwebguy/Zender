@@ -6,6 +6,7 @@ const os = require("os");
 const path = require("path");
 const grpc = require("@grpc/grpc-js");
 const loader = require("@grpc/proto-loader");
+const guard = require("./_guard");
 
 const PROTO = `
 syntax = "proto3";
@@ -44,29 +45,42 @@ function client(server) {
   return clients[server];
 }
 
-const deadline = () => ({ deadline: Date.now() + 12000 });
+// One time budget for the whole request, across every server tried.
+const BUDGET_MS = 15000;
+// Enough history for every check; busy addresses stop counting here.
+const MAX_TX = 50;
+const deadline = (end) => ({ deadline: end });
 
-function unary(c, method, request) {
-  return new Promise((resolve, reject) => c[method](request, deadline(), (e, r) => (e ? reject(e) : resolve(r))));
+function unary(c, method, request, end) {
+  return new Promise((resolve, reject) => c[method](request, deadline(end), (e, r) => (e ? reject(e) : resolve(r))));
 }
 
-function txids(c, address, tip) {
+function txids(c, address, tip, end) {
   return new Promise((resolve, reject) => {
     const range = { start: { height: String(Math.max(1, tip - LOOKBACK)) }, end: { height: String(tip) } };
-    const stream = c.GetTaddressTxids({ address, range }, deadline());
+    const stream = c.GetTaddressTxids({ address, range }, deadline(end));
     let count = 0;
-    stream.on("data", () => (count += 1));
-    stream.on("error", reject);
+    let done = false;
+    stream.on("data", () => {
+      count += 1;
+      if (count >= MAX_TX && !done) {
+        done = true;
+        stream.cancel();
+        resolve(count);
+      }
+    });
+    stream.on("error", (e) => (done ? null : reject(e)));
     stream.on("end", () => resolve(count));
   });
 }
 
 // Just the chain tip, for the "network online" line.
 async function tipOnly(net) {
+  const end = Date.now() + BUDGET_MS;
   let last;
   for (const server of net.servers) {
     try {
-      const info = await unary(client(server), "GetLightdInfo", {});
+      const info = await unary(client(server), "GetLightdInfo", {}, end);
       if (info.chainName !== net.chain) throw new Error("wrong network");
       return { height: Number(info.blockHeight) };
     } catch (e) {
@@ -77,25 +91,28 @@ async function tipOnly(net) {
 }
 
 async function lookup(address, net) {
+  const end = Date.now() + BUDGET_MS;
   let last;
   for (const server of net.servers) {
     try {
       const c = client(server);
-      const info = await unary(c, "GetLightdInfo", {});
+      if (Date.now() > end - 1000) break;
+      const info = await unary(c, "GetLightdInfo", {}, end);
       if (info.chainName !== net.chain) throw new Error("wrong network");
       const tip = Number(info.blockHeight);
-      const [balance, txCount] = await Promise.all([unary(c, "GetTaddressBalance", { addresses: [address] }), txids(c, address, tip)]);
+      const [balance, txCount] = await Promise.all([unary(c, "GetTaddressBalance", { addresses: [address] }, end), txids(c, address, tip, end)]);
       return { balanceZat: Number(balance.valueZat), txCount, height: tip };
     } catch (e) {
       last = e;
     }
   }
-  throw last;
+  throw last || new Error("out of time");
 }
 
 module.exports = async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   if (req.method !== "POST") return res.status(405).json({ error: "POST only." });
+  if (!guard(req, res)) return;
   let body = req.body;
   if (typeof body === "string") {
     try {
@@ -117,6 +134,6 @@ module.exports = async (req, res) => {
   try {
     return res.status(200).json(await lookup(address, net));
   } catch {
-    return res.status(502).json({ error: "Could not reach the Zcash network. Try again in a moment." });
+    return res.status(502).json({ error: "Couldn't check just now. Trying again." });
   }
 };

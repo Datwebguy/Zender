@@ -9,10 +9,12 @@ const PUBLIC = {
 // What each watched step needs to see on the public address.
 // arrive: anything has landed. shield: it has all left again. back: something new landed after the shield.
 export const CHECKS = {
-  arrive: { done: "Coins arrived", ok: (s) => s.txCount >= 1 || s.balanceZat > 0 },
-  shield: { done: "Shielded", ok: (s) => s.txCount >= 2 && (s.balanceZat === 0 || s.txCount >= 3) },
-  // `seen` is how many transactions the address had once it was shielded.
-  back: { done: "Back on postcard", ok: (s, seen = 2) => s.txCount > seen && s.balanceZat > 0 },
+  // arrive: coins are sitting on the address.
+  arrive: { done: "Coins arrived", ok: (s) => s.balanceZat > 0 },
+  // shield: the address emptied after the coins arrived (`after` = its tx count when they arrived).
+  shield: { done: "Shielded", ok: (s, after = 1) => s.balanceZat === 0 && s.txCount > after },
+  // back: something new landed after the shield (`after` = tx count at shield; unknown means any arrival counts).
+  back: { done: "Back to public", ok: (s, after) => s.balanceZat > 0 && (after === undefined || s.txCount > after) },
 };
 
 export function isPublicAddress(value, net) {

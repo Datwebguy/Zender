@@ -88,10 +88,7 @@ export async function drawCard(canvas, info = {}) {
 
   c.fillStyle = INK;
   c.font = type(22);
-  const facts = [
-    info.block ? `BLOCK ${Number(info.block).toLocaleString("en-US")}` : "SHIELDED POOL",
-    info.time ? `6 STEPS · ${info.time}` : "6 STEPS",
-  ];
+  const facts = ["PRIVATE MAIL · ZCASH", info.time ? `6 STEPS · ${info.time}` : "6 STEPS"];
   facts.forEach((t, i) => c.fillText(t, 70, 476 + i * 34));
 
   c.fillStyle = MUTED;
@@ -254,8 +251,9 @@ export async function shareImage(info = {}, { download = false } = {}) {
     try {
       await navigator.share({ files: [file], text });
       return "shared";
-    } catch {
-      return "cancelled";
+    } catch (e) {
+      if (e && e.name === "AbortError") return "cancelled";
+      // Sharing was refused (e.g. the tap expired while drawing): save the card instead.
     }
   }
   const a = document.createElement("a");

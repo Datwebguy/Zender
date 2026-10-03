@@ -62,29 +62,36 @@ function save() {
     localStorage.setItem(storeKey(net), JSON.stringify(state));
   } catch {}
 }
+// Testnet's address key moves with its progress key, so an old address never comes back pre-filled.
+function addrKey(n) {
+  return n === "test" ? "zender:addr:test:v2" : `zender:addr:${n}`;
+}
 function loadAddress(n) {
   try {
-    return localStorage.getItem(`zender:addr:${n}`) || "";
+    return localStorage.getItem(addrKey(n)) || "";
   } catch {
     return "";
   }
 }
 function saveAddress() {
   try {
-    localStorage.setItem(`zender:addr:${net}`, address);
+    localStorage.setItem(addrKey(net), address);
   } catch {}
 }
 
 let net = null; // "test" | "main" | null on the home page
 let state = fresh();
 let address = "";
+// Drafts live in memory only, one per round.
+const drafts = { test: { note: "", shielded: "" }, main: { note: "", shielded: "" } };
 let note = "";
 let shielded = "";
+let gen = 0; // bumps on every render, so late async answers can tell they're stale
 let qrOpen = false;
 let height = null;
 let pollTimer = null;
 let tickTimer = null;
-const lastCheck = {}; // step index → { text, bad }
+let lastCheck = {}; // step index → { text, bad, at }
 
 // Routes: "/", "/testnet", "/mainnet". Old links land on the right round.
 function route() {
@@ -99,7 +106,11 @@ function render() {
   clearTimeout(pollTimer);
   clearTimeout(faucetTimer);
   clearInterval(tickTimer);
+  gen += 1;
+  lastCheck = {};
+  if (net) Object.assign(drafts[net], { note, shielded });
   net = route();
+  if (net) ({ note, shielded } = drafts[net]);
   const canonical = net ? ROUNDS[net].path : "/";
   if (location.pathname !== canonical) history.replaceState(null, "", canonical);
   for (const [id, n] of [["tab-test", "test"], ["tab-main", "main"]]) {
@@ -123,12 +134,12 @@ function renderHome() {
   const copy = el("div", { class: "hero-copy" },
     el("p", { class: "kicker" }, "№ 001 · A letter to future you"),
     el("h1", {}, l1, l2),
-    el("p", { class: "lede" }, "Write to yourself, one year from now. Post it through Zcash's shielded pool. It sits on a public chain for anyone to see, and only your wallet can open it."),
+    el("p", { class: "lede" }, "Write to yourself, one year from now. It lives on a public blockchain, and only your wallet can open it."),
     el("div", { class: "cta" },
       el("a", { href: "/testnet", class: "btn ink", "data-nav": true }, "Practice free", arrow()),
       el("a", { href: "/mainnet", class: "btn line", "data-nav": true }, "Send it for real"),
     ),
-    el("p", { class: "hand note-hand" }, "takes about 15 minutes ↗"),
+    el("p", { class: "hand note-hand" }, "about 15 minutes ↗"),
   );
   const hero = el("section", { class: "hero" }, el("div", { class: "hero-env" }, envelope({ big: true })), copy);
 
@@ -142,7 +153,7 @@ function renderHome() {
     el("div", { class: "views-grid" },
       el("figure", {},
         el("div", { class: "sheet-paper" }, el("p", { class: "hand big" }, "Dear me,"), el("p", { class: "hand" }, "one year from now. Did you keep going? I hope you did. Be kind to yourself."), el("p", { class: "hand sign" }, "– me, today")),
-        el("figcaption", {}, "What your wallet shows you"),
+        el("figcaption", {}, "You see"),
       ),
       el("figure", {},
         el("div", { class: "env-back" },
@@ -152,7 +163,7 @@ function renderHome() {
             [["From", 7], ["To", 6], ["Amount", 5], ["Letter", 9]].map(([k, n]) => el("div", {}, el("dt", {}, k), el("dd", {}))),
           ),
         ),
-        el("figcaption", {}, "What the rest of the world sees"),
+        el("figcaption", {}, "Everyone else sees"),
       ),
     ),
   );
@@ -164,10 +175,9 @@ function renderHome() {
       receiptRows([
         ["1 × Letter to future you", "sealed"],
         ["Postage", "0.0001 ZEC"],
-        ["Postage comes back to", "you"],
-        ["Network fees", "≈ 0.0003 ZEC"],
+        ["Returned to", "you"],
+        ["Fees", "≈ 0.0003 ZEC"],
         ["Readable by", "only you"],
-        ["Seen by this site", "public t-address"],
       ]),
       el("p", { class: "r-total" }, el("span", {}, "TOTAL"), el("span", {}, "a few cents")),
       el("p", { class: "r-foot" }, "thank you for writing ✉"),
@@ -192,7 +202,7 @@ function postCard(n) {
     stamp(test ? "FREE" : "0.0001", test ? "TEST" : "ZEC", n),
     el("span", { class: "post-kicker" }, test ? "Testnet · Zingo" : "Mainnet · Zodl"),
     el("span", { class: "post-title" }, test ? "Practice post" : "Real post"),
-    el("span", { class: "post-sub" }, test ? "Free test coins. Make every mistake for nothing." : "A dollar or two of real ZEC. It all comes back to you."),
+    el("span", { class: "post-sub" }, test ? "Free coins. Mistakes cost nothing." : "A dollar or two. It comes back to you."),
     el("span", { class: "post-foot" }, el("span", {}, count ? `${count} of 6 postmarked` : test ? "≈ 15 min" : "≈ 20 min"), el("span", { class: "go" }, count ? "Continue" : test ? "Start practice" : "Start", arrow())),
   );
 }
@@ -201,14 +211,14 @@ function postCard(n) {
 function envelope({ big }) {
   return el("div", { class: `envelope${big ? " big" : ""}` },
     stamp("0.0001", "ZEC", "main"),
-    postmark({ top: "ZCASH · SHIELDED", mid: ["SEALED", "2026"], bottom: "ONLY YOU READ", cls: "env-pm" }),
+    postmark({ top: "ZCASH · PRIVATE", mid: ["SEALED", "2026"], bottom: "ONLY YOU READ", cls: "env-pm" }),
     el("div", { class: "addr" },
       el("p", { class: "hand" }, "To: me,"),
       el("p", { class: "hand" }, "one year from now"),
       el("p", { class: "hand" }, "wherever I am"),
     ),
     el("p", { class: "from" }, "FROM: ME, TODAY"),
-    el("p", { class: "via" }, "VIA SHIELDED POOL"),
+    el("p", { class: "via" }, "PRIVATE MAIL"),
   );
 }
 
@@ -222,7 +232,7 @@ function renderRound() {
   const ticket = el("aside", { class: "ticket", "aria-label": "Tracking slip" },
     el("p", { class: "t-head" }, el("span", {}, "TRACKING"), el("b", {}, state.ref)),
     receiptRows([
-      ["Service", "Shielded, sealed"],
+      ["Service", "Private, sealed"],
       ["Network", net === "test" ? "Testnet" : "Mainnet"],
       ["Wallet", net === "test" ? "Zingo" : "Zodl"],
       ["Postage", `0.0001 ${unit}`],
@@ -235,7 +245,7 @@ function renderRound() {
       el("p", { class: "kicker" }, r.tag),
       el("h1", {}, r.title),
       el("p", { class: "lede" }, r.sub),
-      el("p", { class: "office", id: "chain" }, el("i", { class: "dot" }), el("span", {}, "Calling the post office…")),
+      el("p", { class: "office", id: "chain" }, el("i", { class: "dot" }), el("span", {}, "Connecting…")),
     ),
     ticket,
   );
@@ -253,12 +263,23 @@ function renderRound() {
   r.steps.forEach((_, i) => list.append(el("li", { class: "entry", id: `step-${i + 1}` })));
 
   const finish = el("section", { class: "finale", id: "finish" });
-  const over = el("button", { type: "button", class: "link" }, "Start this round over");
-  over.addEventListener("click", startOver);
+  // Two taps to start over, no browser pop-up.
+  const over = el("button", { type: "button", class: "link" }, "Start over");
+  let armed = null;
+  over.addEventListener("click", () => {
+    if (armed) return startOver();
+    over.textContent = "Tap again to clear this round";
+    over.classList.add("armed");
+    armed = setTimeout(() => {
+      armed = null;
+      over.textContent = "Start over";
+      over.classList.remove("armed");
+    }, 4000);
+  });
 
   const faq = el("section", { class: "desk" },
-    el("h2", { class: "sec" }, "Stuck at the counter?"),
-    FAQ.filter((f) => net === "test" || !f.test).map((f) => el("details", {}, el("summary", {}, f.q), el("p", {}, f.a))),
+    el("h2", { class: "sec" }, "Stuck?"),
+    FAQ.filter((f) => (net === "test" ? !f.main : !f.test)).map((f) => el("details", {}, el("summary", {}, f.q), el("p", {}, f.a))),
   );
   const other = el("a", { class: `post ${net === "test" ? "main" : "test"} slim`, href: r.other.href, "data-nav": true },
     stamp(net === "test" ? "0.0001" : "FREE", net === "test" ? "ZEC" : "TEST", net === "test" ? "main" : "test"),
@@ -268,7 +289,7 @@ function renderRound() {
   );
 
   main.replaceChildren(head, el("div", { class: `desk-wrap ${net}` }, strip, list, finish,
-    el("p", { class: "center small" }, over, el("span", {}, " · progress saves in this browser")),
+    el("p", { class: "center small" }, over),
     el("div", { class: "tail" }, faq, other)));
 
   if (state.open >= 0 && !state.done[state.open] && !state.start[state.open]) state.start[state.open] = Date.now();
@@ -289,21 +310,23 @@ async function liveChain() {
     if (n !== net) return;
     height = h;
     line.className = "office on";
-    line.lastChild.textContent = `Post office open · ${n === "test" ? "testnet" : "mainnet"} block ${h.toLocaleString("en-US")}`;
-    if (state.open === 0) renderCard(0);
+    line.lastChild.textContent = `${n === "test" ? "Testnet" : "Mainnet"} live`;
+    if (state.sealed && state.done.every(Boolean) && !state.block) {
+      state.block = h;
+      save();
+    }
     renderFinish(false);
   } catch {
     if (n !== net) return;
     line.className = "office off";
-    line.lastChild.textContent = "Post office unreachable, will retry";
+    line.lastChild.textContent = "Offline, retrying";
   }
 }
 
 function startOver() {
-  if (!confirm("Start this round again? Your progress here is cleared.")) return;
   try {
     localStorage.removeItem(storeKey(net));
-    localStorage.removeItem(`zender:addr:${net}`);
+    localStorage.removeItem(addrKey(net));
   } catch {}
   note = "";
   shielded = "";
@@ -341,10 +364,13 @@ function tick() {
 
 function renderProgress() {
   const count = state.done.filter(Boolean).length;
-  $("count").textContent = count === 6 ? "Delivered" : `${count} of 6 postmarked`;
+  $("count").textContent = count === 6 ? "Delivered" : `${count} of 6 done`;
   for (let i = 0; i < 6; i++) {
     const b = $(`blk-${i + 1}`);
     b.className = `mini${state.done[i] ? " done" : ""}${state.open === i ? " now" : ""}`;
+    b.setAttribute("aria-label", `Step ${i + 1}: ${ROUNDS[net].steps[i].title}${state.done[i] ? ", done" : ""}`);
+    if (state.open === i) b.setAttribute("aria-current", "step");
+    else b.removeAttribute("aria-current");
   }
   tick();
 }
@@ -381,7 +407,8 @@ function complete(i) {
   if (next === -1) {
     state.open = -1;
     state.sealed = true;
-    state.block = height;
+    state.sealedAt = state.sealedAt || now;
+    state.block = state.block || height;
     save();
     renderCards();
     renderProgress();
@@ -417,7 +444,7 @@ function renderCard(i) {
 
 function doneLabel(i) {
   if (ROUNDS[net].steps[i].kind !== "verify") return "Done";
-  return state.skipped && state.skipped.includes(i) ? "Done · skipped the check" : `${CHECKS[ROUNDS[net].steps[i].check].done} · checked on chain`;
+  return state.skipped && state.skipped.includes(i) ? "Done" : `${CHECKS[ROUNDS[net].steps[i].check].done} ✓`;
 }
 
 function fillBody(body, step, i) {
@@ -427,9 +454,8 @@ function fillBody(body, step, i) {
   if (step.links) body.append(el("div", { class: "row" }, step.links.map((l) => externalLink(l.label, l.href, "btn line small"))));
   if (step.more) body.append(el("p", { class: "note" }, step.more));
   if (step.tips) {
-    const h = height ? height.toLocaleString("en-US") : "4.4 million";
     body.append(el("div", { class: "tips" }, step.tips.map((t) =>
-      el("div", { class: "tip" }, el("b", {}, t.title), el("p", {}, rich(t.text.replace("{height}", h)))),
+      el("div", { class: "tip" }, el("b", {}, t.title), el("p", {}, rich(t.text))),
     )));
   }
   if (step.shots) {
@@ -479,16 +505,16 @@ function verifyBlock(step, i) {
       autocapitalize: "none",
       autocorrect: "off",
       inputmode: "text",
-      "aria-label": `Your transparent address, starts with ${prefix}`,
+      "aria-label": `Your public address, starts with ${prefix}`,
       placeholder: `${prefix}…`,
     });
     input.value = address;
     const err = el("p", { class: "status bad", "aria-live": "polite" });
-    const go = el("button", { type: "button", class: "btn ink" }, address ? "Watch this address" : "Start watching");
+    const go = el("button", { type: "button", class: "btn ink" }, "Watch this address");
     const use = () => {
       const v = input.value.trim();
       if (!isPublicAddress(v, net)) {
-        err.textContent = v ? `That isn't a ${prefix} address. Copy the transparent one from ${wallet}.` : "";
+        err.textContent = v ? `That's not it. Copy the address that starts with ${prefix} in ${wallet}.` : "";
         return;
       }
       err.textContent = "";
@@ -503,7 +529,7 @@ function verifyBlock(step, i) {
     input.addEventListener("paste", () => setTimeout(use, 0));
     if (!done) {
       wrap.append(
-        el("label", { class: "field-label" }, `Your transparent address (starts with `, el("code", {}, prefix), ")"),
+        el("label", { class: "field-label" }, "Your public address (", el("code", {}, `${prefix}…`), ")"),
         input, err, el("div", { class: "row" }, go),
       );
     }
@@ -512,7 +538,7 @@ function verifyBlock(step, i) {
   const s = lastCheck[i];
   const box = el("div", { class: `watch${done ? " ok" : ""}${s && s.bad ? " bad" : ""}`, "aria-live": "polite" });
   if (done) {
-    box.append(el("b", {}, `${CHECKS[step.check].done}. Seen on chain.`));
+    box.append(el("b", {}, `${CHECKS[step.check].done} ✓`));
   } else if (address) {
     const now = el("button", { type: "button", class: "btn line small" }, "Check now");
     now.addEventListener("click", async () => {
@@ -520,7 +546,7 @@ function verifyBlock(step, i) {
       now.textContent = "Checking…";
       await runCheck(i);
     });
-    const change = el("button", { type: "button", class: "link" }, "Use a different address");
+    const change = el("button", { type: "button", class: "link" }, "Change address");
     change.addEventListener("click", () => {
       address = "";
       saveAddress();
@@ -531,11 +557,11 @@ function verifyBlock(step, i) {
     box.append(
       el("b", {}, el("i", { class: "dot pulse" }), step.watching),
       el("p", {}, s ? s.text : step.watchingSub),
-      el("p", { class: "watch-addr" }, `${address.slice(0, 8)}…${address.slice(-6)} · `, el("span", { class: "ago", "data-at": s ? String(s.at) : "" }, s ? agoText(s.at) : "checking…")),
+      el("p", { class: "watch-addr" }, `${address.slice(0, 6)}…${address.slice(-4)} · `, el("span", { class: "ago", "data-at": s ? String(s.at) : "" }, s ? agoText(s.at) : "checking…")),
       el("div", { class: "watch-row" }, now, change),
     );
   } else {
-    box.append(el("b", {}, "Waiting for your address"), el("p", {}, "Paste it above and this page starts watching."));
+    box.append(el("b", {}, "Paste your address above"), el("p", {}, "Then we watch it for you."));
   }
   wrap.append(box);
 
@@ -543,8 +569,8 @@ function verifyBlock(step, i) {
     const skip = el("button", { type: "button", class: "link" }, step.skip.label);
     skip.addEventListener("click", () => {
       // Swap lands shielded, so there is nothing public to see for steps 2 and 3.
-      state.skipped = [1, 2];
-      state.seen = 0;
+      state.skipped = state.done[2] ? [1] : [1, 2];
+      if (!state.done[2]) state.seen = null;
       state.done[1] = true;
       state.end[1] = state.end[1] || Date.now();
       state.start[2] = state.start[2] || Date.now();
@@ -552,31 +578,54 @@ function verifyBlock(step, i) {
     });
     wrap.append(el("p", { class: "center" }, skip));
   }
-  wrap.append(el("p", { class: "fine" }, "Only this public address is checked, through a Zcash light server. Never your letter or keys."));
+  wrap.append(el("p", { class: "fine" }, "We only read this public address. Never your letter or keys."));
   return wrap;
+}
+
+// The transaction count each check compares against, for this exact address.
+function baseline(kind, addr) {
+  const mark = kind === "shield" ? state.arrived : state.seen;
+  return mark && typeof mark === "object" && mark.addr === addr ? mark.tx : undefined;
 }
 
 async function runCheck(i) {
   clearTimeout(pollTimer);
   if (!address || state.done[i]) return;
-  const n = net;
+  const g = gen, addr = address, n = net;
   try {
-    const s = await check(address, n);
-    if (n !== net || state.done[i]) return;
+    const s = await check(addr, n);
+    if (g !== gen || addr !== address || state.done[i]) return;
     const kind = ROUNDS[n].steps[i].check;
-    if (CHECKS[kind].ok(s, state.seen ?? 2)) {
-      if (kind === "shield") state.seen = s.txCount;
+    if (CHECKS[kind].ok(s, baseline(kind, addr))) {
+      if (kind === "arrive") state.arrived = { addr, tx: s.txCount };
+      if (kind === "shield") state.seen = { addr, tx: s.txCount };
       delete lastCheck[i];
       complete(i);
       return;
     }
     lastCheck[i] = { text: notYet(i, s, n), at: Date.now() };
   } catch (e) {
-    if (n !== net) return;
-    lastCheck[i] = { text: e.message || "Couldn't check just now. Trying again shortly.", bad: true, at: Date.now() };
+    if (g !== gen) return;
+    lastCheck[i] = { text: e.message || "Couldn't check just now. Trying again.", bad: true, at: Date.now() };
   }
-  if (state.open === i) renderCard(i);
+  if (state.open === i) refreshWatch(i);
   schedulePoll(POLL_MS);
+}
+
+// Update the waiting box in place while someone is typing, so their text and keyboard stay put.
+function refreshWatch(i) {
+  const card = $(`step-${i + 1}`);
+  const active = document.activeElement;
+  if (card && active && card.contains(active) && /^(INPUT|TEXTAREA)$/.test(active.tagName)) {
+    const s = lastCheck[i];
+    const box = card.querySelector(".watch");
+    const p = box && box.querySelector("p");
+    if (s && p) p.textContent = s.text;
+    const ago = box && box.querySelector(".ago");
+    if (s && ago) ago.dataset.at = String(s.at);
+    return;
+  }
+  renderCard(i);
 }
 
 // Plain words for what the chain shows so far, per step.
@@ -586,19 +635,12 @@ function notYet(i, s, n) {
   const amount = `${zec(s.balanceZat)} ${unit}`;
   const kind = ROUNDS[n].steps[i].check;
   if (kind === "arrive") {
-    if (s.txCount > 0) return `Not yet. ${amount} on this address so far.`;
-    return n === "test"
-      ? "Nothing has landed here yet. In Zingo, send a little from your shielded balance to this tm address. Blocks come about every 75 seconds."
-      : "Nothing has arrived yet. Withdrawals can take a few minutes to leave the exchange, then about a minute for a block.";
+    return n === "test" ? "Nothing yet. Send it from Zingo, then give it a minute." : "Nothing yet. Withdrawals can take a few minutes.";
   }
   if (kind === "shield") {
-    return s.balanceZat > 0
-      ? `Your ${amount} is still on this public address. Tap Shield in ${wallet} and confirm. This turns green about a minute after your shield is in a block.`
-      : "Not yet. Waiting for your shield to show up in a block.";
+    return s.balanceZat > 0 ? `${amount} still public. Tap Shield in ${wallet}.` : "Almost there. Waiting for your shield.";
   }
-  return s.balanceZat > 0
-    ? `Not yet. ${amount} here, but no new send since your shield. Send a little from your shielded balance to this address.`
-    : `Nothing has come back to this address yet. In ${wallet}, send a little from your shielded balance to it. Blocks come about every 75 seconds.`;
+  return `Nothing new yet. Send a little to this address in ${wallet}.`;
 }
 
 function agoText(at) {
@@ -627,17 +669,20 @@ document.addEventListener("visibilitychange", () => {
 /* Our faucet button. Test ZEC comes from fauzec.com through Zender's /api/faucet. */
 
 let faucetTimer = null;
+let faucetAddr = ""; // memory only
+let faucetInfo = null; // fetched once per visit
+const FAUCET_MAX_POLLS = 120; // about 10 minutes
 
 function faucetBlock(i) {
   const wrap = el("div", { class: "faucet" });
   const claim = state.faucet || null;
   const done = state.done[i];
-  const ready = el("p", { class: "fine" }, "Faucet: checking…");
-  fetch("/api/faucet").then((r) => r.json()).then((f) => {
-    ready.textContent = f.ready
-      ? `Faucet ready · ${zec(f.dripZat || 1e8)} test ZEC per address per day · ${Math.floor((f.availableZat || 0) / 1e8).toLocaleString("en-US")} left to give`
-      : "The faucet says it's busy right now. Try again shortly, or use the faucet site.";
-  }).catch(() => (ready.textContent = ""));
+  const ready = el("p", { class: "fine" });
+  const showInfo = (f) => {
+    ready.textContent = f && f.ready ? `Faucet ready · ${Math.floor((f.availableZat || 0) / 1e8).toLocaleString("en-US")} test ZEC left` : f ? "The faucet is busy. Try again soon." : "";
+  };
+  if (faucetInfo) showInfo(faucetInfo);
+  else fetch("/api/faucet").then((r) => r.json()).then((f) => showInfo((faucetInfo = f))).catch(() => {});
 
   if (!claim || claim.error) {
     const input = el("input", {
@@ -647,52 +692,63 @@ function faucetBlock(i) {
       autocomplete: "off",
       autocapitalize: "none",
       autocorrect: "off",
-      "aria-label": "Your shielded testnet address, starts with utest1",
+      "aria-label": "Your private testnet address, starts with utest1",
       placeholder: "utest1…",
     });
-    input.value = (claim && claim.address) || "";
+    input.value = faucetAddr;
     const err = el("p", { class: "status bad", "aria-live": "polite" }, (claim && claim.error) || "");
     const go = el("button", { type: "button", class: "btn ink" }, "Send me test ZEC");
+    let busy = false;
     const send = async () => {
-      const address = input.value.trim();
-      if (!/^(utest1|ztestsapling1)/i.test(address)) {
-        err.textContent = /^tm/i.test(address)
-          ? "That's your transparent address. The faucet needs the shielded one, starting with utest1."
-          : /^u1/i.test(address)
-            ? "That's a mainnet address. Switch Zingo to testnet first (step 1)."
-            : "Paste the address that starts with utest1 from Zingo's Receive screen.";
+      if (busy) return;
+      const addr = input.value.trim();
+      if (!/^(utest1|ztestsapling1)/i.test(addr)) {
+        err.textContent = /^tm/i.test(addr)
+          ? "That's your public address. Use the one that starts with utest1."
+          : /^u1/i.test(addr)
+            ? "That's a mainnet address. Switch Zingo to testnet first."
+            : "Paste the address that starts with utest1.";
         return;
       }
+      busy = true;
+      faucetAddr = addr;
       go.disabled = true;
-      go.textContent = "Asking the faucet…";
+      go.textContent = "Sending…";
       err.textContent = "";
+      const g = gen, s = state;
+      let next;
       try {
-        const r = await fetch("/api/faucet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ address }) });
+        const r = await fetch("/api/faucet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ address: addr }) });
         const d = await r.json().catch(() => ({}));
-        state.faucet = d.id && !d.error ? { id: d.id, state: d.state, txid: d.txid } : { error: d.error || "The faucet couldn't send right now.", address };
+        next = d.id && !d.error ? { id: d.id, state: d.state, txid: d.txid, polls: 0 } : { error: d.error || "The faucet couldn't send right now." };
       } catch {
-        state.faucet = { error: "Couldn't reach the faucet. Try again in a moment.", address };
+        next = { error: "Couldn't reach the faucet. Try again in a moment." };
       }
-      save();
+      // Never let a later error replace a claim that's already on its way.
+      if (!(s.faucet && s.faucet.id && next.error)) s.faucet = next;
+      try {
+        localStorage.setItem(storeKey("test"), JSON.stringify(s));
+      } catch {}
+      busy = false;
+      if (g !== gen) return;
       renderCard(i);
       pollFaucet(i);
     };
     go.addEventListener("click", send);
     input.addEventListener("keydown", (e) => e.key === "Enter" && send());
-    wrap.append(el("label", { class: "field-label" }, "Your shielded testnet address (starts with ", el("code", {}, "utest1"), ")"), input, err, el("div", { class: "row" }, go));
+    wrap.append(el("label", { class: "field-label" }, "Your private address (", el("code", {}, "utest1…"), ")"), input, err, el("div", { class: "row" }, go));
   } else {
     const words = {
-      pending: ["Queued at the faucet…", "It goes out in a moment."],
-      broadcasting: ["On its way…", "Sent to the network. It lands in the next block, about 75 seconds."],
-      confirmed: ["Sent. It's in a block.", "Open Zingo. Your test ZEC is in your shielded balance (pull down to refresh)."],
-      failed: ["The faucet couldn't send it.", "Try again, or use the faucet site below."],
-    }[claim.state] || ["Asking the faucet…", ""];
+      pending: ["Sending…", "Give it a moment."],
+      broadcasting: ["On its way", "Lands in about a minute."],
+      confirmed: ["Sent ✓", "Pull down in Zingo to see it."],
+    }[claim.state] || ["Sending…", ""];
     const box = el("div", { class: `watch${claim.state === "confirmed" ? " ok" : ""}`, "aria-live": "polite" },
       el("b", {}, claim.state === "confirmed" ? "" : el("i", { class: "dot pulse" }), words[0]),
       el("p", {}, words[1]),
     );
-    if (claim.txid) {
-      box.append(el("p", { class: "watch-addr" }, externalLink(`tx ${claim.txid.slice(0, 10)}…${claim.txid.slice(-6)}${claim.height ? ` · block ${claim.height.toLocaleString("en-US")}` : ""}`, `https://zexplorer.app/testnet/tx/${claim.txid}`, "")));
+    if (claim.txid && /^[0-9a-f]{64}$/.test(claim.txid)) {
+      box.append(el("p", { class: "watch-addr" }, externalLink("View transaction", `https://zexplorer.app/testnet/tx/${claim.txid}`, "")));
     }
     wrap.append(box);
     if (!done) {
@@ -706,30 +762,34 @@ function faucetBlock(i) {
       wrap.append(el("p", {}, again));
     }
   }
-  wrap.append(ready, el("p", { class: "fine" }, "Test ZEC comes from fauzec.com, the free public testnet faucet. Your utest1 address is passed to it, nothing else."));
-  if (!done) {
-    const site = el("p", { class: "fine" }, "Button not working? ", externalLink("Use the faucet site", FAUCET_URL, ""), " and tap below once it's in Zingo.");
-    wrap.append(site);
-  }
-  if (claim && !claim.error && claim.state !== "confirmed" && claim.state !== "failed") pollFaucet(i);
+  wrap.append(ready);
+  if (!done) wrap.append(el("p", { class: "fine" }, "Button not working? ", externalLink("Use the faucet site", FAUCET_URL, ""), "."));
+  if (claim && claim.id && !claim.error && claim.state !== "confirmed") pollFaucet(i);
   return wrap;
 }
 
 function pollFaucet(i) {
   clearTimeout(faucetTimer);
   const claim = state.faucet;
-  if (!net || net !== "test" || !claim || !claim.id || claim.state === "confirmed" || claim.state === "failed") return;
+  if (net !== "test" || state.open !== i || state.done[i] || !claim || !claim.id || claim.state === "confirmed") return;
+  const g = gen;
   faucetTimer = setTimeout(async () => {
+    if (g !== gen) return;
+    if (document.hidden) return pollFaucet(i);
+    let d = null;
     try {
-      const d = await (await fetch(`/api/faucet?id=${encodeURIComponent(claim.id)}`)).json();
-      if (state.faucet && state.faucet.id === claim.id && d.state) {
-        state.faucet = { ...state.faucet, state: d.state, txid: d.txid || state.faucet.txid, height: d.height || null };
-        if (d.state === "failed") state.faucet = { error: d.error || "The faucet couldn't send it." };
-        save();
-        if (state.open === i) renderCard(i);
-      }
+      const r = await fetch(`/api/faucet?id=${encodeURIComponent(claim.id)}`);
+      d = await r.json().catch(() => ({}));
+      if (r.status === 404) d = { state: "failed", error: "The faucet lost that request. Try again." };
     } catch {}
-    if (state.faucet && state.faucet.state !== "confirmed") pollFaucet(i);
+    if (g !== gen || !state.faucet || state.faucet.id !== claim.id) return;
+    const polls = (state.faucet.polls || 0) + 1;
+    if (d && d.state === "failed") state.faucet = { error: d.error || "The faucet couldn't send it. Try again." };
+    else if (polls > FAUCET_MAX_POLLS) state.faucet = { error: "That took too long. Check Zingo, or try again." };
+    else state.faucet = { ...state.faucet, polls, state: (d && d.state) || state.faucet.state, txid: (d && d.txid) || state.faucet.txid };
+    save();
+    if (state.open === i) renderCard(i);
+    pollFaucet(i);
   }, 5000);
 }
 
@@ -739,12 +799,12 @@ function addressProblem(value) {
   if (!value) return null;
   if (net === "test") {
     if (/^u1/i.test(value)) return "That's a mainnet address. Use your Zingo testnet address.";
-    if (/^t/i.test(value)) return "Use your shielded address, not the transparent one.";
+    if (/^t/i.test(value)) return "Use your private address (utest1…).";
     if (!isUnifiedAddress(value, "utest")) return "Use your utest1 address from Zingo.";
     return "";
   }
   if (/^utest1/i.test(value)) return "That's a testnet address. Use your Zodl address.";
-  if (/^t/i.test(value)) return "Use your shielded address, not the transparent one.";
+  if (/^t/i.test(value)) return "Use your private address (u1…).";
   if (!isUnifiedAddress(value)) return "Use your u1 address from Zodl.";
   return "";
 }
@@ -754,6 +814,8 @@ function letterForm() {
   const field = el("textarea", {
     id: "note",
     rows: "4",
+    spellcheck: "false",
+    autocorrect: "off",
     autocomplete: "off",
     autocapitalize: "sentences",
     "aria-label": "Your letter to yourself, one year from now",
@@ -777,7 +839,7 @@ function letterForm() {
   const status = el("p", { class: "status bad", "aria-live": "polite" });
   const qr = el("div", { class: "qr" });
   const qrBox = el("div", { class: "qr-box", hidden: !qrOpen },
-    el("p", { class: "note" }, "Optional. Scan this from your wallet's send screen to fill everything in."),
+    el("p", { class: "note" }, "Optional: scan from your wallet's send screen."),
     addr, status, qr,
   );
 
@@ -858,14 +920,14 @@ function renderFinish(animate) {
   const box = $("finish");
   const all = state.done.every(Boolean);
   box.classList.toggle("locked", !all);
-  const opens = new Date();
+  const opens = new Date(state.sealedAt || Date.now());
   opens.setFullYear(opens.getFullYear() + 1);
   const opensText = opens.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
   const block = (all && state.block) || height;
 
   const letter = el("div", { class: "sheet-paper" },
     el("p", { class: "hand big" }, all ? "Dear me," : "Dear me,"),
-    el("p", { class: "hand" }, all ? note.trim() || "(your letter, safe in your wallet)" : "…finish all six steps and this letter gets sealed."),
+    el("p", { class: "hand" }, all ? note.trim() || "(safe in your wallet)" : "…"),
   );
   const env = el("div", { class: "env-back" },
     el("span", { class: "flap" }),
@@ -876,9 +938,9 @@ function renderFinish(animate) {
 
   const head = all
     ? net === "test"
-      ? [el("p", { class: "kicker" }, "Practice delivered"), el("h2", {}, "You've done it once."), el("p", { class: "lede" }, "That was free test ZEC. Now post the real one.")]
-      : [el("p", { class: "kicker" }, "Sealed for a year"), el("h2", {}, `Opens ${opensText}.`), el("p", { class: "lede" }, "Only you can open it. Keep your recovery phrase and it stays yours.")]
-    : [el("p", { class: "kicker" }, "The last stop"), el("h2", {}, "Your sealed letter"), el("p", { class: "lede" }, "Postmark all six steps and your letter goes into its envelope.")];
+      ? [el("p", { class: "kicker" }, "Practice delivered"), el("h2", {}, "You've done it once."), el("p", { class: "lede" }, "Now send the real one.")]
+      : [el("p", { class: "kicker" }, "Sealed for a year"), el("h2", {}, `Opens ${opensText}.`), el("p", { class: "lede" }, "Only you can open it. Keep your recovery phrase safe.")]
+    : [el("p", { class: "kicker" }, "The last stop"), el("h2", {}, "Your sealed letter"), el("p", { class: "lede" }, "Finish the six steps to seal it.")];
 
   const actions = el("div", { class: "actions" });
   let shareBox = null;
@@ -895,7 +957,8 @@ function renderFinish(animate) {
       });
       actions.append(remind);
     }
-    shareBox = sharePanel({ net, block, time: mmss(total()), opens: net === "main" ? opensText : "" });
+    // The share card never carries the block: with the time, it could point to your public address.
+    shareBox = sharePanel({ net, time: mmss(total()), opens: net === "main" ? opensText : "" });
   }
   box.replaceChildren(...[el("div", { class: "fin-head" }, head), el("div", { class: "fin-stage" }, letter, env), shareBox, actions].filter(Boolean));
   box.classList.remove("sealed-now");
@@ -907,9 +970,9 @@ function renderFinish(animate) {
 
 // Share: a postcard drawn on the phone, a post for X, and the card itself.
 function sharePanel(info) {
-  const preview = el("img", { class: "postcard", alt: "Your Zender postcard: sealed, with your network, block and time. Never your letter.", width: 1200, height: 630 });
+  const preview = el("img", { class: "postcard", alt: "Your Zender postcard. Never your letter.", width: 1200, height: 630 });
   const canvas = document.createElement("canvas");
-  drawCard(canvas, info).then(() => (preview.src = canvas.toDataURL("image/png")));
+  drawCard(canvas, info).then(() => (preview.src = canvas.toDataURL("image/png"))).catch(() => preview.remove());
 
   const flash = (btn, text, back) => {
     btn.textContent = text;
@@ -928,14 +991,14 @@ function sharePanel(info) {
   const draft = el("p", { class: "draft" }, postText(info), el("br", {}), el("span", { class: "draft-link" }, "tryzender.vercel.app @zksnarks_ #ZECATHON"));
 
   return el("section", { class: "share", "aria-label": "Share on X" },
-    el("p", { class: "kicker" }, "Send a postcard to the timeline"),
+    el("p", { class: "kicker" }, "Share it"),
     el("div", { class: "share-grid" },
       el("figure", { class: "postcard-wrap" }, preview),
       el("div", { class: "share-side" },
         el("p", { class: "label" }, "Your post"),
         draft,
         el("div", { class: "row" }, externalLink("Post on X", postUrl(info), "btn ink"), share, save),
-        el("p", { class: "fine" }, "X links can't carry a picture. On a phone, tap Share image and pick X. On a computer, download the card and add it to your post. Your letter is never in it."),
+        el("p", { class: "fine" }, "To add the picture: tap Share image and pick X, or download it. Your letter is never in it."),
       ),
     ),
   );
@@ -1010,16 +1073,49 @@ document.addEventListener("click", (e) => {
 });
 window.addEventListener("popstate", render);
 
+// Light / dark. The choice is remembered; until then we follow the phone.
+function setThemeColor() {
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", document.documentElement.dataset.theme === "dark" ? "#15130f" : "#f3ecdf");
+}
+$("theme").addEventListener("click", () => {
+  const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  try {
+    localStorage.setItem("zender:theme", next);
+  } catch {}
+  setThemeColor();
+  if (net && state.done.every(Boolean)) renderFinish(false);
+});
+if (window.matchMedia) {
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+    let saved = null;
+    try {
+      saved = localStorage.getItem("zender:theme");
+    } catch {}
+    if (!saved) {
+      document.documentElement.dataset.theme = e.matches ? "dark" : "light";
+      setThemeColor();
+    }
+  });
+}
+setThemeColor();
+
 const sheet = $("sheet");
 $("cheat").addEventListener("click", () => {
   sheet.hidden = false;
   sheet.querySelector("[data-close]").focus();
 });
+function closeSheet() {
+  if (sheet.hidden) return;
+  sheet.hidden = true;
+  $("cheat").focus();
+}
 sheet.addEventListener("click", (e) => {
-  if (e.target === sheet || e.target.closest("[data-close]")) sheet.hidden = true;
+  if (e.target === sheet || e.target.closest("[data-close]")) closeSheet();
 });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") sheet.hidden = true;
+  if (e.key === "Escape") closeSheet();
 });
 
 render();

@@ -16,3 +16,6 @@ export const EXCHANGES = [
   { label: "Coinbase", href: "https://www.coinbase.com/price/zcash" },
   { label: "Kraken", href: "https://www.kraken.com/buy/zec" },
 ];
+
+// Also list ZEC (checked 3 Oct 2026). Named only, no links.
+export const MORE_EXCHANGES = "Also on OKX, Bybit and Binance.";

@@ -1,4 +1,4 @@
-import { ZODL_URL, EXCHANGES } from "./config.js";
+import { ZODL_URL, EXCHANGES, MORE_EXCHANGES } from "./config.js";
 
 export const STEPS = [
   {
@@ -12,6 +12,7 @@ export const STEPS = [
     sentence: "Buy a dollar or two and send it to your transparent address.",
     video: "/videos/2.mp4",
     links: EXCHANGES,
+    more: MORE_EXCHANGES,
   },
   {
     title: "Shield it",

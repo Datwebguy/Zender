@@ -250,6 +250,8 @@ input[type="text"]:focus, textarea:focus { outline: 2px solid var(--yellow); out
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .row .pill { min-height: 42px; padding: 0 8px; font-size: 15px; }
 .row.links { grid-template-columns: repeat(3, 1fr); }
+body[data-step="2"] .extras { height: auto; gap: 6px; }
+.more { margin: 0; text-align: center; color: var(--muted); font-size: 13px; }
 .row.links .pill { min-height: 46px; }
 
 

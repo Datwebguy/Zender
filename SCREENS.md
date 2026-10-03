@@ -37,6 +37,8 @@ Buttons: Gemini, Coinbase, Kraken. Names only, no logos. Each opens that exchang
 - https://www.coinbase.com/price/zcash
 - https://www.kraken.com/buy/zec
 
+Under them, one line, no links: "Also on OKX, Bybit and Binance."
+
 ZEC was about $1,368 on 3 Oct 2026. The send is 0.0001 ZEC (about $0.14) and comes back. Fees are about 0.0001 ZEC per transaction (ZIP 317 minimum), so shield, send and unshield cost about $0.40 in all.
 
 Video: Receive, copy the transparent address, wait for the balance.

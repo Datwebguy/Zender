@@ -189,6 +189,7 @@ function renderExtras(step) {
     const row = el("div", { class: "row links" });
     step.links.forEach((l) => row.append(externalLink(l.label, l.href, "pill secondary")));
     box.append(row);
+    if (step.more) box.append(el("p", { class: "more" }, step.more));
   }
   if (step.form) box.append(noteForm());
 }

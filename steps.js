@@ -186,11 +186,14 @@ export const ROUNDS = {
   },
 };
 
-// Lost in the post? Short answers.
+// Lost in the post? Answers about how Zender works. test/main: shown on that round only.
 export const FAQ = [
-  { q: "My balance shows but I can't send", a: "New coins need a few minutes. Let the wallet finish syncing." },
-  { q: "The faucet won't take my address", a: "Use the private one that starts with utest1.", test: true },
-  { q: "The exchange won't take my address", a: "Exchanges send to public addresses (t1). Use that, then shield in step 3.", main: true },
-  { q: "It's still waiting", a: "Zcash adds a block about every 75 seconds. We check every 20 seconds." },
-  { q: "Is this safe?", a: "We only see your public address. Never your letter, phrase or keys." },
+  { q: "How does a step turn green by itself?", a: "Zender looks up the public address you pasted on the Zcash chain about every 20 seconds. A new block lands about every 75 seconds, so give it a minute or tap Check now." },
+  { q: "Why do I tick some steps myself?", a: "Private sends can't be seen by anyone, Zender included. That's the point, so you confirm those steps." },
+  { q: "Send me test ZEC didn't work", a: "Paste your private address, the one that starts with utest1. If the faucet is busy, use the faucet site link under the button.", test: true },
+  { q: "Is test ZEC worth anything?", a: "No. It shows as TAZ in Zingo and has no value. It's only for practice.", test: true },
+  { q: "Can I skip the exchange?", a: "Yes. If you bought ZEC with Swap in Zodl, tap I used Swap in Zodl instead in step 2.", main: true },
+  { q: "There's no Shield button in Zodl", a: "New coins need a few minutes to confirm. Shield appears on your Unshielded Balance once they do.", main: true },
+  { q: "Where does my letter go?", a: "Into the memo of a send to yourself. It's encrypted on the chain and only your wallet can open it. Zender never sends or saves it." },
+  { q: "What can Zender see?", a: "Only the public address you paste. Never your letter, your recovery phrase or your keys." },
 ];

@@ -278,7 +278,7 @@ function renderRound() {
   });
 
   const faq = el("section", { class: "desk" },
-    el("h2", { class: "sec" }, "Stuck?"),
+    el("h2", { class: "sec" }, "Lost in the post?"),
     FAQ.filter((f) => (net === "test" ? !f.main : !f.test)).map((f) => el("details", {}, el("summary", {}, f.q), el("p", {}, f.a))),
   );
   const other = el("a", { class: `post ${net === "test" ? "main" : "test"} slim`, href: r.other.href, "data-nav": true },

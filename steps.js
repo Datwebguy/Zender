@@ -186,7 +186,7 @@ export const ROUNDS = {
   },
 };
 
-// Stuck? Short answers.
+// Lost in the post? Short answers.
 export const FAQ = [
   { q: "My balance shows but I can't send", a: "New coins need a few minutes. Let the wallet finish syncing." },
   { q: "The faucet won't take my address", a: "Use the private one that starts with utest1.", test: true },

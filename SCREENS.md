@@ -12,6 +12,8 @@ Shared chrome:
 - Video player for that step
 - Yellow Next
 - Back from step 2
+- One screen per step. No page scroll. The video takes the height that is left.
+- Tap the right side of the screen for next, the left side for back. Buttons, links and fields keep their own tap. Step 1 says so in one line.
 
 ## 1. Install Zodl
 

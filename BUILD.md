@@ -44,7 +44,9 @@ Tests: node --test tests/*.mjs
 
 ## Videos
 
-Six clips, one per step, recorded on testnet in Zodl. Mute by default. Controls visible. Each clip under about 40 seconds.
+Six clips, one per step. Muted, autoplay, no native controls, because a tap on the screen moves between steps. A Replay button shows when a clip ends. Each clip under about 40 seconds.
+
+The current clips are animated guides (720x1280, H.264), not screen recordings. Replace them with real Zodl testnet recordings when you have them, same file names.
 
 Until a clip exists, the player area stays, with the sentence as the instruction. Do not ship a fake play button that does nothing. Label it "Video coming" only if the file is missing, and replace it before the tweet.
 

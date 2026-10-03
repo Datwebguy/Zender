@@ -36,7 +36,7 @@ Source: https://x.com/zksnarks_/status/2104718302606205130
 - Primary faucet https://zcashfaucet.jinolabs.xyz reset every connection from the build machine. Step 2 uses the fallback, https://zechub.wiki/tools?tool=faucet (fauzec.com), and drops the "0.1 TAZ" wording. To switch back, set `ACTIVE_FAUCET = "primary"` in config.js once the Jino faucet is confirmed to drip.
 - Store links taken from https://zodl.com/ on build day. The App Store listing URL still carries the old Zashi slug.
 - Step 4 asks the visitor for their own testnet unified address (`utest1…`) and builds the ZIP-321 link to it. They send to themselves and read the note in their own Activity. `RECEIVE_ADDRESS` in config.js stays empty.
-- Videos go in `videos/1.mp4` to `videos/6.mp4`. A missing clip shows "Video coming" with the step sentence.
+- `videos/1.mp4` to `videos/6.mp4` are animated guide clips, not Zodl screen recordings. Swap in real recordings with the same names. A missing clip shows "Video coming" with the step sentence.
 
 ## Run locally
 

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
   <meta name="theme-color" content="#000000">
@@ -28,21 +28,27 @@
     </header>
 
     <main id="main" tabindex="-1">
-      <p class="count" id="count">Step 1 of 6</p>
+      <p class="sr-only" id="count">Step 1 of 6</p>
       <h1 id="title">Install Zodl</h1>
       <p class="sentence" id="sentence">Install the wallet, then switch it to testnet.</p>
 
-      <div class="media" id="media">
-        <video id="video" muted playsinline autoplay controls preload="metadata"></video>
-        <button type="button" class="replay" id="replay" hidden>Replay</button>
-        <div class="coming" id="coming" hidden>
-          <span class="tag">Video coming</span>
-          <p id="coming-text"></p>
+      <div class="stage" id="stage">
+        <div class="media" id="media">
+          <video id="video" muted playsinline autoplay preload="auto"></video>
+          <div class="coming" id="coming" hidden>
+            <span class="tag">Video coming</span>
+            <p id="coming-text"></p>
+          </div>
+          <div class="qr" id="qr" hidden></div>
+          <div class="linkview" id="linkview" hidden><code id="uri"></code></div>
+          <button type="button" class="chip replay" id="replay" hidden>Replay</button>
         </div>
       </div>
 
       <div class="extras" id="extras"></div>
     </main>
+
+    <p class="taphint" id="taphint">Tap the right side for next, the left side for back.</p>
 
     <nav class="actions" aria-label="Step navigation">
       <a class="back" id="back" href="/1" data-nav>Back</a>
@@ -50,8 +56,7 @@
     </nav>
 
     <footer class="foot">
-      <p>Testnet only. No account. Notes stay in Zodl.</p>
-      <p class="event">ZECATHON</p>
+      <p>Testnet only. No account. Notes stay in Zodl. <span class="event">ZECATHON</span></p>
     </footer>
   </div>
   <noscript><p class="noscript">Turn on JavaScript in your browser to use Zender.</p></noscript>

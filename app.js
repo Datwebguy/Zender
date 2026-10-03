@@ -9,14 +9,19 @@ const $ = (id) => document.getElementById(id);
 let note = "";
 let address = "";
 
-function stepFromPath() {
+// What the media area shows: "video", "qr" or "link".
+let view = "video";
+let uri = null;
+
+function currentStep() {
   const m = location.pathname.match(/^\/([1-6])\/?$/);
   return m ? Number(m[1]) : null;
 }
 
-function go(n, replace = false) {
+function go(n) {
+  if (n < 1 || n > 6) return;
   const path = `/${n}`;
-  if (location.pathname !== path) history[replace ? "replaceState" : "pushState"](null, "", path);
+  if (location.pathname !== path) history.pushState(null, "", path);
   render();
 }
 
@@ -32,7 +37,7 @@ function externalLink(label, href, className) {
 }
 
 function render() {
-  let n = stepFromPath();
+  let n = currentStep();
   if (!n) {
     history.replaceState(null, "", "/1");
     n = 1;
@@ -58,20 +63,21 @@ function render() {
   next.textContent = step.done ? "Done" : "Next";
   next.href = step.done ? "/1" : `/${n + 1}`;
 
+  $("taphint").hidden = n !== 1;
   document.body.dataset.step = String(n);
+
+  uri = null;
+  view = "video";
   loadVideo(step);
   renderExtras(step);
+  showView();
 
-  window.scrollTo(0, 0);
   $("main").focus({ preventScroll: true });
 }
 
 function loadVideo(step) {
   const video = $("video");
-  const coming = $("coming");
-  $("replay").hidden = true;
-  coming.hidden = true;
-  video.hidden = false;
+  video.dataset.missing = "";
   $("coming-text").textContent = step.sentence;
   video.src = step.video;
   video.load();
@@ -79,18 +85,31 @@ function loadVideo(step) {
   if (playing) playing.catch(() => {});
 }
 
-function showComing() {
-  $("video").hidden = true;
-  $("replay").hidden = true;
-  $("coming").hidden = false;
+// Shows one thing in the media area: the video (or its placeholder), the QR, or the link text.
+function showView() {
+  const video = $("video");
+  const missing = video.dataset.missing === "1";
+  video.hidden = view !== "video" || missing;
+  $("coming").hidden = view !== "video" || !missing;
+  $("qr").hidden = view !== "qr";
+  $("linkview").hidden = view !== "link";
+  $("replay").hidden = view !== "video" || missing || !video.ended;
+
+  const toggle = $("toggle");
+  if (toggle) toggle.textContent = view === "video" ? "QR" : "Video";
+
+  const show = $("show");
+  if (show) show.textContent = view === "link" ? "Hide link" : "Show link";
+
+  if (view !== "video") video.pause();
 }
 
 function replay() {
   const video = $("video");
-  $("replay").hidden = true;
   video.currentTime = 0;
   const playing = video.play();
   if (playing) playing.catch(() => {});
+  showView();
 }
 
 function renderExtras(step) {
@@ -118,15 +137,15 @@ function renderExtras(step) {
 }
 
 function addressProblem(value) {
-  if (!value) return "Paste your testnet unified address from Zodl to make the QR.";
+  if (!value) return "In Zodl, open Receive and copy your shielded address. You send to yourself.";
   if (/^u1/i.test(value)) return "That is a mainnet address. Switch Zodl to testnet and copy the address that starts with utest1.";
-  if (!isTestnetUnified(value)) return "That is not a testnet unified address. Copy the address that starts with utest1 from Zodl.";
+  if (!isTestnetUnified(value)) return "That is not a testnet address. Copy the one that starts with utest1 from Zodl.";
   return "";
 }
 
 function noteForm() {
   const wrap = el("div", { class: "send" });
-  const addrLabel = el("label", { for: "address", class: "label" }, "Your testnet unified address");
+
   const addrField = el("input", {
     id: "address",
     type: "text",
@@ -134,62 +153,85 @@ function noteForm() {
     autocomplete: "off",
     autocapitalize: "none",
     autocorrect: "off",
-    placeholder: "utest1…",
+    enterkeyhint: "next",
+    "aria-label": "Your testnet unified address",
+    placeholder: "Your testnet unified address (utest1…)",
   });
   addrField.value = address;
-  const addrHint = el("p", { class: "hint" }, "In Zodl, open Receive and copy your shielded address. You send to yourself.");
-  const label = el("label", { for: "note", class: "label" }, "Your note");
+
+  const noteRow = el("div", { class: "note-row" });
   const field = el("textarea", {
     id: "note",
-    rows: "3",
+    rows: "2",
     spellcheck: "false",
     autocomplete: "off",
     autocapitalize: "sentences",
-    placeholder: "Write a note. Only you will be able to read it.",
+    "aria-label": "Your note",
+    placeholder: "Your note. Only you will be able to read it.",
   });
   field.value = note;
-  const counter = el("p", { class: "counter", id: "counter", "aria-live": "polite" });
-  const amount = el("p", { class: "hint" }, `Amount ${AMOUNT} testnet ZEC. Zodl sets the fee.`);
-  const qr = el("div", { class: "qr", id: "qr" });
-  const copy = el("button", { type: "button", class: "pill secondary", id: "copy" }, "Copy link");
-  const status = el("p", { class: "hint", id: "copy-status", "aria-live": "polite" });
-  const details = el("details", { class: "link" });
-  const linkText = el("code", { id: "uri" });
-  details.append(el("summary", {}, "Show link"), linkText);
+  const counter = el("span", { class: "counter", id: "counter", "aria-live": "polite" });
+  noteRow.append(field, counter);
 
-  wrap.append(addrLabel, addrField, addrHint, label, field, counter, amount, qr, copy, status, details);
+  const status = el("p", { class: "hint", id: "status", "aria-live": "polite" });
+
+  const buttons = el("div", { class: "row" });
+  const copy = el("button", { type: "button", class: "pill secondary", id: "copy" }, "Copy link");
+  const show = el("button", { type: "button", class: "pill secondary", id: "show" }, "Show link");
+  const toggle = el("button", { type: "button", class: "pill secondary", id: "toggle" }, "Video");
+  buttons.append(copy, show, toggle);
+
+  wrap.append(addrField, noteRow, status, buttons);
 
   const update = () => {
     note = field.value;
     address = addrField.value.trim();
-    const problem = addressProblem(address);
-    addrField.classList.toggle("invalid", Boolean(address) && Boolean(problem));
     const bytes = utf8Bytes(note).length;
     counter.textContent = `${bytes} / ${MAX_MEMO_BYTES}`;
     counter.classList.toggle("over", bytes > MAX_MEMO_BYTES);
-    status.textContent = "";
 
-    let uri = null;
+    const problem = addressProblem(address);
+    addrField.classList.toggle("invalid", Boolean(address) && Boolean(problem));
+
+    const before = uri;
+    uri = null;
     let message = "";
     if (problem) message = problem;
-    else if (!note.trim()) message = "Type a note to make the QR.";
+    else if (!note.trim()) message = "Now type a note.";
     else if (bytes > MAX_MEMO_BYTES) message = `Too long. Cut it to ${MAX_MEMO_BYTES} bytes.`;
-    else uri = buildUri({ address, amount: AMOUNT, memo: note, message: MESSAGE });
+    else {
+      uri = buildUri({ address, amount: AMOUNT, memo: note, message: MESSAGE });
+      message = `Scan the QR in Zodl, or copy the link. ${AMOUNT} testnet ZEC, Zodl sets the fee.`;
+    }
+    status.textContent = message;
 
-    qr.replaceChildren(uri ? qrSvg(uri) : el("p", { class: "qr-empty" }, message));
     copy.disabled = !uri;
-    copy.dataset.uri = uri || "";
-    linkText.textContent = uri || "";
-    details.hidden = !uri;
+    show.disabled = !uri;
+    toggle.disabled = !uri;
+    $("uri").textContent = uri || "";
+    $("qr").replaceChildren(...(uri ? [qrSvg(uri)] : []));
+
+    if (uri && !before) view = "qr";
+    if (!uri) view = "video";
+    showView();
   };
 
   field.addEventListener("input", update);
   addrField.addEventListener("input", update);
   copy.addEventListener("click", async () => {
-    const ok = await copyText(copy.dataset.uri);
-    status.textContent = ok ? "Link copied." : "Could not copy. Open Show link and copy it by hand.";
+    const ok = await copyText(uri);
+    status.textContent = ok ? "Link copied. Paste it in Zodl's send screen." : "Could not copy. Tap Show link and copy it by hand.";
   });
-  update();
+  show.addEventListener("click", () => {
+    view = view === "link" ? "qr" : "link";
+    showView();
+  });
+  toggle.addEventListener("click", () => {
+    view = view === "video" ? "qr" : "video";
+    if (view === "video") replay();
+    showView();
+  });
+  queueMicrotask(update);
   return wrap;
 }
 
@@ -242,30 +284,49 @@ async function copyText(text) {
   }
 }
 
+function finish() {
+  note = "";
+  address = "";
+  go(1);
+}
+
+// Links inside the site move between steps without a page load.
 document.addEventListener("click", (e) => {
   const a = e.target.closest("a[data-nav]");
   if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
   const m = a.getAttribute("href").match(/^\/([1-6])$/);
   if (!m) return;
   e.preventDefault();
-  if (a.id === "next" && a.textContent === "Done") note = "";
-  if (a.classList.contains("close")) note = "";
-  go(Number(m[1]));
+  if ((a.id === "next" && a.textContent === "Done") || a.classList.contains("close")) finish();
+  else go(Number(m[1]));
+});
+
+// Tap the right side of the screen for next, the left side for back.
+// Buttons, links and fields keep their own tap.
+const app = document.querySelector(".app");
+app.addEventListener("click", (e) => {
+  if (e.defaultPrevented) return;
+  if (e.target.closest("a, button, input, textarea, label, .actions, .top, .linkview, .card")) return;
+  if (String(window.getSelection() || "")) return;
+  const n = currentStep() || 1;
+  const rect = app.getBoundingClientRect();
+  if (e.clientX > rect.left + rect.width / 2) {
+    if (n === 6) finish();
+    else go(n + 1);
+  } else if (n > 1) {
+    go(n - 1);
+  }
 });
 
 window.addEventListener("popstate", render);
 
 const video = $("video");
-video.addEventListener("error", showComing);
-video.addEventListener("ended", () => {
-  $("replay").hidden = false;
+video.addEventListener("error", () => {
+  video.dataset.missing = "1";
+  showView();
 });
-video.addEventListener("play", () => {
-  $("replay").hidden = true;
-});
-video.addEventListener("click", () => {
-  if (video.ended) replay();
-});
+video.addEventListener("ended", showView);
+video.addEventListener("play", showView);
 $("replay").addEventListener("click", replay);
 
 render();

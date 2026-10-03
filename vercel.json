@@ -1,11 +1,24 @@
 {
-  "rewrites": [
+  "redirects": [
     {
       "source": "/:step(1|2|3|4|5|6|done)",
-      "destination": "/index.html"
+      "destination": "/mainnet",
+      "permanent": false
     },
     {
       "source": "/t/:step(1|2|3|4|5|6|done)",
+      "destination": "/testnet",
+      "permanent": false
+    },
+    {
+      "source": "/t",
+      "destination": "/testnet",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/:p(testnet|mainnet)",
       "destination": "/index.html"
     }
   ],

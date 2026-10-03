@@ -1,135 +1,52 @@
 # Screens
 
-## Two rounds
+One scrolling page per round. Each step is a card. One card is open at a time, with a timer. Public steps are checked on chain, live.
 
-- Testnet practice at /t/1 to /t/6 and /t/done. Zingo, free test ZEC, testnet.zec.rocks:443. Opening the site at / starts here. Practice done → "Now do it for real" → /1.
-- Mainnet at /1 to /6 and /done. Zodl, real ZEC.
-- A pill next to the wordmark shows Testnet or Mainnet; tap it to switch and keep the step.
+## Pages
 
-## Check on chain
+- `/` Home. "The blockchain is public. Your letter isn't." types out, an envelope gets its wax seal. Two cards: Practice first (testnet) and Do it for real (mainnet), each with progress if started.
+- `/testnet` Practice round. Zingo, free test ZEC, testnet.zec.rocks:443.
+- `/mainnet` The real round. Zodl, a dollar or two of real ZEC.
+- Old links (`/1`–`/6`, `/done`, `/t/…`) redirect to the matching round.
 
-Steps 2, 3 and 6 (both rounds) have a "Check on chain" chip on the video. The first tap asks for the public transparent address (t1 on mainnet, tm on testnet) in a sheet, then Zender's /api/check reads its balance and transaction count from a light server. ✓ ZEC arrived (any history), ✓ Shielded (two or more transactions and empty, or three or more), ✓ Back on postcard (three or more and a balance). Verified steps turn their progress tick green. Not yet: it checks again every 20 seconds while the visitor stays on the step. Steps 4 and 5 are the sealed letter: only the visitor's wallet can prove them.
+Header on every page: Zender (home), Testnet / Mainnet tabs, ? (Envelopes and postcards: plain words for u1, t1, Shield, Unshield, Letter, Testnet).
 
-One route per step: /1 through /6. / redirects to /1. State is the step index in the URL. No account.
+Footer: Built for ZECATHON · Not affiliated with any wallet, exchange or Zcash organisation · Open source.
 
-Shared chrome:
+## A round, top to bottom
 
-- Wordmark: Zender
-- Progress: 6 ticks, current tick filled
-- Close returns to /1
-- Title
-- One sentence
-- Video player for that step
-- Yellow Next
-- Back from step 2
-- One screen per step. No page scroll. The video takes the height that is left.
-- Tap the right side of the screen for next, the left side for back. Buttons, links and fields keep their own tap.
-- Keep it neat: title, one sentence, video, at most one button, Next. Everything centred.
+1. Hero: small tag, two-line title (second line yellow), one sentence, a live network line ("Testnet online · block 4,446,087" from `/api/check`), the envelope.
+2. Six step cards. Card head: number (✓ when done), title, one-line subtitle, mm:ss timer. The timer starts when a card first opens and stops when it's done. Finishing a card opens the next one.
+3. Card body: one lead sentence, a numbered how-to list, a small note for the usual snag, links, tip boxes, "Watch how" (mainnet clips), then the action.
+4. Bottom bar: "Finish all six steps to seal it" (turns into Seal it), Start over, "n/6 steps · progress saves in this browser".
+5. Finish (after all six): "Sealed for a year." with total time, You see / Everyone else sees panels, Post on X, Share image, Remind me. On testnet: "Practice done" and Now do it for real.
+6. The other round: "Then do it on mainnet" or "New to this?".
+7. Stuck? Short answers: can't spend yet, exchange won't take my address, QR won't scan, still watching, is this safe, switching Zingo to testnet.
 
-## 1. Install Zodl
+## The six steps
 
-Under the button, one line, no links: "Other Zcash wallets: Vizor, Zafu."
+| # | Testnet (Zingo) | Mainnet (Zodl) | Action |
+|---|---|---|---|
+| 1 | Set up a testnet wallet: gear → Server → Network Testnet, Custom `https://testnet.zec.rocks:443`, Create New Wallet, sync. Tips: Am I on testnet? / Back to mainnet later | Set up Zodl: install, Create New Wallet, back up the phrase on paper, sync | I'm ready |
+| 2 | Get test ZEC from the faucet to your tm address | Get a little ZEC: exchange withdrawal to your t1 (Gemini, Coinbase, Kraken links; OKX, Bybit, Binance, THORChain named) | Paste the address once; watched on chain. Mainnet also offers "I used Swap in Zodl instead" |
+| 3 | Shield it | Shield it | Watched on chain |
+| 4 | Seal a practice letter: Send → own utest1 → 0.0001 → Memo | Seal a letter: Send → own u1 → 0.0001 → Message | Letter box, Copy letter, optional Show QR, then I sent it |
+| 5 | Read it back | Read it back. Tips: what everyone sees / what you see | I can read my letter |
+| 6 | Unshield to your own tm | Unshield to your own t1 | Watched on chain |
 
-Title: Install Zodl
+## Watching the chain
 
-Sentence: Install it and tap Create New Wallet. About 10 minutes in all.
+Only the public transparent address (t1 or tm) is sent, to Zender's own `/api/check`, which asks a Zcash light server for balance and transaction count. While a watched card is open it checks every 20 seconds; the box reads "Watching your public address…", then "Not yet. 0 TAZ here, 1 transaction so far." and turns green on its own.
 
-Button under the video: Get Zodl. Links to https://zodl.com/
+- Step 2 passes when anything has arrived.
+- Step 3 passes when the address has emptied (or moved on).
+- Step 6 passes on a new transaction after the shield, with a balance.
 
-Video: welcome screen, tap Create New Wallet, wallet ready. Creating a wallet shows no phrase; the phrase is exported later from Advanced Settings.
-
-## 2. Get a little ZEC
-
-Title: Get a little ZEC
-
-Sentence: Tap Swap in Zodl, or buy a dollar or two on an exchange.
-
-Buttons: Gemini, Coinbase, Kraken. Names only, no logos. Each opens that exchange's Zcash page:
-- https://www.gemini.com/prices/zcash
-- https://www.coinbase.com/price/zcash
-- https://www.kraken.com/buy/zec
-
-Sentence: "Tap Swap in Zodl, or buy a dollar or two on an exchange." Under the buttons, one line, no links: "Withdraw to your t1. Also OKX, Bybit, Binance, or swap on THORChain."
-
-Plain words (the ? in the header), "Envelopes and postcards": u1 is your envelope address (sealed), t1 your postcard address (readable by anyone), Shield moves ZEC into the envelope, Unshield back to postcard, the letter is the note inside, and how to get ZEC. One line each, in our own words.
-
-ZEC was about $1,368 on 3 Oct 2026. The send is 0.0001 ZEC (about $0.14) and comes back. Fees are about 0.0001 ZEC per transaction (ZIP 317 minimum), so shield, send and unshield cost about $0.40 in all.
-
-Video: Receive, copy the transparent address, wait for the balance.
-
-## 3. Shield
-
-Title: Shield it
-
-Sentence: In Zodl, tap Shield on your transparent balance.
-
-No QR on this step. Zodl has a Shield button for transparent funds: a small fee, one block.
-
-Video: ZEC lands transparent, tap Shield, shielded.
-
-## 4. Seal a letter
-
-Title: Seal a letter
-
-Sentence: Write to yourself, one year from now. Then send it to yourself in Zodl.
-
-Note field placeholder: "Dear me, one year from now…"
-
-Controls:
-
-- Letter box first. "Dear me, one year from now…", max 512 UTF-8 bytes, n / 512.
-- One line: "In Zodl: Send → your own u1 address → 0.0001 → paste in Message."
-- Copy letter (yellow). Copies the letter for Zodl's Message box. Works on one phone.
-- Show QR (optional, second screen). Reveals "Your shielded address (u1…)"; with a valid u1 address and a letter, the QR of the ZIP-321 URI replaces the video for Zodl's camera to scan. Reject utest1, t1 and anything else.
-- Amount 0.0001 ZEC, to their own address. No fee field.
-
-Zodl's Send to box takes a plain address, not a payment link, and its gallery import did not read the QR from a screenshot on build day. One phone cannot scan itself, so Copy letter is the main path.
-
-They send to themselves, then read the letter in their own Zodl on step 5. The site holds no receive address. Do not generate a wallet. Do not commit a seed.
-
-Next goes to /5 only as a manual advance. The site cannot see their Zodl, so do not pretend to detect the send.
-
-Video must show: scan QR, confirm send, memo visible on the confirmation screen.
-
-## 5. Read it back
-
-Title: Read it back
-
-Sentence: Tap the new transaction in Zodl. Your letter is there.
-
-Next goes to /6.
-
-Video must show: Activity row, memo text matching what was typed.
-
-## 6. Unshield
-
-Title: Unshield
-
-Sentence: Send a little ZEC to your own transparent address.
-
-Button: Done. Goes to /done.
-
-Video must show: shielded balance, own transparent address, send, transparent balance afterwards.
-
-## Finish (/done)
-
-Title: Sealed for a year.
-
-Sentence: Only you can open it. Keep your recovery phrase and it stays yours.
-
-Two panels: "You see" with the letter (kept in memory only), and "Everyone else sees": sender hidden, amount hidden, letter sealed.
-
-Buttons: Post on X (yellow, full width), then Share image (a card drawn on the phone) and Remind me (a calendar file for one year from today, titled "Open your Zcash letter"). The card and the reminder never contain the letter or an address. Start over returns to /1.
+Steps 1, 4 and 5 are confirmed by the visitor: the letter is sealed, so only their wallet can prove it. Zender never claims to see the send.
 
 ## Motion
 
-- Opening scene, every time the site opens (tap Zender to replay): "Zender", then "The blockchain is public." types out, then "Your letter isn't." in yellow, an envelope drops and a wax seal stamps it. Tap to begin.
-- Each step: the title rises, the sentence types itself, the video pops in, buttons rise. Forward slides from the right, back from the left.
-- Step 4: the QR materialises. When a clip ends, Next nudges.
-- Finish: "hidden, hidden, sealed" unscramble from random characters, then a wax seal stamps the letter.
-- Clip captions type out.
+- Home: the two lines type out, the envelope floats and a wax seal stamps it.
+- Cards rise in as they open. The watching dot pulses.
+- QR materialises. Finish: "hidden, hidden, sealed" unscramble, then the seal stamps the letter.
 - Reduce motion turns all of it off.
-
-## Footer on every screen
-
-Real ZEC · small amounts · ZECATHON

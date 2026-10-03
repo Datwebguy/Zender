@@ -3,7 +3,7 @@
   "private": true,
   "description": "Zender: seal a letter to your future self on Zcash.",
   "scripts": {
-    "test": "node --test tests/"
+    "test": "node --test tests/*.mjs"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.12.0",

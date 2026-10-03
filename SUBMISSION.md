@@ -11,7 +11,7 @@ Zender: seal a letter to your future self on Zcash.
 
 The blockchain is public. Your letter isn't.
 
-Install Zodl, get a little ZEC, shield, seal your letter, read it back, unshield. One screen and a short video per step.
+Install Zodl, get a little ZEC, shield, seal your letter, read it back, unshield. Practise free on testnet first. Every step is timed and the public ones are checked on chain, live.
 
 No account. No tracking. No keys on the site.
 

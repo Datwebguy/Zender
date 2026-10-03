@@ -1,456 +1,568 @@
 import qrcode from "./vendor/qrcode.js";
-import { STEPS, TEST_STEPS } from "./steps.js";
-import { CHECKS, check, isPublicAddress } from "./verify.js";
+import { ROUNDS, FAQ } from "./steps.js";
+import { CHECKS, check, tip, isPublicAddress, zec } from "./verify.js";
 import { AMOUNT, MESSAGE } from "./config.js";
 import { MAX_MEMO_BYTES, utf8Bytes, buildUri, isUnifiedAddress } from "./zip321.js";
 import { postUrl, shareImage, saveReminder } from "./share.js";
-import { typeText, enter, scramble, after, intro, stopAll } from "./motion.js";
+import { typeText, scramble, after, stopAll, calm } from "./motion.js";
 
 const $ = (id) => document.getElementById(id);
+const main = $("main");
+const POLL_MS = 20000;
 
-// The note and address live only in these variables. They are never stored or sent.
-let note = "";
-let address = "";
-
-// Last step shown, to slide the next one in from the right side.
-let lastStep = 0;
-
-// Step 4: whether the visitor asked for a QR to scan from a second screen.
-let qrMode = false;
-
-// What the media area shows: "video", "qr" or "link".
-let view = "video";
-let uri = null;
-
-// Steps are 1 to 6; 7 is the finish screen at /done.
-// Testnet practice lives under /t/, mainnet at the root.
-const DONE = 7;
-const ROUTE = /^(\/t)?\/([1-6]|done)\/?$/;
-
-function net() {
-  return location.pathname.startsWith("/t/") || location.pathname === "/" ? "test" : "main";
-}
-
-function steps() {
-  return net() === "test" ? TEST_STEPS : STEPS;
-}
-
-function currentStep() {
-  const m = location.pathname.match(ROUTE);
-  if (!m) return null;
-  return m[2] === "done" ? DONE : Number(m[2]);
-}
-
-function pathFor(n, network = net()) {
-  const prefix = network === "test" ? "/t" : "";
-  return prefix + (n === DONE ? "/done" : `/${n}`);
-}
-
-// Live chain checks, per network. Only the public transparent address is kept, in memory.
-const proof = { main: { address: "", result: null }, test: { address: "", result: null } };
-let pollTimer = null;
-let checking = false;
-
-function go(n) {
-  if (n < 1 || n > DONE) return;
-  const path = pathFor(n);
-  if (location.pathname !== path) history.pushState(null, "", path);
-  render();
-}
-
-function el(tag, attrs = {}, text) {
+function el(tag, attrs = {}, ...kids) {
   const node = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
-  if (text !== undefined) node.textContent = text;
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v === false || v == null) continue;
+    node.setAttribute(k, v === true ? "" : v);
+  }
+  node.append(...kids.flat(Infinity).filter((k) => k != null && k !== false));
   return node;
+}
+
+// **bold** and `code` only. Everything else is plain text.
+function rich(text) {
+  return text.split(/(\*\*[^*]+\*\*|`[^`]+`)/).filter(Boolean).map((part) => {
+    if (part.startsWith("**")) return el("b", {}, part.slice(2, -2));
+    if (part.startsWith("`")) return el("code", {}, part.slice(1, -1));
+    return part;
+  });
 }
 
 function externalLink(label, href, className) {
   return el("a", { href, class: className, target: "_blank", rel: "noopener noreferrer" }, label);
 }
 
-function render() {
-  let n = currentStep();
-  if (!n) {
-    n = 1;
-    history.replaceState(null, "", pathFor(n));
-  }
-  const network = net();
-  document.body.dataset.step = String(n);
-  document.body.dataset.net = network;
-  const close = document.querySelector(".close");
-  close.hidden = n === 1;
-  close.href = pathFor(1);
-  $("net").textContent = network === "test" ? "Testnet" : "Mainnet";
-  $("net").setAttribute("aria-label", network === "test" ? "Testnet practice. Switch to mainnet" : "Mainnet. Switch to testnet practice");
-  $("foot").textContent = network === "test" ? "Testnet practice · free test ZEC · ZECATHON" : "Real ZEC · small amounts · ZECATHON";
-  clearTimeout(pollTimer);
-  stopAll();
-  enter($("main"), n >= lastStep ? 1 : -1);
-  lastStep = n;
-  if (n === DONE) return renderDone();
-  $("sealed").hidden = true;
-  $("media").hidden = false;
-  const step = steps()[n - 1];
+/* Saved progress, per round, in this browser. Never the letter. */
 
-  document.title = `${step.title} · Zender`;
-  $("count").textContent = `Step ${n} of 6`;
-  $("title").textContent = step.title;
-  typeText($("sentence"), step.sentence, { delay: 120 });
-
-  [...$("ticks").children].forEach((li, i) => {
-    li.className = i + 1 < n ? "done" : i + 1 === n ? "current" : "";
-    if (i + 1 === n) li.setAttribute("aria-current", "step");
-    else li.removeAttribute("aria-current");
-  });
-  markVerified();
-
-  const back = $("back");
-  back.hidden = n === 1;
-  back.href = pathFor(Math.max(1, n - 1));
-
-  const next = $("next");
-  next.classList.remove("quiet");
-  next.textContent = step.done ? "Done" : "Next";
-  next.href = pathFor(n + 1);
-
-  uri = null;
-  view = "video";
-  loadVideo(step);
-  renderExtras(step);
-  showView();
-  renderVerify(n, step);
-
-  $("main").focus({ preventScroll: true });
+function fresh() {
+  return { done: Array(6).fill(false), start: Array(6).fill(null), end: Array(6).fill(null), open: 0, seen: null, sealed: false, skipped: [] };
 }
-
-// Adds a check mark to every step the chain has confirmed on this network.
-function markVerified() {
-  const result = proof[net()].result;
-  [...$("ticks").children].forEach((li, i) => {
-    const c = CHECKS[i + 1];
-    li.classList.toggle("verified", Boolean(result && c && c.ok(result)));
-  });
-}
-
-function renderVerify(n, step) {
-  const chip = $("verify");
-  chip.hidden = !step.verify;
-  if (!step.verify) return;
-  const p = proof[net()];
-  const c = CHECKS[n];
-  chip.classList.remove("ok", "wait");
-  if (p.result && c.ok(p.result)) {
-    chip.textContent = `✓ ${c.done}`;
-    chip.classList.add("ok");
-  } else if (checking) {
-    chip.textContent = "Checking the chain…";
-  } else if (p.result) {
-    chip.textContent = "Not yet · checking again";
-    chip.classList.add("wait");
-  } else {
-    chip.textContent = "Check on chain";
-  }
-}
-
-async function runCheck() {
-  const n = currentStep();
-  const step = n && n < DONE ? steps()[n - 1] : null;
-  if (!step || !step.verify) return;
-  const network = net();
-  const p = proof[network];
-  clearTimeout(pollTimer);
-  checking = true;
-  renderVerify(n, step);
+function load(n) {
   try {
-    p.result = await check(p.address, network);
-    $("vmsg").textContent = "";
-  } catch (e) {
-    $("vmsg").textContent = e.message;
+    const s = JSON.parse(localStorage.getItem(`zender:${n}`));
+    if (s && Array.isArray(s.done) && s.done.length === 6) return { ...fresh(), ...s };
+  } catch {}
+  return fresh();
+}
+function save() {
+  try {
+    localStorage.setItem(`zender:${net}`, JSON.stringify(state));
+  } catch {}
+}
+function loadAddress(n) {
+  try {
+    return localStorage.getItem(`zender:addr:${n}`) || "";
+  } catch {
+    return "";
   }
-  checking = false;
-  // The visitor may have moved on while the check ran.
-  if (currentStep() !== n || net() !== network) return;
-  markVerified();
-  renderVerify(n, step);
-  if (p.result && CHECKS[n].ok(p.result)) {
-    $("vsheet").hidden = true;
-    const next = $("next");
-    next.classList.remove("nudge");
-    void next.offsetWidth;
-    next.classList.add("nudge");
+}
+function saveAddress() {
+  try {
+    localStorage.setItem(`zender:addr:${net}`, address);
+  } catch {}
+}
+
+let net = null; // "test" | "main" | null on the home page
+let state = fresh();
+let address = "";
+let note = "";
+let shielded = "";
+let qrOpen = false;
+let height = null;
+let pollTimer = null;
+let tickTimer = null;
+const lastCheck = {}; // step index → { text, bad }
+
+// Routes: "/", "/testnet", "/mainnet". Old links land on the right round.
+function route() {
+  const p = location.pathname.replace(/\/+$/, "") || "/";
+  if (p === "/testnet" || /^\/t(\/|$)/.test(p)) return "test";
+  if (p === "/mainnet" || /^\/([1-6]|done)$/.test(p)) return "main";
+  return null;
+}
+
+function render() {
+  stopAll();
+  clearTimeout(pollTimer);
+  clearInterval(tickTimer);
+  net = route();
+  const canonical = net ? ROUNDS[net].path : "/";
+  if (location.pathname !== canonical) history.replaceState(null, "", canonical);
+  for (const [id, n] of [["tab-test", "test"], ["tab-main", "main"]]) {
+    if (net === n) $(id).setAttribute("aria-current", "page");
+    else $(id).removeAttribute("aria-current");
+  }
+  if (!net) return renderHome();
+  state = load(net);
+  address = loadAddress(net);
+  qrOpen = false;
+  height = null;
+  renderRound();
+}
+
+/* Home */
+
+function renderHome() {
+  document.title = "Zender";
+  const l1 = el("span", { class: "line" });
+  const l2 = el("span", { class: "line gold" });
+  const hero = el("section", { class: "hero" },
+    el("p", { class: "tag" }, "Learn Zcash · Six steps"),
+    el("h1", {}, l1, l2),
+    el("p", { class: "lede" }, "Write a letter to yourself, one year from now. Seal it on Zcash. Learn the wallet on the way."),
+    art(),
+  );
+  const pick = el("section", { class: "rounds" },
+    roundCard("test", "Practice first", "Free test ZEC in Zingo · about 15 minutes"),
+    roundCard("main", "Do it for real", "A dollar or two in Zodl · about 20 minutes"),
+  );
+  main.replaceChildren(hero, pick);
+  typeText(l1, "The blockchain is public.", { delay: 200, speed: 40 });
+  typeText(l2, "Your letter isn't.", { delay: 1300, speed: 50 });
+  after(2300, () => hero.classList.add("stamped"));
+}
+
+function roundCard(n, title, sub) {
+  const count = load(n).done.filter(Boolean).length;
+  return el("a", { href: ROUNDS[n].path, class: "round-card", "data-nav": true },
+    el("span", { class: "tag" }, n === "test" ? "Testnet" : "Mainnet"),
+    el("span", { class: "rc-title" }, title),
+    el("span", { class: "rc-sub" }, sub),
+    el("span", { class: "rc-go" }, count ? `${count} of 6 done · continue →` : "Start →"),
+  );
+}
+
+function art() {
+  return el("div", { class: "art", "aria-hidden": "true" },
+    el("div", { class: "envelope" }, envelopeSvg(), el("span", { class: "wax" }, lockSvg(22))),
+  );
+}
+
+/* A round */
+
+function renderRound() {
+  const r = ROUNDS[net];
+  document.title = `${net === "test" ? "Testnet" : "Mainnet"} · Zender`;
+  const hero = el("section", { class: "hero round" },
+    el("p", { class: "tag" }, r.tag),
+    el("h1", {}, el("span", { class: "line" }, r.title[0]), el("span", { class: "line gold" }, r.title[1])),
+    el("p", { class: "lede" }, r.sub),
+    el("p", { class: "chain", id: "chain" }, el("i", { class: "dot" }), el("span", {}, "Connecting to the network…")),
+    art(),
+  );
+  const list = el("ol", { class: "cards", id: "cards" });
+  r.steps.forEach((_, i) => list.append(el("li", { class: "card", id: `step-${i + 1}` })));
+
+  const sealBtn = el("button", { type: "button", class: "btn primary", id: "seal" });
+  sealBtn.addEventListener("click", () => {
+    state.sealed = true;
+    save();
+    renderFinish(true);
+    after(100, () => $("finish").scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "start" }));
+  });
+  const over = el("button", { type: "button", class: "btn ghost" }, "Start over");
+  over.addEventListener("click", startOver);
+  const bar = el("div", { class: "bottom" }, sealBtn, over, el("p", { class: "saved", id: "saved" }));
+
+  const finish = el("section", { class: "finish", id: "finish", hidden: true });
+  const other = el("section", { class: "other" },
+    el("h2", {}, r.other.title),
+    el("p", {}, r.other.text),
+    el("a", { href: r.other.href, class: "btn ghost", "data-nav": true }, r.other.label),
+  );
+  const faq = el("section", { class: "faq" },
+    el("h2", {}, "Stuck?"),
+    FAQ.filter((f) => net === "test" || !f.test).map((f) => el("details", {}, el("summary", {}, f.q), el("p", {}, f.a))),
+  );
+  main.replaceChildren(hero, list, bar, finish, other, faq);
+
+  if (state.open >= 0 && !state.done[state.open] && !state.start[state.open]) state.start[state.open] = Date.now();
+  save();
+  renderCards();
+  renderProgress();
+  if (state.sealed && state.done.every(Boolean)) renderFinish(false);
+  tickTimer = setInterval(tick, 1000);
+  schedulePoll(400);
+  liveChain();
+}
+
+async function liveChain() {
+  const n = net;
+  const line = $("chain");
+  try {
+    const h = await tip(n);
+    if (n !== net) return;
+    height = h;
+    line.className = "chain on";
+    line.lastChild.textContent = `${n === "test" ? "Testnet" : "Mainnet"} online · block ${h.toLocaleString("en-US")}`;
+    renderCard(0);
+  } catch {
+    if (n !== net) return;
+    line.className = "chain off";
+    line.lastChild.textContent = "Can't reach the network right now. Steps still work, checks will retry.";
+  }
+}
+
+function startOver() {
+  if (!confirm("Start this round again? Your progress here is cleared.")) return;
+  try {
+    localStorage.removeItem(`zender:${net}`);
+    localStorage.removeItem(`zender:addr:${net}`);
+  } catch {}
+  note = "";
+  shielded = "";
+  render();
+  window.scrollTo({ top: 0 });
+}
+
+function mmss(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600);
+  const pad = (x) => String(x).padStart(2, "0");
+  return h ? `${h}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}` : `${pad(Math.floor(s / 60))}:${pad(s % 60)}`;
+}
+
+function elapsed(i) {
+  if (!state.start[i]) return null;
+  return (state.end[i] || Date.now()) - state.start[i];
+}
+
+function total() {
+  return state.start.reduce((sum, _, i) => sum + (elapsed(i) || 0), 0);
+}
+
+function tick() {
+  for (let i = 0; i < 6; i++) {
+    const t = document.querySelector(`#step-${i + 1} .timer`);
+    if (t) t.textContent = elapsed(i) == null ? "--:--" : mmss(elapsed(i));
+  }
+}
+
+function renderProgress() {
+  const count = state.done.filter(Boolean).length;
+  const seal = $("seal");
+  seal.disabled = count < 6;
+  seal.textContent = count < 6 ? "Finish all six steps to seal it" : net === "test" ? "See your practice result" : "Seal it";
+  $("saved").textContent = `${count}/6 steps · progress saves in this browser`;
+}
+
+function renderCards() {
+  for (let i = 0; i < 6; i++) renderCard(i);
+  tick();
+}
+
+function openCard(i, scroll) {
+  state.open = i;
+  if (!state.done[i] && !state.start[i]) state.start[i] = Date.now();
+  save();
+  renderCards();
+  schedulePoll(400);
+  if (scroll) after(80, () => $(`step-${i + 1}`).scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "start" }));
+}
+
+function closeCard() {
+  state.open = -1;
+  save();
+  renderCards();
+  clearTimeout(pollTimer);
+}
+
+function complete(i) {
+  const now = Date.now();
+  state.done[i] = true;
+  state.start[i] = state.start[i] || now;
+  state.end[i] = state.end[i] || now;
+  save();
+  renderProgress();
+  const next = state.done.findIndex((d) => !d);
+  if (next === -1) {
+    state.open = -1;
+    state.sealed = true;
+    save();
+    renderCards();
+    renderFinish(true);
+    after(300, () => $("finish").scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "start" }));
   } else {
-    pollTimer = setTimeout(runCheck, 20000);
+    openCard(next, true);
   }
 }
 
-function renderDone() {
-  if (net() === "test") return renderPracticeDone();
-  document.title = "Sealed for a year · Zender";
-  $("count").textContent = "Finished";
-  $("title").textContent = "Sealed for a year.";
-  typeText($("sentence"), "Only you can open it. Keep your recovery phrase and it stays yours.", { delay: 120 });
-  document.querySelectorAll("#sealed [data-final]").forEach((b, i) => scramble(b, b.dataset.final, 500 + i * 260));
-  $("sealed").classList.remove("stamped");
-  after(1500, () => $("sealed").classList.add("stamped"));
-  [...$("ticks").children].forEach((li) => {
-    li.className = "done";
-    li.removeAttribute("aria-current");
+function renderCard(i) {
+  const step = ROUNDS[net].steps[i];
+  const card = $(`step-${i + 1}`);
+  if (!card) return;
+  const done = state.done[i];
+  const open = state.open === i;
+  card.className = `card${done ? " done" : ""}${open ? " open" : ""}`;
+  const head = el("button", { type: "button", class: "card-head", "aria-expanded": String(open), "aria-controls": `body-${i + 1}` },
+    el("span", { class: "num", "aria-hidden": "true" }, done ? checkSvg() : String(i + 1)),
+    el("span", { class: "card-title" }, el("b", {}, step.title), el("small", {}, done ? doneLabel(i) : step.sub)),
+    el("span", { class: "timer", role: "timer", "aria-label": "Time on this step" }, elapsed(i) == null ? "--:--" : mmss(elapsed(i))),
+  );
+  head.addEventListener("click", () => (open ? closeCard() : openCard(i, false)));
+  const body = el("div", { class: "card-body", id: `body-${i + 1}`, hidden: !open });
+  if (open) fillBody(body, step, i);
+  card.replaceChildren(head, body);
+}
+
+function doneLabel(i) {
+  if (ROUNDS[net].steps[i].kind !== "verify") return "Done";
+  return state.skipped && state.skipped.includes(i) ? "Done · skipped the check" : `${CHECKS[i + 1].done} · checked on chain`;
+}
+
+function fillBody(body, step, i) {
+  body.append(el("p", { class: "lead" }, rich(step.lead)));
+  if (step.list) body.append(el("ol", { class: "how" }, step.list.map((t) => el("li", {}, rich(t)))));
+  if (step.note) body.append(el("p", { class: "note" }, rich(step.note)));
+  if (step.links) body.append(el("div", { class: "row" }, step.links.map((l) => externalLink(l.label, l.href, "btn ghost small"))));
+  if (step.more) body.append(el("p", { class: "note" }, step.more));
+  if (step.tips) {
+    const h = height ? height.toLocaleString("en-US") : "4.4 million";
+    body.append(el("div", { class: "tips" }, step.tips.map((t) =>
+      el("div", { class: "tip" }, el("b", {}, t.title), el("p", {}, rich(t.text.replace("{height}", h)))),
+    )));
+  }
+  if (step.video) body.append(clip(step.video));
+  if (step.kind === "letter") body.append(letterForm());
+  if (step.kind === "verify") body.append(verifyBlock(step, i));
+  if (step.kind === "confirm" || step.kind === "letter") {
+    const b = el("button", { type: "button", class: "btn primary" }, state.done[i] ? "Done" : step.confirm);
+    b.disabled = state.done[i];
+    b.addEventListener("click", () => complete(i));
+    body.append(el("div", { class: "row" }, b));
+  }
+}
+
+function clip(src) {
+  const wrap = el("div", { class: "clip" });
+  const btn = el("button", { type: "button", class: "btn ghost small" }, playSvg(), " Watch how");
+  btn.addEventListener("click", () => {
+    const video = el("video", { src, playsinline: true, controls: true, preload: "auto" });
+    video.muted = true;
+    wrap.replaceChildren(video);
+    const p = video.play();
+    if (p) p.catch(() => {});
   });
+  wrap.append(btn);
+  return wrap;
+}
 
-  const video = $("video");
-  video.pause();
-  $("media").hidden = true;
-  $("sealed").hidden = false;
-  $("mynote").textContent = note.trim() || "Your letter";
+/* Watching the chain */
 
-  const back = $("back");
-  back.hidden = false;
-  back.href = pathFor(6);
-  const next = $("next");
-  next.classList.add("quiet");
-  next.textContent = "Start over";
-  next.href = pathFor(1);
+function verifyBlock(step, i) {
+  const wrap = el("div", { class: "verify" });
+  const prefix = net === "test" ? "tm" : "t1";
+  const wallet = net === "test" ? "Zingo" : "Zodl";
+  const done = state.done[i];
 
-  const box = $("extras");
-  box.replaceChildren();
-  const row = el("div", { class: "row" });
-  const post = externalLink("Post on X", postUrl(), "pill primary");
-  const save = el("button", { type: "button", class: "pill secondary", id: "share-image" }, "Share image");
-  const remind = el("button", { type: "button", class: "pill secondary", id: "remind" }, "Remind me");
-  remind.addEventListener("click", () => {
-    saveReminder();
-    remind.textContent = "Saved";
-    setTimeout(() => (remind.textContent = "Remind me"), 1600);
-  });
-  save.addEventListener("click", async () => {
-    const result = await shareImage();
-    if (result === "saved") {
-      save.textContent = "Saved";
-      setTimeout(() => (save.textContent = "Share image"), 1600);
+  if (step.ask || !address) {
+    const input = el("input", {
+      type: "text",
+      class: "field",
+      spellcheck: "false",
+      autocomplete: "off",
+      autocapitalize: "none",
+      autocorrect: "off",
+      inputmode: "text",
+      "aria-label": `Your transparent address, starts with ${prefix}`,
+      placeholder: `${prefix}…`,
+    });
+    input.value = address;
+    const err = el("p", { class: "status bad", "aria-live": "polite" });
+    const go = el("button", { type: "button", class: "btn primary" }, address ? "Watch this address" : "Start watching");
+    const use = () => {
+      const v = input.value.trim();
+      if (!isPublicAddress(v, net)) {
+        err.textContent = v ? `That isn't a ${prefix} address. Copy the transparent one from ${wallet}.` : "";
+        return;
+      }
+      err.textContent = "";
+      address = v;
+      saveAddress();
+      delete lastCheck[i];
+      runCheck(i);
+      renderCard(i);
+    };
+    go.addEventListener("click", use);
+    input.addEventListener("keydown", (e) => e.key === "Enter" && use());
+    input.addEventListener("paste", () => setTimeout(use, 0));
+    if (!done) {
+      wrap.append(
+        el("label", { class: "field-label" }, `Your transparent address (starts with `, el("code", {}, prefix), ")"),
+        input, err, el("div", { class: "row" }, go),
+      );
     }
-  });
-  row.append(save, remind);
-  box.append(post, row);
-  $("main").focus({ preventScroll: true });
-}
-
-// The practice round on testnet: same sealed letter, then the way into the real thing.
-function renderPracticeDone() {
-  document.title = "Practice done · Zender";
-  $("count").textContent = "Practice finished";
-  $("title").textContent = "Practice done.";
-  typeText($("sentence"), "That was free test ZEC. Now do it with real ZEC in Zodl.", { delay: 120 });
-  document.querySelectorAll("#sealed [data-final]").forEach((b, i) => scramble(b, b.dataset.final, 500 + i * 260));
-  $("sealed").classList.remove("stamped");
-  after(1500, () => $("sealed").classList.add("stamped"));
-  [...$("ticks").children].forEach((li) => {
-    li.className = "done";
-    li.removeAttribute("aria-current");
-  });
-  markVerified();
-  $("video").pause();
-  $("media").hidden = true;
-  $("sealed").hidden = false;
-  $("mynote").textContent = note.trim() || "Your practice letter";
-  const back = $("back");
-  back.hidden = false;
-  back.href = pathFor(6);
-  const next = $("next");
-  next.classList.add("quiet");
-  next.textContent = "Start over";
-  next.href = pathFor(1);
-  const box = $("extras");
-  box.replaceChildren(el("a", { href: "/1", class: "pill primary", "data-nav": "" }, "Now do it for real"));
-  $("main").focus({ preventScroll: true });
-}
-
-function loadVideo(step) {
-  const video = $("video");
-  video.dataset.missing = "";
-  $("coming-text").textContent = step.video ? step.sentence : "";
-  $("coming-tag").textContent = step.video ? "Video coming" : "Practice round";
-  if (!step.video) {
-    video.removeAttribute("src");
-    video.dataset.missing = "1";
-    return;
   }
-  video.src = step.video;
-  video.load();
-  const playing = video.play();
-  if (playing) playing.catch(() => {});
-}
 
-// Shows one thing in the media area: the video (or its placeholder), the QR, or the link text.
-function showView() {
-  const video = $("video");
-  const missing = video.dataset.missing === "1";
-  video.hidden = view !== "video" || missing;
-  $("coming").hidden = view !== "video" || !missing;
-  $("qr").hidden = view !== "qr";
-  $("linkview").hidden = view !== "link";
-  $("replay").hidden = view !== "video" || missing || !video.ended;
-
-
-  if (view !== "video") video.pause();
-}
-
-function replay() {
-  const video = $("video");
-  video.currentTime = 0;
-  const playing = video.play();
-  if (playing) playing.catch(() => {});
-  showView();
-}
-
-function renderExtras(step) {
-  const box = $("extras");
-  box.replaceChildren();
-
-  if (step.button) {
-    box.append(externalLink(step.button.label, step.button.href, "pill secondary"));
+  const s = lastCheck[i];
+  const box = el("div", { class: `watch${done ? " ok" : ""}${s && s.bad ? " bad" : ""}`, "aria-live": "polite" });
+  if (done) {
+    box.append(el("b", {}, `${CHECKS[i + 1].done}. Seen on chain.`));
+  } else if (address) {
+    box.append(
+      el("b", {}, el("i", { class: "dot pulse" }), step.watching),
+      el("p", {}, s ? s.text : step.watchingSub),
+      el("p", { class: "addr" }, `${address.slice(0, 8)}…${address.slice(-6)}`),
+    );
+  } else {
+    box.append(el("b", {}, "Waiting for your address"), el("p", {}, "Paste it above and this page starts watching."));
   }
-  if (step.links) {
-    const row = el("div", { class: "row links" });
-    step.links.forEach((l) => row.append(externalLink(l.label, l.href, "pill secondary")));
-    box.append(row);
+  wrap.append(box);
+
+  if (step.skip && !done) {
+    const skip = el("button", { type: "button", class: "link" }, step.skip.label);
+    skip.addEventListener("click", () => {
+      // Swap lands shielded, so there is nothing public to see for steps 2 and 3.
+      state.skipped = [1, 2];
+      state.seen = 0;
+      state.done[1] = true;
+      state.end[1] = state.end[1] || Date.now();
+      state.start[2] = state.start[2] || Date.now();
+      complete(2);
+    });
+    wrap.append(el("p", { class: "center" }, skip));
   }
-  if (step.more) box.append(el("p", { class: "more" }, step.more));
-  if (step.form) box.append(noteForm());
+  wrap.append(el("p", { class: "fine" }, "Only this public address is checked, through a Zcash light server. Never your letter or keys."));
+  return wrap;
 }
 
-// Only real problems get a message. An empty field just waits.
+async function runCheck(i) {
+  clearTimeout(pollTimer);
+  if (!address || state.done[i]) return;
+  const n = net;
+  try {
+    const s = await check(address, n);
+    if (n !== net || state.done[i]) return;
+    if (i === 5 ? CHECKS[6].ok(s, state.seen ?? 2) : CHECKS[i + 1].ok(s)) {
+      if (i === 2) state.seen = s.txCount;
+      delete lastCheck[i];
+      complete(i);
+      return;
+    }
+    const unit = n === "test" ? "TAZ" : "ZEC";
+    lastCheck[i] = { text: `Not yet. ${zec(s.balanceZat)} ${unit} here, ${s.txCount} ${s.txCount === 1 ? "transaction" : "transactions"} so far. Checking again shortly.` };
+  } catch (e) {
+    if (n !== net) return;
+    lastCheck[i] = { text: e.message || "Couldn't check just now. Trying again shortly.", bad: true };
+  }
+  if (state.open === i) renderCard(i);
+  schedulePoll(POLL_MS);
+}
+
+// While a verify card is open and the address is known, keep checking quietly.
+function schedulePoll(ms) {
+  clearTimeout(pollTimer);
+  if (!net || state.open < 0) return;
+  const i = state.open;
+  if (ROUNDS[net].steps[i].kind !== "verify" || state.done[i] || !address) return;
+  pollTimer = setTimeout(() => {
+    if (document.hidden || state.open !== i) return schedulePoll(POLL_MS);
+    runCheck(i);
+  }, ms);
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && net) schedulePoll(400);
+});
+
+/* The letter */
+
 function addressProblem(value) {
   if (!value) return null;
-  if (net() === "test") {
-    if (/^u1/i.test(value)) return "That is a mainnet address. Use your Zingo testnet address.";
-    if (/^t/i.test(value)) return "Use your shielded address, not transparent.";
+  if (net === "test") {
+    if (/^u1/i.test(value)) return "That's a mainnet address. Use your Zingo testnet address.";
+    if (/^t/i.test(value)) return "Use your shielded address, not the transparent one.";
     if (!isUnifiedAddress(value, "utest")) return "Use your utest1 address from Zingo.";
     return "";
   }
-  if (/^utest1/i.test(value)) return "That is a testnet address. Use your Zodl address.";
-  if (/^t/i.test(value)) return "Use your shielded address, not transparent.";
-  if (!isUnifiedAddress(value)) return "Use your shielded address from Zodl.";
+  if (/^utest1/i.test(value)) return "That's a testnet address. Use your Zodl address.";
+  if (/^t/i.test(value)) return "Use your shielded address, not the transparent one.";
+  if (!isUnifiedAddress(value)) return "Use your u1 address from Zodl.";
   return "";
 }
 
-function noteForm() {
-  const wrap = el("div", { class: "send" });
-
-  const noteRow = el("div", { class: "note-row" });
+function letterForm() {
+  const wrap = el("div", { class: "letter" });
   const field = el("textarea", {
     id: "note",
-    rows: "2",
-    spellcheck: "false",
+    rows: "4",
     autocomplete: "off",
     autocapitalize: "sentences",
     "aria-label": "Your letter to yourself, one year from now",
     placeholder: "Dear me, one year from now…",
   });
   field.value = note;
-  const counter = el("span", { class: "counter", id: "counter", "aria-live": "polite" });
-  noteRow.append(field, counter);
-
-  const how = el("p", { class: "how" }, net() === "test"
-    ? `In Zingo: Send → your own utest1 address → ${AMOUNT} → paste in Memo.`
-    : `In Zodl: Send → your own u1 address → ${AMOUNT} → paste in Message.`);
-
-  // Second screen only: the address turns the letter into a QR that Zodl's camera can scan.
-  const addrField = el("input", {
-    id: "address",
+  const counter = el("span", { class: "counter", "aria-live": "polite" });
+  const copy = el("button", { type: "button", class: "btn primary" }, "Copy letter");
+  const toggle = el("button", { type: "button", class: "btn ghost" }, qrOpen ? "Hide QR" : "Show QR");
+  const addr = el("input", {
     type: "text",
+    class: "field",
     spellcheck: "false",
     autocomplete: "off",
     autocapitalize: "none",
     autocorrect: "off",
-    "aria-label": "Your Zodl shielded address",
-    placeholder: net() === "test" ? "Your shielded address (utest1…)" : "Your shielded address (u1…)",
+    "aria-label": "Your shielded address",
+    placeholder: net === "test" ? "Your utest1… address" : "Your u1… address",
   });
-  addrField.value = address;
-  addrField.hidden = !qrMode;
-
-  const status = el("p", { class: "hint", id: "status", "aria-live": "polite" });
-
-  const buttons = el("div", { class: "row" });
-  const copy = el("button", { type: "button", class: "pill primary", id: "copy" }, "Copy letter");
-  const show = el("button", { type: "button", class: "pill secondary", id: "show" }, qrMode ? "Hide QR" : "Show QR");
-  buttons.append(copy, show);
-
-  wrap.append(noteRow, how, addrField, status, buttons);
+  addr.value = shielded;
+  const status = el("p", { class: "status bad", "aria-live": "polite" });
+  const qr = el("div", { class: "qr" });
+  const qrBox = el("div", { class: "qr-box", hidden: !qrOpen },
+    el("p", { class: "note" }, "Optional. Scan this from your wallet's send screen to fill everything in."),
+    addr, status, qr,
+  );
 
   const update = () => {
     note = field.value;
-    address = addrField.value.trim();
+    shielded = addr.value.trim();
     const bytes = utf8Bytes(note).length;
-    counter.textContent = bytes ? `${bytes} / ${MAX_MEMO_BYTES}` : "";
-    counter.classList.toggle("over", bytes > MAX_MEMO_BYTES);
     const tooLong = bytes > MAX_MEMO_BYTES;
+    counter.textContent = bytes ? `${bytes} / ${MAX_MEMO_BYTES}` : "";
+    counter.classList.toggle("over", tooLong);
     copy.disabled = !note.trim() || tooLong;
-
-    const problem = qrMode ? addressProblem(address) : null;
-    addrField.classList.toggle("invalid", Boolean(problem));
-
-    const before = uri;
-    uri = null;
-    let message = "";
-    if (tooLong) message = "Letter is too long.";
-    else if (problem) message = problem;
-    else if (qrMode && problem === "" && note.trim()) uri = buildUri({ address, amount: AMOUNT, memo: note, message: MESSAGE, hrp: net() === "test" ? "utest" : "u" });
-    status.textContent = message;
-
-    $("uri").textContent = uri || "";
-    $("qr").replaceChildren(...(uri ? [qrSvg(uri)] : []));
-
-    if (uri && !before) view = "qr";
-    if (!uri) view = "video";
-    showView();
+    const problem = addressProblem(shielded);
+    status.textContent = tooLong ? "Your letter is too long." : problem || "";
+    let uri = null;
+    if (!tooLong && problem === "" && note.trim()) {
+      uri = buildUri({ address: shielded, amount: AMOUNT, memo: note, message: MESSAGE, hrp: net === "test" ? "utest" : "u" });
+    }
+    qr.replaceChildren(...(uri ? [qrSvg(uri)] : []));
   };
-
   field.addEventListener("input", update);
-  addrField.addEventListener("input", update);
+  addr.addEventListener("input", update);
   copy.addEventListener("click", async () => {
     const ok = await copyText(note);
     copy.textContent = ok ? "Copied" : "Copy failed";
     setTimeout(() => (copy.textContent = "Copy letter"), 1600);
   });
-  show.addEventListener("click", () => {
-    qrMode = !qrMode;
-    addrField.hidden = !qrMode;
-    show.textContent = qrMode ? "Hide QR" : "Show QR";
-    if (qrMode) addrField.focus();
-    update();
+  toggle.addEventListener("click", () => {
+    qrOpen = !qrOpen;
+    qrBox.hidden = !qrOpen;
+    toggle.textContent = qrOpen ? "Hide QR" : "Show QR";
+    if (qrOpen) addr.focus();
   });
+  wrap.append(el("div", { class: "note-wrap" }, field, counter), el("div", { class: "row" }, copy, toggle), qrBox);
   queueMicrotask(update);
   return wrap;
 }
 
 function qrSvg(text) {
-  const qr = qrcode(0, "L");
-  qr.addData(text, "Byte");
-  qr.make();
-  const count = qr.getModuleCount();
+  const q = qrcode(0, "L");
+  q.addData(text, "Byte");
+  q.make();
+  const count = q.getModuleCount();
   const quiet = 4;
   const size = count + quiet * 2;
   let d = "";
   for (let r = 0; r < count; r++) {
     for (let c = 0; c < count; c++) {
-      if (qr.isDark(r, c)) d += `M${c + quiet} ${r + quiet}h1v1h-1z`;
+      if (q.isDark(r, c)) d += `M${c + quiet} ${r + quiet}h1v1h-1z`;
     }
   }
-  const ns = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(ns, "svg");
-  svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
-  svg.setAttribute("role", "img");
-  svg.setAttribute("aria-label", "Payment QR code");
-  svg.setAttribute("shape-rendering", "crispEdges");
-  const bg = document.createElementNS(ns, "rect");
-  bg.setAttribute("width", size);
-  bg.setAttribute("height", size);
-  bg.setAttribute("fill", "#fff");
-  const path = document.createElementNS(ns, "path");
-  path.setAttribute("d", d);
-  path.setAttribute("fill", "#000");
-  svg.append(bg, path);
+  const svg = svgEl("svg", { viewBox: `0 0 ${size} ${size}`, role: "img", "aria-label": "Payment QR code", "shape-rendering": "crispEdges" });
+  svg.append(svgEl("rect", { width: size, height: size, fill: "#fff" }), svgEl("path", { d, fill: "#000" }));
   return svg;
 }
 
@@ -460,7 +572,7 @@ async function copyText(text) {
     await navigator.clipboard.writeText(text);
     return true;
   } catch {
-    const area = el("textarea", { readonly: "", class: "offscreen" });
+    const area = el("textarea", { readonly: true, class: "offscreen" });
     area.value = text;
     document.body.append(area);
     area.select();
@@ -473,75 +585,108 @@ async function copyText(text) {
   }
 }
 
-function finish() {
-  note = "";
-  address = "";
-  qrMode = false;
-  go(1);
+/* Finish */
+
+function renderFinish(animate) {
+  const box = $("finish");
+  if (!state.done.every(Boolean)) {
+    box.hidden = true;
+    return;
+  }
+  box.hidden = false;
+  const rows = [["Sender", "hidden"], ["Amount", "hidden"], ["Letter", "sealed"]].map(([k, v]) => {
+    const b = el("b", {}, v);
+    if (animate) scramble(b, v, 300);
+    return el("p", { class: "prow" }, el("span", {}, k), b);
+  });
+  const panels = el("div", { class: "sealed" },
+    el("div", { class: "panel mine" },
+      el("span", { class: "wax small", "aria-hidden": "true" }, lockSvg(16)),
+      el("p", { class: "plabel" }, "You see"),
+      el("p", { class: "pnote" }, note.trim() || (net === "test" ? "Your practice letter" : "Your letter")),
+    ),
+    el("div", { class: "panel" }, el("p", { class: "plabel" }, "Everyone else sees"), rows),
+  );
+  const time = mmss(total());
+  const head = net === "test"
+    ? [el("p", { class: "tag" }, "Practice done"), el("h2", {}, "You did all six."), el("p", { class: "lede" }, `In ${time}, on the real testnet. Now do it with real ZEC.`)]
+    : [el("p", { class: "tag" }, "Sealed"), el("h2", {}, "Sealed for a year."), el("p", { class: "lede" }, `All six in ${time}. Only you can open it. Keep your recovery phrase and it stays yours.`)];
+  const actions = el("div", { class: "actions" });
+  if (net === "test") {
+    actions.append(el("a", { href: "/mainnet", class: "btn primary", "data-nav": true }, "Now do it for real"));
+  } else {
+    const share = el("button", { type: "button", class: "btn ghost" }, "Share image");
+    share.addEventListener("click", async () => {
+      if ((await shareImage()) === "saved") {
+        share.textContent = "Saved";
+        setTimeout(() => (share.textContent = "Share image"), 1600);
+      }
+    });
+    const remind = el("button", { type: "button", class: "btn ghost" }, "Remind me");
+    remind.addEventListener("click", () => {
+      saveReminder();
+      remind.textContent = "Saved";
+      setTimeout(() => (remind.textContent = "Remind me"), 1600);
+    });
+    actions.append(externalLink("Post on X", postUrl(), "btn primary"), share, remind);
+  }
+  box.replaceChildren(...head, panels, actions);
+  if (animate) after(900, () => panels.classList.add("stamped"));
+  else panels.classList.add("stamped");
 }
 
-// Switches between testnet practice and mainnet, keeping the step.
-function switchNet() {
-  const n = currentStep() || 1;
-  const other = net() === "test" ? "main" : "test";
-  note = "";
-  address = "";
-  qrMode = false;
-  history.pushState(null, "", pathFor(n, other));
-  render();
+/* Icons */
+
+function svgEl(tag, attrs) {
+  const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  return n;
+}
+function lockSvg(size, color = "#1a1400") {
+  const s = svgEl("svg", { viewBox: "0 0 24 24", width: size, height: size, "aria-hidden": "true" });
+  s.append(
+    svgEl("rect", { x: 6, y: 11, width: 12, height: 9, rx: 2, fill: color }),
+    svgEl("path", { d: "M8.5 11V8.5a3.5 3.5 0 0 1 7 0V11", fill: "none", stroke: color, "stroke-width": 2.4 }),
+  );
+  return s;
+}
+function checkSvg() {
+  const s = svgEl("svg", { viewBox: "0 0 24 24", width: 16, height: 16, "aria-hidden": "true" });
+  s.append(svgEl("path", { d: "M5 12.5l4.5 4.5L19 7.5", fill: "none", stroke: "currentColor", "stroke-width": 3, "stroke-linecap": "round", "stroke-linejoin": "round" }));
+  return s;
+}
+function playSvg() {
+  const s = svgEl("svg", { viewBox: "0 0 24 24", width: 14, height: 14, "aria-hidden": "true" });
+  s.append(svgEl("path", { d: "M8 5.5v13l11-6.5z", fill: "currentColor" }));
+  return s;
+}
+function envelopeSvg() {
+  const s = svgEl("svg", { viewBox: "0 0 120 84", width: 120, height: 84 });
+  s.append(
+    svgEl("rect", { x: 2, y: 2, width: 116, height: 80, rx: 10, fill: "#18181b", stroke: "#3f3f46", "stroke-width": 3 }),
+    svgEl("path", { d: "M6 8 L60 48 L114 8", fill: "none", stroke: "#3f3f46", "stroke-width": 3 }),
+  );
+  return s;
 }
 
-// Links inside the site move between steps without a page load.
+/* Wiring */
+
 document.addEventListener("click", (e) => {
   const a = e.target.closest("a[data-nav]");
   if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-  const href = a.getAttribute("href");
-  const m = href.match(ROUTE);
-  if (!m) return;
   e.preventDefault();
-  if ((a.id === "next" && a.textContent === "Start over") || a.classList.contains("close")) return finish();
-  if (location.pathname !== href) history.pushState(null, "", href);
+  const href = a.getAttribute("href");
+  if (href !== location.pathname) history.pushState(null, "", href);
   render();
+  window.scrollTo({ top: 0 });
+  main.focus({ preventScroll: true });
 });
-
-// Tap the right side of the screen for next, the left side for back.
-// Buttons, links and fields keep their own tap.
-const app = document.querySelector(".app");
-app.addEventListener("click", (e) => {
-  if (e.defaultPrevented) return;
-  if (e.target.closest("a, button, input, textarea, label, .actions, .top, .linkview, .sealed")) return;
-  if (String(window.getSelection() || "")) return;
-  const n = currentStep() || 1;
-  const rect = app.getBoundingClientRect();
-  if (e.clientX > rect.left + rect.width / 2) {
-    if (n < DONE) go(n + 1);
-  } else if (n > 1) {
-    go(n - 1);
-  }
-});
-
 window.addEventListener("popstate", render);
 
-const video = $("video");
-video.addEventListener("error", () => {
-  video.dataset.missing = "1";
-  showView();
-});
-video.addEventListener("ended", () => {
-  showView();
-  const next = $("next");
-  next.classList.remove("nudge");
-  void next.offsetWidth;
-  next.classList.add("nudge");
-});
-video.addEventListener("play", showView);
-$("replay").addEventListener("click", replay);
-
-// Envelopes and postcards: the ideas the steps teach, in plain words, one tap away.
 const sheet = $("sheet");
 $("cheat").addEventListener("click", () => {
   sheet.hidden = false;
-  sheet.querySelector("button").focus();
+  sheet.querySelector("[data-close]").focus();
 });
 sheet.addEventListener("click", (e) => {
   if (e.target === sheet || e.target.closest("[data-close]")) sheet.hidden = true;
@@ -550,32 +695,4 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") sheet.hidden = true;
 });
 
-// Check on chain: ask once for the public transparent address, then check and keep checking.
-const vsheet = $("vsheet");
-$("verify").addEventListener("click", () => {
-  if (proof[net()].address) return runCheck();
-  const test = net() === "test";
-  $("vwhere").textContent = test ? "In Zingo, open Receive and copy your transparent address (tm…)." : "In Zodl, open Receive and copy your Zcash Transparent Address (t1…).";
-  $("vaddr").placeholder = test ? "tm…" : "t1…";
-  $("vaddr").value = "";
-  $("vmsg").textContent = "";
-  vsheet.hidden = false;
-  $("vaddr").focus();
-});
-$("vgo").addEventListener("click", () => {
-  const value = $("vaddr").value.trim();
-  if (!isPublicAddress(value, net())) {
-    $("vmsg").textContent = net() === "test" ? "That is not a testnet transparent address. It starts with tm." : "That is not a t1 address. Copy the transparent one from Zodl.";
-    return;
-  }
-  proof[net()].address = value;
-  runCheck();
-});
-vsheet.addEventListener("click", (e) => {
-  if (e.target === vsheet || e.target.closest("[data-close]")) vsheet.hidden = true;
-});
-$("net").addEventListener("click", switchNet);
-
 render();
-intro($("intro"), render);
-$("wordmark").addEventListener("click", () => intro($("intro"), render));

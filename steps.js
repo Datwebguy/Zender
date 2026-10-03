@@ -1,80 +1,203 @@
-import { ZODL_URL, EXCHANGES, MORE_EXCHANGES, OTHER_WALLETS, ZINGO_URL, TESTNET_SERVER, FAUCET_URL } from "./config.js";
+import { ZODL_URL, EXCHANGES, MORE_EXCHANGES, OTHER_WALLETS, ZINGO_URL, TESTNET_SERVER, FAUCET_URL, AMOUNT } from "./config.js";
 
-// Mainnet: real ZEC in Zodl.
-export const STEPS = [
-  {
-    title: "Install Zodl",
-    sentence: "Install it and tap Create New Wallet. About 10 minutes in all.",
-    video: "/videos/1.mp4",
-    button: { label: "Get Zodl", href: ZODL_URL },
-    more: OTHER_WALLETS,
+// Step cards. Text supports **bold** and `code`.
+// kind: "confirm" (you say it's done), "verify" (we watch the chain), "letter" (write, copy, send).
+export const ROUNDS = {
+  test: {
+    path: "/testnet",
+    tag: "Real chain · Free test ZEC",
+    title: ["Seal your first letter.", "Practice it for free."],
+    sub: "Six steps on the real Zcash testnet. Your public steps are checked on chain, live.",
+    other: { title: "Then do it on mainnet", text: "Same six steps with real ZEC, in Zodl. A dollar or two is plenty.", label: "Go to Mainnet", href: "/mainnet" },
+    steps: [
+      {
+        title: "Set up a testnet wallet",
+        sub: "Zingo, switched to Testnet · about 3 minutes",
+        lead: "Testnet is a practice copy of Zcash. Its coins, called TAZ, are free and worth nothing, so every mistake is free too.",
+        list: [
+          "Install **Zingo** from its download page.",
+          "Already use Zingo? Write down that wallet's seed first: menu → **Options** → **Wallet Seed**. Switching network takes it off the phone.",
+          "Tap the gear → **Server**. Set **Network** to **Testnet**.",
+          `Choose **Custom** and enter \`https://${TESTNET_SERVER}\`. Save and accept the warning.`,
+          "Tap **Create New Wallet**. Write the 24 words on paper, not a screenshot.",
+          "Wait for the first sync.",
+        ],
+        links: [{ label: "Get Zingo", href: ZINGO_URL }],
+        tips: [
+          { title: "Am I on testnet?", text: "Your addresses start with **utest1** and **tm**, not u1 and t1. The block height is near {height}." },
+          { title: "Back to mainnet later", text: "Gear → **Server** → Network: **Mainnet**. Then restore your real wallet from its seed." },
+        ],
+        kind: "confirm",
+        confirm: "My testnet wallet is synced",
+      },
+      {
+        title: "Get test ZEC",
+        sub: "A free faucet plays the exchange · lands on your public address",
+        lead: "On mainnet you'd buy ZEC on an exchange and withdraw it to a **transparent** address. Here, a free faucet does that part.",
+        list: [
+          "In Zingo, open **Receive** and copy your **tm** address.",
+          "Paste it below, so this page can watch it.",
+          "Open the faucet, paste the same address and ask for test ZEC.",
+        ],
+        links: [{ label: "Open faucet", href: FAUCET_URL }],
+        kind: "verify",
+        ask: true,
+        watching: "Watching your public address…",
+        watchingSub: "This turns green on its own once the faucet's coins land.",
+      },
+      {
+        title: "Shield it",
+        sub: "Verified live · your public address empties",
+        lead: "Zingo shows your transparent balance with a **Shield** button. Tap it and confirm. Your TAZ moves from the postcard into the envelope.",
+        note: "No Shield button yet? New coins need about 3 blocks first. Zingo may say the amount is too small to shield: it isn't too small, just too new. Give it a few minutes.",
+        kind: "verify",
+        watching: "Watching your public address…",
+        watchingSub: "This updates on its own once your shield is mined.",
+      },
+      {
+        title: "Seal a practice letter",
+        sub: "Written to future you · sent to yourself",
+        lead: "Now the private part. You send a tiny amount to your own shielded address, with your letter inside.",
+        list: [
+          "Write below, then tap **Copy letter**.",
+          "In Zingo, tap **Send**.",
+          "To: your own **utest1** address, from **Receive**.",
+          `Amount: \`${AMOUNT}\`.`,
+          "Paste your letter in **Memo**, then send.",
+        ],
+        note: "Balance too low? Freshly shielded coins need a few blocks before you can spend them. Wait a few minutes.",
+        kind: "letter",
+        confirm: "I sent it",
+      },
+      {
+        title: "Read it back",
+        sub: "Only your wallet can open it",
+        lead: "Open the new transaction in Zingo's history. Your letter is there.",
+        tips: [
+          { title: "What everyone else sees", text: "A shielded transaction. No sender, no amount, no letter." },
+          { title: "What you see", text: "All of it, because only your wallet holds the key." },
+        ],
+        kind: "confirm",
+        confirm: "I can read my letter",
+      },
+      {
+        title: "Unshield",
+        sub: "Verified live · your public address fills again",
+        lead: "Most exchanges only take **transparent** addresses, so you'll sometimes need to leave the envelope. Practice it by sending to yourself.",
+        list: [
+          "In Zingo, copy your **tm** address from **Receive**.",
+          "Tap **Send**, paste it, and send a little, like `0.001`.",
+        ],
+        note: "Insufficient balance? The change from your letter is still confirming. Give it about 3 blocks, then try again.",
+        kind: "verify",
+        watching: "Watching your public address…",
+        watchingSub: "This updates on its own once your coins land back.",
+      },
+    ],
   },
-  {
-    title: "Get a little ZEC",
-    sentence: "Tap Swap in Zodl, or buy a dollar or two on an exchange.",
-    video: "/videos/2.mp4",
-    verify: true,
-    links: EXCHANGES,
-    more: MORE_EXCHANGES,
+  main: {
+    path: "/mainnet",
+    tag: "Mainnet · Real ZEC",
+    title: ["Seal a letter to future you.", "On the real Zcash."],
+    sub: "The same six steps with real ZEC in Zodl. A dollar or two is plenty, and it comes back to you.",
+    other: { title: "New to this?", text: "Run the free practice round on testnet first. Same steps, nothing at stake.", label: "Go to Testnet", href: "/testnet" },
+    steps: [
+      {
+        title: "Set up Zodl",
+        sub: "Your Zcash wallet · about 5 minutes",
+        lead: "Zodl is a Zcash wallet for your phone. It keeps your ZEC shielded by default.",
+        list: [
+          "Install **Zodl**.",
+          "Tap **Create New Wallet**.",
+          "Back it up: **Settings** → **Advanced** → recovery phrase. Write it on paper, never a screenshot.",
+          "Let it sync.",
+        ],
+        links: [{ label: "Get Zodl", href: ZODL_URL }],
+        more: OTHER_WALLETS,
+        video: "/videos/1.mp4",
+        kind: "confirm",
+        confirm: "My wallet is ready",
+      },
+      {
+        title: "Get a little ZEC",
+        sub: "A dollar or two · lands on your public address",
+        lead: "Buy on an exchange and withdraw to your **transparent** address. Most exchanges only send there.",
+        list: [
+          "In Zodl, tap **Receive** and copy your **t1** address.",
+          "Paste it below, so this page can watch it.",
+          "Withdraw a dollar or two of ZEC to it.",
+        ],
+        links: EXCHANGES,
+        more: MORE_EXCHANGES,
+        video: "/videos/2.mp4",
+        kind: "verify",
+        ask: true,
+        skip: { label: "I used Swap in Zodl instead", skips: 2 },
+        watching: "Watching your public address…",
+        watchingSub: "This turns green on its own once your ZEC lands.",
+      },
+      {
+        title: "Shield it",
+        sub: "Verified live · your public address empties",
+        lead: "In Zodl, tap **Shield** on your Unshielded Balance and confirm.",
+        note: "No Shield button yet? New coins need a few blocks first. Give it a few minutes.",
+        video: "/videos/3.mp4",
+        kind: "verify",
+        watching: "Watching your public address…",
+        watchingSub: "This updates on its own once your shield is mined.",
+      },
+      {
+        title: "Seal a letter",
+        sub: "Written to future you · sent to yourself",
+        lead: "Now the private part. You send a tiny amount to your own shielded address, with your letter inside.",
+        list: [
+          "Write below, then tap **Copy letter**.",
+          "In Zodl, tap **Send**.",
+          "To: your own **u1** address, from **Receive**.",
+          `Amount: \`${AMOUNT}\`.`,
+          "Paste your letter in **Message**, then review and send.",
+        ],
+        note: "Balance too low? Freshly shielded coins need a few blocks before you can spend them.",
+        video: "/videos/4.mp4",
+        kind: "letter",
+        confirm: "I sent it",
+      },
+      {
+        title: "Read it back",
+        sub: "Only your wallet can open it",
+        lead: "Tap the new transaction in **Activity**. Your letter is there.",
+        tips: [
+          { title: "What everyone else sees", text: "A shielded transaction. No sender, no amount, no letter." },
+          { title: "What you see", text: "All of it, because only your wallet holds the key." },
+        ],
+        video: "/videos/5.mp4",
+        kind: "confirm",
+        confirm: "I can read my letter",
+      },
+      {
+        title: "Unshield",
+        sub: "Verified live · your public address fills again",
+        lead: "Most exchanges only take **transparent** addresses. Practice leaving the envelope by sending to yourself.",
+        list: [
+          "In Zodl, tap **Receive** and copy your **t1** address.",
+          "Tap **Send**, paste it, and send a little, like `0.0005`.",
+        ],
+        note: "Not enough balance? The change from your letter is still confirming. Give it a few minutes.",
+        video: "/videos/6.mp4",
+        kind: "verify",
+        watching: "Watching your public address…",
+        watchingSub: "This updates on its own once your ZEC lands back.",
+      },
+    ],
   },
-  {
-    title: "Shield it",
-    sentence: "In Zodl, tap Shield on your transparent balance.",
-    video: "/videos/3.mp4",
-    verify: true,
-  },
-  {
-    title: "Seal a letter",
-    sentence: "Write to yourself, one year from now. Then send it to yourself in Zodl.",
-    video: "/videos/4.mp4",
-    form: true,
-  },
-  {
-    title: "Read it back",
-    sentence: "Tap the new transaction in Zodl. Your letter is there.",
-    video: "/videos/5.mp4",
-  },
-  {
-    title: "Unshield",
-    sentence: "Send a little ZEC to your own transparent address.",
-    video: "/videos/6.mp4",
-    verify: true,
-    done: true,
-  },
-];
+};
 
-// Testnet practice round: free test ZEC in Zingo. Same six moves, nothing real at stake.
-export const TEST_STEPS = [
-  {
-    title: "Install Zingo",
-    sentence: "In Settings → Server, pick Testnet first. Then create a wallet.",
-    button: { label: "Get Zingo", href: ZINGO_URL },
-    more: `Server: ${TESTNET_SERVER}`,
-  },
-  {
-    title: "Get test ZEC",
-    sentence: "Copy your tm address in Zingo and ask the faucet for some.",
-    button: { label: "Open faucet", href: FAUCET_URL },
-    verify: true,
-  },
-  {
-    title: "Shield it",
-    sentence: "In Zingo, shield your transparent test ZEC.",
-    verify: true,
-  },
-  {
-    title: "Seal a practice letter",
-    sentence: "Write to yourself. Then send it to yourself in Zingo.",
-    form: true,
-  },
-  {
-    title: "Read it back",
-    sentence: "Open the new transaction in Zingo. Your letter is there.",
-  },
-  {
-    title: "Unshield",
-    sentence: "Send a little test ZEC to your own tm address.",
-    verify: true,
-    done: true,
-  },
+// Stuck? Short answers, in our words.
+export const FAQ = [
+  { q: "My ZEC shows but I can't spend it", a: "New coins need a few blocks to confirm. Give it 5 to 10 minutes." },
+  { q: "The exchange won't take my address", a: "Most exchanges only send to a transparent address. Use that one, then shield in step 3." },
+  { q: "The QR won't scan", a: "Skip it. Copy your letter and paste it into the message field in your wallet." },
+  { q: "It still says watching", a: "A Zcash block comes about every 75 seconds. This page checks again every 20 seconds on its own." },
+  { q: "Is this safe?", a: "This page only ever sees your public transparent address, to read its balance. Never your letter, your recovery phrase or your keys." },
+  { q: "How do I switch Zingo to testnet?", a: `Gear → Server → Network: Testnet, or enter https://${TESTNET_SERVER}. Do it before you create the wallet.`, test: true },
 ];

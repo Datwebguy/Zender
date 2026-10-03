@@ -61,6 +61,21 @@ function txids(c, address, tip) {
   });
 }
 
+// Just the chain tip, for the "network online" line.
+async function tipOnly(net) {
+  let last;
+  for (const server of net.servers) {
+    try {
+      const info = await unary(client(server), "GetLightdInfo", {});
+      if (info.chainName !== net.chain) throw new Error("wrong network");
+      return { height: Number(info.blockHeight) };
+    } catch (e) {
+      last = e;
+    }
+  }
+  throw last;
+}
+
 async function lookup(address, net) {
   let last;
   for (const server of net.servers) {
@@ -91,6 +106,13 @@ module.exports = async (req, res) => {
   }
   const net = NETWORKS[body && body.network === "test" ? "test" : "main"];
   const address = String((body && body.address) || "").trim();
+  if (!address && body && body.tip) {
+    try {
+      return res.status(200).json(await tipOnly(net));
+    } catch {
+      return res.status(502).json({ error: "Could not reach the Zcash network." });
+    }
+  }
   if (!net.address.test(address)) return res.status(400).json({ error: net.hint });
   try {
     return res.status(200).json(await lookup(address, net));

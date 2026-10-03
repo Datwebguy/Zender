@@ -8,9 +8,10 @@ const PUBLIC = {
 
 // What each checkable step needs to see on chain.
 export const CHECKS = {
-  2: { done: "ZEC arrived", ok: (s) => s.txCount >= 1 || s.balanceZat > 0 },
+  2: { done: "Coins arrived", ok: (s) => s.txCount >= 1 || s.balanceZat > 0 },
   3: { done: "Shielded", ok: (s) => s.txCount >= 2 && (s.balanceZat === 0 || s.txCount >= 3) },
-  6: { done: "Back on postcard", ok: (s) => s.txCount >= 3 && s.balanceZat > 0 },
+  // `seen` is how many transactions the address had once it was shielded.
+  6: { done: "Back on postcard", ok: (s, seen = 2) => s.txCount > seen && s.balanceZat > 0 },
 };
 
 export function isPublicAddress(value, net) {
@@ -30,4 +31,15 @@ export async function check(address, net) {
 
 export function zec(zat) {
   return (zat / 1e8).toFixed(8).replace(/0+$/, "").replace(/\.$/, "");
+}
+
+// The latest block, for the "network online" line.
+export async function tip(net) {
+  const r = await fetch("/api/check", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ network: net, tip: true }),
+  });
+  if (!r.ok) throw new Error("offline");
+  return (await r.json()).height;
 }

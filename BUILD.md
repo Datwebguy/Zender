@@ -1,6 +1,6 @@
 # Build
 
-Static site. No backend. Phone first, because the bounty user is on a phone installing Zodl.
+Static site plus one small serverless function (`api/check.js`) for the chain checks. Phone first, because the bounty user is on a phone installing Zodl.
 
 ## Stack
 
@@ -11,21 +11,21 @@ Suggested host: any static host. A pages.dev or similar URL is enough for Sunday
 ## Files
 
 ```
-index.html          shell, chrome, video, next, CSP
-app.js              routing /1 to /6, video, step 4 form, QR, copy
-steps.js            the six titles, sentences, video paths, external links
+index.html          header, tabs, footer, cheat sheet, CSP
+app.js              routes / /testnet /mainnet, step cards, timers, chain watching, letter form, QR, finish
+steps.js            both rounds: six step cards each, how-to lists, tips, links, FAQ
 zip321.js           UTF-8 to base64url memo, u1 check, URI builder
 config.js           amount 0.0001, message, Zodl link
 share.js            share card, Post on X link, reminder file
 motion.js           typing text, step entrances, scramble-to-sealed, opening scene
-verify.js           Check on chain: address check, rules for steps 2, 3, 6
+verify.js           chain checks: address check, rules for steps 2, 3, 6, live block height
 api/check.js        the only server code: t1/tm balance and tx count from lightwalletd over gRPC
 package.json        @grpc/grpc-js, @grpc/proto-loader for api/check.js
 styles.css
 vendor/qrcode.js    QR encoder, MIT, served from our origin
 videos/1.mp4 ... 6.mp4
-tests/zip321.test.mjs
-vercel.json         rewrites, redirect / to /1, CSP header
+tests/zip321.test.mjs tests/verify.test.mjs
+vercel.json         rewrites, redirects from old links, CSP header
 _redirects _headers same for Cloudflare Pages or Netlify
 ```
 

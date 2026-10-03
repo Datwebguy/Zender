@@ -34,15 +34,13 @@ Then a finish screen: "Sealed for a year.", what they see next to what everyone 
 Copy the Solflare education stack, not a docs page.
 
 - Black background.
-- Progress of six ticks at the top.
-- Close mark.
-- One title, one sentence.
-- The visual is a video, autoplay muted, replay on tap. Not a static illustration.
-- Yellow pill button labeled Next.
-- Back control from step 2 on.
+- One scrolling page per round, six step cards. One open at a time, each with a timer.
+- Public steps watched on chain, live. A live block line in the hero.
+- Each card: a lead sentence, a short numbered how-to, tips, and Watch how (a clip, muted).
+- Yellow pill for the main action. A Stuck? FAQ at the bottom.
 
 Reference the organiser poster only for the name ZECATHON in the footer. Do not copy the paper letterpress layout.
 
 ## Out of scope
 
-Login, admin, music, theme picker, address book, swaps, a network toggle, a server that stores notes, a reply bot, analytics.
+Login, admin, music, theme picker, address book, swaps, a server that stores notes, a reply bot, analytics.

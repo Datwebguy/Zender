@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
   <meta name="theme-color" content="#000000">
   <meta name="color-scheme" content="dark">
-  <meta name="description" content="Zero to a shielded Zcash send in six steps, with a guide video on each.">
+  <meta name="description" content="Learn Zcash by sealing a letter to your future self. Six steps, each timed, checked on the real chain.">
   <meta property="og:title" content="Zender">
   <meta property="og:description" content="Seal a letter to your future self on Zcash. Public chain, only you can read it.">
   <meta property="og:image" content="https://tryzender.vercel.app/og.png">
@@ -18,105 +18,36 @@
   <script type="module" src="/app.js"></script>
 </head>
 <body>
-  <div class="intro" id="intro" hidden>
-    <div class="intro-inner">
-      <p class="intro-mark">Zender</p>
-      <p class="intro-line" data-line="1"></p>
-      <p class="intro-line gold" data-line="2"></p>
-      <div class="envelope" aria-hidden="true">
-        <svg viewBox="0 0 120 84" width="120" height="84"><rect x="2" y="2" width="116" height="80" rx="10" fill="#18181b" stroke="#3f3f46" stroke-width="3"/><path d="M6 8 L60 48 L114 8" fill="none" stroke="#3f3f46" stroke-width="3"/></svg>
-        <span class="wax"><svg viewBox="0 0 24 24" width="22" height="22"><rect x="6" y="11" width="12" height="9" rx="2" fill="#1a1400"/><path d="M8.5 11V8.5a3.5 3.5 0 0 1 7 0V11" fill="none" stroke="#1a1400" stroke-width="2.4"/></svg></span>
-      </div>
-      <p class="intro-tap">Tap to begin</p>
-    </div>
-  </div>
+  <header class="top">
+    <a class="wordmark" href="/" data-nav>Zender</a>
+    <nav class="tabs" aria-label="Rounds">
+      <a href="/testnet" data-nav id="tab-test">Testnet</a>
+      <a href="/mainnet" data-nav id="tab-main">Mainnet</a>
+    </nav>
+    <button type="button" class="icon" id="cheat" aria-label="Envelopes and postcards: Zcash in plain words">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.9" r="1.1" fill="currentColor"/></svg>
+    </button>
+  </header>
+
+  <main id="main" tabindex="-1"></main>
+
+  <footer class="foot">
+    <p>Built for ZECATHON · Not affiliated with any wallet, exchange or Zcash organisation · <a href="https://github.com/Datwebguy/Zender" target="_blank" rel="noopener noreferrer">Open source</a></p>
+  </footer>
+
   <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-label="Envelopes and postcards">
     <div class="sheet-card">
-      <p class="plabel">Envelopes and postcards</p>
+      <p class="label">Envelopes and postcards</p>
       <dl>
         <div><dt>u1…</dt><dd>Your envelope address. What arrives is sealed. Safe to share.</dd></div>
         <div><dt>t1…</dt><dd>Your postcard address. Anyone can read what arrives.</dd></div>
         <div><dt>Shield</dt><dd>Move ZEC from postcard to envelope.</dd></div>
         <div><dt>Unshield</dt><dd>Back to postcard, for places that only take t1.</dd></div>
         <div><dt>Letter</dt><dd>The note inside a shielded send. Up to 512 characters.</dd></div>
-        <div><dt>ZEC</dt><dd>Swap in Zodl, or buy on an exchange and withdraw to your t1.</dd></div>
+        <div><dt>Testnet</dt><dd>A practice copy of Zcash. Its coins are free and worth nothing.</dd></div>
       </dl>
-      <button type="button" class="pill secondary" data-close>Got it</button>
+      <button type="button" class="btn ghost wide" data-close>Got it</button>
     </div>
-  </div>
-  <div class="sheet" id="vsheet" hidden role="dialog" aria-modal="true" aria-label="Check on chain">
-    <div class="sheet-card">
-      <p class="plabel">Check on chain</p>
-      <p class="vtext" id="vwhere"></p>
-      <input type="text" id="vaddr" spellcheck="false" autocomplete="off" autocapitalize="none" autocorrect="off" aria-label="Your transparent address">
-      <p class="vtext small">Zender asks a Zcash light server for this public address's balance. Nothing else is sent. Nothing is stored. Your letter never leaves this page.</p>
-      <p class="hint" id="vmsg" aria-live="polite"></p>
-      <div class="row">
-        <button type="button" class="pill secondary" data-close>Not now</button>
-        <button type="button" class="pill primary" id="vgo">Check</button>
-      </div>
-    </div>
-  </div>
-  <div class="app">
-    <header class="top">
-      <div class="bar">
-        <button type="button" class="wordmark" id="wordmark" aria-label="Play the Zender intro">Zender</button>
-        <button type="button" class="net" id="net">Testnet</button>
-        <button type="button" class="cheat" id="cheat" aria-label="Envelopes and postcards: Zcash in plain words">
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.9" r="1.1" fill="currentColor"/></svg>
-        </button>
-        <a class="close" href="/1" data-nav aria-label="Close, back to step 1">
-          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
-        </a>
-      </div>
-      <ol class="ticks" id="ticks" aria-label="Progress">
-        <li></li><li></li><li></li><li></li><li></li><li></li>
-      </ol>
-    </header>
-
-    <main id="main" tabindex="-1">
-      <p class="sr-only" id="count">Step 1 of 6</p>
-      <h1 id="title">Install Zodl</h1>
-      <p class="sentence" id="sentence">Install it and tap Create New Wallet. About 10 minutes in all.</p>
-
-      <div class="stage" id="stage">
-        <div class="sealed" id="sealed" hidden>
-          <div class="panel mine">
-            <span class="wax small" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16"><rect x="6" y="11" width="12" height="9" rx="2" fill="#1a1400"/><path d="M8.5 11V8.5a3.5 3.5 0 0 1 7 0V11" fill="none" stroke="#1a1400" stroke-width="2.4"/></svg></span>
-            <p class="plabel">You see</p>
-            <p class="pnote" id="mynote">Your letter</p>
-          </div>
-          <div class="panel theirs">
-            <p class="plabel">Everyone else sees</p>
-            <p class="prow"><span>Sender</span><b data-final="hidden">hidden</b></p>
-            <p class="prow"><span>Amount</span><b data-final="hidden">hidden</b></p>
-            <p class="prow"><span>Letter</span><b data-final="sealed">sealed</b></p>
-          </div>
-        </div>
-        <div class="media" id="media">
-          <video id="video" muted playsinline autoplay preload="auto"></video>
-          <div class="coming" id="coming" hidden>
-            <span class="tag" id="coming-tag">Video coming</span>
-            <p id="coming-text"></p>
-          </div>
-          <div class="qr" id="qr" hidden></div>
-          <div class="linkview" id="linkview" hidden><code id="uri"></code></div>
-          <button type="button" class="chip replay" id="replay" hidden>Replay</button>
-          <button type="button" class="chip verify" id="verify" hidden>Check on chain</button>
-        </div>
-      </div>
-
-      <div class="extras" id="extras"></div>
-    </main>
-
-    <nav class="actions" aria-label="Step navigation">
-      <a class="back" id="back" href="/1" data-nav>Back</a>
-      <a class="next" id="next" href="/2" data-nav>Next</a>
-    </nav>
-
-    <footer class="foot">
-      <p id="foot">Real ZEC · small amounts · ZECATHON</p>
-    </footer>
   </div>
   <noscript><p class="noscript">Turn on JavaScript in your browser to use Zender.</p></noscript>
 </body>

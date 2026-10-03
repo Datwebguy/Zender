@@ -18,6 +18,8 @@ Shared chrome:
 
 ## 1. Install Zodl
 
+Under the button, one line, no links: "Other Zcash wallets: Vizor, Zafu."
+
 Title: Install Zodl
 
 Sentence: Install it and tap Create New Wallet. About 10 minutes in all.
@@ -30,14 +32,16 @@ Video: welcome screen, tap Create New Wallet, wallet ready. Creating a wallet sh
 
 Title: Get a little ZEC
 
-Sentence: Buy a dollar or two and send it to your transparent address.
+Sentence: Tap Swap in Zodl, or buy a dollar or two on an exchange.
 
 Buttons: Gemini, Coinbase, Kraken. Names only, no logos. Each opens that exchange's Zcash page:
 - https://www.gemini.com/prices/zcash
 - https://www.coinbase.com/price/zcash
 - https://www.kraken.com/buy/zec
 
-Under them, one line, no links: "Also on OKX, Bybit and Binance. Or use Swap in Zodl."
+Sentence: "Tap Swap in Zodl, or buy a dollar or two on an exchange." Under the buttons, one line, no links: "Withdraw to your t1. Also OKX, Bybit, Binance, or swap on THORChain."
+
+Cheat sheet (the ? in the header): Get ZEC, u1, t1, Shield, Unshield, Message, Receive. One line each.
 
 ZEC was about $1,368 on 3 Oct 2026. The send is 0.0001 ZEC (about $0.14) and comes back. Fees are about 0.0001 ZEC per transaction (ZIP 317 minimum), so shield, send and unshield cost about $0.40 in all.
 

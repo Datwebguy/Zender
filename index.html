@@ -30,10 +30,28 @@
       <p class="intro-tap">Tap to begin</p>
     </div>
   </div>
+  <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-label="Cheat sheet">
+    <div class="sheet-card">
+      <p class="plabel">Cheat sheet</p>
+      <dl>
+        <div><dt>Get ZEC</dt><dd>Exchange: buy, then withdraw to your t1. On-chain: swap on THORChain. Or Swap in Zodl, or get paid by a friend.</dd></div>
+        <div><dt>u1…</dt><dd>Shielded. Private. Give this one out.</dd></div>
+        <div><dt>t1…</dt><dd>Transparent. Public. Some exchanges need it.</dd></div>
+        <div><dt>Shield</dt><dd>t1 to u1. Do it once, then stay shielded.</dd></div>
+        <div><dt>Unshield</dt><dd>u1 to t1. Only when you must.</dd></div>
+        <div><dt>Message</dt><dd>A private note on a shielded send. 512 max.</dd></div>
+        <div><dt>Receive</dt><dd>Share your u1, or its QR in Zodl.</dd></div>
+      </dl>
+      <button type="button" class="pill secondary" data-close>Got it</button>
+    </div>
+  </div>
   <div class="app">
     <header class="top">
       <div class="bar">
         <button type="button" class="wordmark" id="wordmark" aria-label="Play the Zender intro">Zender</button>
+        <button type="button" class="cheat" id="cheat" aria-label="Cheat sheet">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.9" r="1.1" fill="currentColor"/></svg>
+        </button>
         <a class="close" href="/1" data-nav aria-label="Close, back to step 1">
           <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
         </a>

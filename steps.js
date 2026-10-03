@@ -1,4 +1,4 @@
-import { ZODL_URL, EXCHANGES, MORE_EXCHANGES } from "./config.js";
+import { ZODL_URL, EXCHANGES, MORE_EXCHANGES, OTHER_WALLETS } from "./config.js";
 
 export const STEPS = [
   {
@@ -6,10 +6,11 @@ export const STEPS = [
     sentence: "Install it and tap Create New Wallet. About 10 minutes in all.",
     video: "/videos/1.mp4",
     button: { label: "Get Zodl", href: ZODL_URL },
+    more: OTHER_WALLETS,
   },
   {
     title: "Get a little ZEC",
-    sentence: "Buy a dollar or two and send it to your transparent address.",
+    sentence: "Tap Swap in Zodl, or buy a dollar or two on an exchange.",
     video: "/videos/2.mp4",
     links: EXCHANGES,
     more: MORE_EXCHANGES,

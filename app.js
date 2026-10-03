@@ -190,8 +190,8 @@ function renderExtras(step) {
     const row = el("div", { class: "row links" });
     step.links.forEach((l) => row.append(externalLink(l.label, l.href, "pill secondary")));
     box.append(row);
-    if (step.more) box.append(el("p", { class: "more" }, step.more));
   }
+  if (step.more) box.append(el("p", { class: "more" }, step.more));
   if (step.form) box.append(noteForm());
 }
 
@@ -391,6 +391,19 @@ video.addEventListener("ended", () => {
 });
 video.addEventListener("play", showView);
 $("replay").addEventListener("click", replay);
+
+// Cheat sheet: the six ideas the steps teach, one tap away.
+const sheet = $("sheet");
+$("cheat").addEventListener("click", () => {
+  sheet.hidden = false;
+  sheet.querySelector("button").focus();
+});
+sheet.addEventListener("click", (e) => {
+  if (e.target === sheet || e.target.closest("[data-close]")) sheet.hidden = true;
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") sheet.hidden = true;
+});
 
 render();
 intro($("intro"), render);

@@ -76,7 +76,19 @@ a { color: inherit; }
   border-radius: 50%;
 }
 .close:hover, .close:focus-visible { color: var(--fg); }
-.close svg { pointer-events: none; }
+.close svg, .cheat svg { pointer-events: none; }
+.right { display: flex; align-items: center; }
+.cheat { display: grid; place-items: center; width: 44px; height: 44px; margin-left: auto; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
+.cheat:hover, .cheat:focus-visible { color: var(--yellow); }
+
+/* Cheat sheet */
+.sheet { position: fixed; inset: 0; z-index: 9; display: flex; align-items: flex-end; justify-content: center; background: rgba(0, 0, 0, 0.6); }
+.sheet-card { width: 100%; max-width: 480px; padding: 20px 20px calc(16px + env(safe-area-inset-bottom)); border: 1px solid var(--line); border-bottom: 0; border-radius: 22px 22px 0 0; background: var(--panel); animation: rise 0.3s ease-out both; }
+.sheet dl { margin: 6px 0 16px; }
+.sheet dl div { display: grid; grid-template-columns: 76px 1fr; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.sheet dt { font: 600 14px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--yellow); }
+.sheet dd { margin: 0; font-size: 15px; line-height: 1.4; color: #e4e4e7; }
+.sheet .pill { width: 100%; }
 .close[hidden] { display: grid !important; visibility: hidden; }
 
 .ticks {
@@ -195,7 +207,7 @@ body[data-step="4"] .media video { object-fit: contain; }
 
 /* Step extras */
 /* Same slot on every step, so the video keeps one size and position. */
-.extras { flex: none; height: 46px; margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.extras { flex: none; height: 70px; margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
 body[data-step="4"] .extras { height: auto; }
 body[data-step="7"] .stage { align-items: center; }
 body[data-step="7"] .extras { height: auto; }

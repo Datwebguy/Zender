@@ -26,6 +26,8 @@ Zodl memo facts from their support page, checked June 2026: memos ride on shield
 - Zodl store and F-Droid builds are mainnet only. Android releases attach only app-zcashmainnet APKs: https://github.com/zodl-inc/zodl-android/releases
 - Zodl's F-Droid repo lists one app, mainnet: https://foss.zodl.com/
 - Testnet faucet: https://fauzec.com/ (the one behind zechub.wiki's faucet tool). Checked 3 Oct 2026: it sends to Unified (utest1) and Sapling addresses only, transparent is on its roadmap, with a Turnstile check and per-address limits.
+- fauzec API (used by `/api/faucet`): `POST /api/v1/claim`, `GET /api/v1/status/{network}/{id}`, `GET /api/v1/faucet-status`. OpenAPI at https://fauzec.com/.well-known/openapi.json. Its help page says direct API claims can skip the human check "for now", one drip (1 TAZ) per address every 24 hours.
+- Zingo: https://zingolabs.org/zingo/download/. Testnet is ☰ → Options → ⚙ → Server → Network: Testnet (Automatic picks testnet.zec.rocks:443), then Save and Create New Wallet. Checked on Zingo 2.0.24, 3 Oct 2026.
 
 ## Payment request
 
@@ -46,7 +48,7 @@ Message is display text for the wallet. Memo is the note. Do not put the note on
 - Lightwalletd: https://github.com/zcash/lightwalletd
 - Public light servers: https://github.com/ZecHub/zechub/blob/main/site/Zcash_Tech/Lightwallet_Nodes.md
 
-The site does not talk to lightwalletd. Zodl does.
+The page itself never talks to lightwalletd. Only Zender's `/api/check` function does, for one public address at a time: zec.rocks (na/eu mirrors) on mainnet, testnet.zec.rocks on testnet.
 
 ## Do not copy
 

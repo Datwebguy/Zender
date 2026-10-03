@@ -1,46 +1,43 @@
 # Brief
 
-Name: Zender
+**Name:** Zender
 
-One line: A six-step site that takes a new person from no wallet to a shielded Zcash send, with a guide video on every step.
+**One line:** Write a letter to your future self and seal it on Zcash, learning the wallet on the way.
 
 ## User
 
-Someone who has never used Zcash. They are on a phone. They can install an app. They must not be asked for a seed, a viewing key, or an email.
+Someone who has never used Zcash, on a phone. They can install an app. Never ask for a seed, a viewing key, or an email.
 
-## Network
+## Rounds
 
-Testnet practice first (Zingo, free test ZEC, `/t/`), then mainnet with small amounts (Zodl, `/`). Zodl has no testnet in its store builds; Zingo does (Settings → Server → Testnet, testnet.zec.rocks:443). Each visitor needs a dollar or two of ZEC (ZEC was about $1,368 on 3 Oct 2026). The 0.0001 ZEC note goes to their own address, so only fees are spent.
+- **Practice, testnet** (`/testnet`): Zingo, because Zodl's store builds are mainnet only. Free test ZEC from a one-tap faucet. Nothing at stake.
+- **Real, mainnet** (`/mainnet`): Zodl, formerly Zashi (https://zodl.com/). A dollar or two of ZEC. The 0.0001 ZEC letter goes to their own address, so only fees are spent.
 
-## Wallet
-
-Zodl, formerly Zashi. Official site: https://zodl.com/
-
-Do not build a wallet. Do not embed a prover. Zodl does install, shield, send, receive, and unshield.
+Do not build a wallet. Do not embed a prover. The wallet does every send.
 
 ## The six steps
 
-1. Install Zodl and tap Create New Wallet.
-2. Get a little ZEC sent to their transparent address.
-3. Shield it by sending the transparent balance to their own unified address.
-4. Seal a letter to themselves, one year from now, as a shielded memo. They paste their own shielded address (u1) from Zodl. The site makes a ZIP-321 QR to that address. The memo is the note they typed.
-5. Receive. Open Activity in Zodl and find the same note. The self-send is the receive.
-6. Unshield. Send a little ZEC to their own transparent address.
+| # | Practice (Zingo) | Real (Zodl) |
+|---|---|---|
+| 1 | Set up Zingo on testnet | Set up Zodl |
+| 2 | Get test ZEC (one tap) | Get a little ZEC |
+| 3 | Move some to your public address | Shield it |
+| 4 | Shield it back | Seal a letter |
+| 5 | Seal a practice letter | Read it back |
+| 6 | Read it back | Unshield |
 
-Then a finish screen: "Sealed for a year.", what they see next to what everyone else sees, Post on X, a share card and a one-year calendar reminder.
+The faucet only pays private addresses, so practice starts private and goes public, then back. Exchanges pay public addresses, so the real round starts public. Both cover shield, unshield, sending and receiving.
 
-## Visual system
+Then the finish: the letter sealed in its envelope, "Opens 3 October 2027", a postcard to share on X, and a one-year reminder.
 
-Copy the Solflare education stack, not a docs page.
+## Voice
 
-- Black background.
-- One scrolling page per round, six step cards. One open at a time, each with a timer.
-- Public steps watched on chain, live. A live block line in the hero.
-- Each card: a lead sentence, a short numbered how-to, tips, and Watch how (a clip, muted).
-- Yellow pill for the main action. A Stuck? FAQ at the bottom.
+Plain words, short lines. Public and private, not transparent and shielded (except where a wallet button says so). No developer terms in the page.
 
-Reference the organiser poster only for the name ZECATHON in the footer. Do not copy the paper letterpress layout.
+## Look
+
+A post office. Cream paper, airmail stripes, a perforated stamp logo, rubber postmarks, a typewriter for labels and handwriting for letters. A night version for dark mode. Our own design, not a copy of any other entry.
 
 ## Out of scope
 
-Login, admin, music, theme picker, address book, swaps, a server that stores notes, a reply bot, analytics.
+Login, admin, music, address book, a server that stores letters, a reply bot, analytics.

@@ -7,11 +7,11 @@ Post text:
 ```
 @zksnarks_ #ZECATHON Wildcard Track submission
 
-Zender: seal a letter to your future self on Zcash.
+Zender: write a letter to your future self and seal it on Zcash.
 
 The blockchain is public. Your letter isn't.
 
-Install Zodl, get a little ZEC, shield, seal your letter, read it back, unshield. Practise free on testnet first. Every step is timed and the public ones are checked on chain, live.
+Practise free on testnet (one-tap faucet), then do it for real in Zodl: set up, get ZEC, shield, seal your letter, read it back, unshield. Every step timed and watched for you.
 
 No account. No tracking. No keys on the site.
 
@@ -19,6 +19,17 @@ https://tryzender.vercel.app
 Code: https://github.com/Datwebguy/Zender
 ```
 
-Attach a screen recording of the six steps, including ZEC arriving, a real send to yourself, and the memo matching the typed note. Blur your addresses.
+## Attach
 
-Say it uses real ZEC in small amounts. Do not claim the site detected the transaction. The visitor confirms it in Zodl.
+A screen recording of a full round on your phone:
+- the faucet or ZEC arriving
+- a step turning green by itself
+- the letter sent to yourself, and the same letter showing in the wallet
+- the wax seal and the postcard
+
+Blur your addresses. Light or dark mode, whichever looks best.
+
+## Say it straight
+
+- The real round uses a dollar or two of real ZEC, and it comes back to you.
+- Zender watches only your public address. It can't see a private send, so you confirm the letter steps yourself.

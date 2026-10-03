@@ -27,7 +27,8 @@ Along the way you set up a wallet, get ZEC, shield and unshield, and send a tiny
 
 - Zender never holds a key, seed or viewing key, and has no field for one. The wallet does every send.
 - The letter never leaves the page: no network request, no storage, no share card, no reminder.
-- The page only talks to its own two functions. No analytics, no third-party scripts, fonts or media.
+- The page only talks to its own domain. No third-party scripts, fonts or media.
+- Vercel Web Analytics counts page views from our own domain: no cookies, no personal data, nothing about your progress or letter.
 - `/api/check` receives only the public address you paste (t1 or tm) and returns its balance and transaction count from a Zcash light server. It stores and logs nothing.
 - `/api/faucet` (testnet only) passes your utest1 address to fauzec.com to send test coins. The address stays in page memory only.
 - Saved in your browser only: which steps are done, their times, your public address, and your theme. Start over clears a round.

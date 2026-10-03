@@ -18,8 +18,22 @@ const WORDS = {
   on_abuse_list: "The faucet refused this request. Use the Open faucet link instead.",
 };
 
-async function call(path, init) {
-  const r = await fetch(BASE + path, { ...init, signal: AbortSignal.timeout(12000) });
+// A ULID-style request id (Crockford base32), chosen here so a slow claim is never lost.
+function newId() {
+  const A = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+  let t = Date.now(), head = "";
+  for (let i = 0; i < 10; i++) {
+    head = A[t % 32] + head;
+    t = Math.floor(t / 32);
+  }
+  const bytes = require("crypto").randomBytes(16);
+  let tail = "";
+  for (let i = 0; i < 16; i++) tail += A[bytes[i] % 32];
+  return head + tail;
+}
+
+async function call(path, init, ms = 12000) {
+  const r = await fetch(BASE + path, { ...init, signal: AbortSignal.timeout(ms) });
   const data = await r.json().catch(() => ({}));
   return { status: r.status, data };
 }
@@ -66,14 +80,25 @@ module.exports = async (req, res) => {
     if (/^tm/i.test(address)) return res.status(400).json({ error: WORDS.unsupported_address_kind });
     if (/^u1/i.test(address)) return res.status(400).json({ error: WORDS.network_mismatch });
     if (!SHIELDED.test(address)) return res.status(400).json({ error: WORDS.malformed_address });
-    const { data } = await call("/claim", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ network: "testnet", address }),
-    });
+    const id = newId();
+    let data;
+    try {
+      ({ data } = await call("/claim", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ network: "testnet", address, request_id: id }),
+      }, 22000));
+    } catch (e) {
+      // Still working at the faucet: hand back our id and let the page keep watching it.
+      console.error("faucet claim slow or failed:", e && e.name, e && e.message);
+      return res.status(200).json({ id, state: "pending", txid: null, height: null, amountZat: null, error: null });
+    }
+    if (!data.request_id) data.request_id = id;
     const out = shape(data);
+    if (out.error) console.error("faucet refused:", data.error_code, data.failure_reason || "");
     return res.status(out.error ? 400 : 200).json(out);
-  } catch {
+  } catch (e) {
+    console.error("faucet error:", e && e.name, e && e.message);
     return res.status(502).json({ error: "Couldn't reach the faucet. Try again in a moment." });
   }
 };

@@ -44,5 +44,13 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/faucet.js": {
+      "maxDuration": 30
+    },
+    "api/check.js": {
+      "maxDuration": 20
+    }
+  }
 }

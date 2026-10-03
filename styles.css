@@ -41,7 +41,7 @@ body {
 [hidden] { display: none !important; }
 a { color: inherit; }
 img { display: block; max-width: 100%; }
-code { font-family: var(--type); font-size: 0.92em; background: rgba(28, 26, 23, 0.07); padding: 1px 5px; border-radius: 4px; }
+code { overflow-wrap: anywhere; font-family: var(--type); font-size: 0.92em; background: rgba(28, 26, 23, 0.07); padding: 1px 5px; border-radius: 4px; }
 b, strong { font-weight: 650; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .offscreen { position: fixed; left: -9999px; top: 0; }

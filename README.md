@@ -58,7 +58,7 @@ Live: https://tryzender.vercel.app · Track: Wildcard
 - Zender never holds a key, seed or viewing key, and has no field for one. Zodl does every send.
 - The address and note stay in the page's memory. They go into the QR and the copy link, nowhere else.
 - Nothing is sent anywhere: CSP `connect-src 'none'`, no analytics, no third-party scripts, fonts or media. Clips are served from the same origin.
-- The phone remembers only whether the opening scene was seen (localStorage).
+- Nothing is stored on the phone, not even progress.
 - The share card is drawn on the phone and never includes the letter or an address.
 - The reminder is a calendar file made on the phone. It has the date and "Open your Zcash letter", never the letter.
 

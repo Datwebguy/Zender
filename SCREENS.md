@@ -109,7 +109,7 @@ Buttons: Post on X (yellow, full width), then Share image (a card drawn on the p
 
 ## Motion
 
-- Opening scene, once per phone: "Zender", then "The blockchain is public." types out, then "Your letter isn't." in yellow, an envelope drops and a wax seal stamps it. Tap to begin.
+- Opening scene, every time the site opens (tap Zender to replay): "Zender", then "The blockchain is public." types out, then "Your letter isn't." in yellow, an envelope drops and a wax seal stamps it. Tap to begin.
 - Each step: the title rises, the sentence types itself, the video pops in, buttons rise. Forward slides from the right, back from the left.
 - Step 4: the QR materialises. When a clip ends, Next nudges.
 - Finish: "hidden, hidden, sealed" unscramble from random characters, then a wax seal stamps the letter.

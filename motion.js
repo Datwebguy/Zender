@@ -80,14 +80,10 @@ export function after(ms, fn) {
   later(fn, ms);
 }
 
-// Opening scene, once per phone. Resolves when the visitor taps.
-export function intro(root) {
-  let seen = false;
-  try {
-    seen = localStorage.getItem("zender:intro") === "1";
-  } catch {}
-  if (seen || calm) return;
-
+// Opening scene. Plays when the site opens, and again when the wordmark is tapped.
+export function intro(root, onClose = () => {}) {
+  if (calm) return;
+  root.classList.remove("stamped", "ready", "leaving");
   root.hidden = false;
   const l1 = root.querySelector("[data-line='1']");
   const l2 = root.querySelector("[data-line='2']");
@@ -97,13 +93,12 @@ export function intro(root) {
   later(() => root.classList.add("ready"), 3300);
 
   const close = () => {
-    try {
-      localStorage.setItem("zender:intro", "1");
-    } catch {}
+    stopAll();
     root.classList.add("leaving");
     setTimeout(() => {
       root.hidden = true;
     }, 400);
+    onClose();
   };
   root.addEventListener("click", close, { once: true });
 }

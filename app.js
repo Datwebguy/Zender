@@ -385,4 +385,5 @@ video.addEventListener("play", showView);
 $("replay").addEventListener("click", replay);
 
 render();
-intro($("intro"));
+intro($("intro"), render);
+$("wordmark").addEventListener("click", () => intro($("intro"), render));

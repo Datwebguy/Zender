@@ -8,9 +8,3 @@
   document.documentElement.setAttribute("data-theme", t);
 })();
 
-// Vercel Web Analytics: page views only, no cookies, served from our own domain.
-window.va =
-  window.va ||
-  function () {
-    (window.vaq = window.vaq || []).push(arguments);
-  };

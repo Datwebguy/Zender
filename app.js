@@ -2,6 +2,7 @@ import qrcode from "./vendor/qrcode.js";
 import { STEPS } from "./steps.js";
 import { AMOUNT, MESSAGE } from "./config.js";
 import { MAX_MEMO_BYTES, utf8Bytes, buildUri, isTestnetUnified } from "./zip321.js";
+import { postUrl, shareImage } from "./share.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -13,14 +14,38 @@ let address = "";
 let view = "video";
 let uri = null;
 
+// Steps are 1 to 6; 7 is the finish screen at /done.
+const DONE = 7;
+
 function currentStep() {
-  const m = location.pathname.match(/^\/([1-6])\/?$/);
-  return m ? Number(m[1]) : null;
+  const m = location.pathname.match(/^\/([1-6]|done)\/?$/);
+  if (!m) return null;
+  return m[1] === "done" ? DONE : Number(m[1]);
+}
+
+function pathFor(n) {
+  return n === DONE ? "/done" : `/${n}`;
+}
+
+// Only the step number is remembered, on this phone, so a visitor can come back after waiting for funds.
+function saveProgress(n) {
+  try {
+    localStorage.setItem("zender:step", String(n));
+  } catch {}
+}
+
+function savedProgress() {
+  try {
+    const n = Number(localStorage.getItem("zender:step"));
+    return n >= 1 && n <= DONE ? n : 1;
+  } catch {
+    return 1;
+  }
 }
 
 function go(n) {
-  if (n < 1 || n > 6) return;
-  const path = `/${n}`;
+  if (n < 1 || n > DONE) return;
+  const path = pathFor(n);
   if (location.pathname !== path) history.pushState(null, "", path);
   render();
 }
@@ -39,9 +64,14 @@ function externalLink(label, href, className) {
 function render() {
   let n = currentStep();
   if (!n) {
-    history.replaceState(null, "", "/1");
-    n = 1;
+    n = location.pathname === "/" ? savedProgress() : 1;
+    history.replaceState(null, "", pathFor(n));
   }
+  saveProgress(n);
+  document.body.dataset.step = String(n);
+  if (n === DONE) return renderDone();
+  $("sealed").hidden = true;
+  $("media").hidden = false;
   const step = STEPS[n - 1];
 
   document.title = `${step.title} · Zender`;
@@ -60,10 +90,9 @@ function render() {
   back.href = `/${Math.max(1, n - 1)}`;
 
   const next = $("next");
+  next.classList.remove("quiet");
   next.textContent = step.done ? "Done" : "Next";
-  next.href = step.done ? "/1" : `/${n + 1}`;
-
-  document.body.dataset.step = String(n);
+  next.href = pathFor(n + 1);
 
   uri = null;
   view = "video";
@@ -71,6 +100,47 @@ function render() {
   renderExtras(step);
   showView();
 
+  $("main").focus({ preventScroll: true });
+}
+
+function renderDone() {
+  document.title = "Sealed · Zender";
+  $("count").textContent = "Finished";
+  $("title").textContent = "Sealed.";
+  $("sentence").textContent = "Your note went out and came back. Only you can read it.";
+  [...$("ticks").children].forEach((li) => {
+    li.className = "done";
+    li.removeAttribute("aria-current");
+  });
+
+  const video = $("video");
+  video.pause();
+  $("media").hidden = true;
+  $("sealed").hidden = false;
+  $("mynote").textContent = note.trim() || "Your note";
+
+  const back = $("back");
+  back.hidden = false;
+  back.href = "/6";
+  const next = $("next");
+  next.classList.add("quiet");
+  next.textContent = "Start over";
+  next.href = "/1";
+
+  const box = $("extras");
+  box.replaceChildren();
+  const row = el("div", { class: "row" });
+  const post = externalLink("Post on X", postUrl(), "pill primary");
+  const save = el("button", { type: "button", class: "pill secondary", id: "share-image" }, "Share image");
+  save.addEventListener("click", async () => {
+    const result = await shareImage();
+    if (result === "saved") {
+      save.textContent = "Saved";
+      setTimeout(() => (save.textContent = "Share image"), 1600);
+    }
+  });
+  row.append(post, save);
+  box.append(row);
   $("main").focus({ preventScroll: true });
 }
 
@@ -267,11 +337,11 @@ function finish() {
 document.addEventListener("click", (e) => {
   const a = e.target.closest("a[data-nav]");
   if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-  const m = a.getAttribute("href").match(/^\/([1-6])$/);
+  const m = a.getAttribute("href").match(/^\/([1-6]|done)$/);
   if (!m) return;
   e.preventDefault();
-  if ((a.id === "next" && a.textContent === "Done") || a.classList.contains("close")) finish();
-  else go(Number(m[1]));
+  if ((a.id === "next" && a.textContent === "Start over") || a.classList.contains("close")) finish();
+  else go(m[1] === "done" ? DONE : Number(m[1]));
 });
 
 // Tap the right side of the screen for next, the left side for back.
@@ -279,13 +349,12 @@ document.addEventListener("click", (e) => {
 const app = document.querySelector(".app");
 app.addEventListener("click", (e) => {
   if (e.defaultPrevented) return;
-  if (e.target.closest("a, button, input, textarea, label, .actions, .top, .linkview")) return;
+  if (e.target.closest("a, button, input, textarea, label, .actions, .top, .linkview, .sealed")) return;
   if (String(window.getSelection() || "")) return;
   const n = currentStep() || 1;
   const rect = app.getBoundingClientRect();
   if (e.clientX > rect.left + rect.width / 2) {
-    if (n === 6) finish();
-    else go(n + 1);
+    if (n < DONE) go(n + 1);
   } else if (n > 1) {
     go(n - 1);
   }

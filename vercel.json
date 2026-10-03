@@ -1,6 +1,5 @@
 {
-  "redirects": [{ "source": "/", "destination": "/1", "permanent": false }],
-  "rewrites": [{ "source": "/:step(1|2|3|4|5|6)", "destination": "/index.html" }],
+  "rewrites": [{ "source": "/:step(1|2|3|4|5|6|done)", "destination": "/index.html" }],
   "headers": [
     {
       "source": "/(.*)",

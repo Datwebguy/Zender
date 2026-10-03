@@ -96,9 +96,23 @@ Title: Unshield
 
 Sentence: Send the testnet ZEC to your own transparent address.
 
-Button: Done. Returns to /1.
+Button: Done. Goes to /done.
 
 Video must show: shielded balance, own transparent address, send, transparent balance afterwards.
+
+## Finish (/done)
+
+Title: Sealed.
+
+Sentence: Your note went out and came back. Only you can read it.
+
+Two panels: "You see" with the note (kept in memory only), and "Everyone else sees": sender hidden, amount hidden, note sealed.
+
+Buttons: Post on X (yellow, opens an X post with the link, @zksnarks_ and #ZECATHON) and Share image (a card drawn on the phone, shared through the phone's share sheet or saved). The card never shows the note or an address. Start over returns to /1.
+
+## Progress
+
+The last step reached is saved on the phone (localStorage, step number only). Opening the site at / resumes there.
 
 ## Footer on every screen
 

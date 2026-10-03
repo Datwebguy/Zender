@@ -63,7 +63,6 @@ function render() {
   next.textContent = step.done ? "Done" : "Next";
   next.href = step.done ? "/1" : `/${n + 1}`;
 
-  $("taphint").hidden = n !== 1;
   document.body.dataset.step = String(n);
 
   uri = null;
@@ -95,9 +94,6 @@ function showView() {
   $("linkview").hidden = view !== "link";
   $("replay").hidden = view !== "video" || missing || !video.ended;
 
-  const toggle = $("toggle");
-  if (toggle) toggle.textContent = view === "video" ? "QR" : "Video";
-
   const show = $("show");
   if (show) show.textContent = view === "link" ? "Hide link" : "Show link";
 
@@ -119,27 +115,14 @@ function renderExtras(step) {
   if (step.button) {
     box.append(externalLink(step.button.label, step.button.href, "pill secondary"));
   }
-  if (step.note) box.append(el("p", { class: "hint" }, step.note));
-  if (step.links) {
-    const row = el("p", { class: "stores" });
-    step.links.forEach((l, i) => {
-      if (i) row.append(" · ");
-      row.append(externalLink(l.label, l.href));
-    });
-    box.append(row);
-  }
   if (step.form) box.append(noteForm());
-  if (step.showNote && note.trim()) {
-    const card = el("div", { class: "card" });
-    card.append(el("p", { class: "label" }, "Your note"), el("p", { class: "echo" }, note));
-    box.append(card);
-  }
 }
 
+// Only real problems get a message. An empty field just waits.
 function addressProblem(value) {
-  if (!value) return "In Zodl, open Receive and copy your shielded address. You send to yourself.";
-  if (/^u1/i.test(value)) return "That is a mainnet address. Switch Zodl to testnet and copy the address that starts with utest1.";
-  if (!isTestnetUnified(value)) return "That is not a testnet address. Copy the one that starts with utest1 from Zodl.";
+  if (!value) return null;
+  if (/^u1/i.test(value)) return "Mainnet address. Switch Zodl to testnet.";
+  if (!isTestnetUnified(value)) return "Use your utest1 address from Zodl.";
   return "";
 }
 
@@ -155,7 +138,7 @@ function noteForm() {
     autocorrect: "off",
     enterkeyhint: "next",
     "aria-label": "Your testnet unified address",
-    placeholder: "Your testnet unified address (utest1…)",
+    placeholder: "Your utest1 address",
   });
   addrField.value = address;
 
@@ -167,7 +150,7 @@ function noteForm() {
     autocomplete: "off",
     autocapitalize: "sentences",
     "aria-label": "Your note",
-    placeholder: "Your note. Only you will be able to read it.",
+    placeholder: "Your note",
   });
   field.value = note;
   const counter = el("span", { class: "counter", id: "counter", "aria-live": "polite" });
@@ -178,8 +161,7 @@ function noteForm() {
   const buttons = el("div", { class: "row" });
   const copy = el("button", { type: "button", class: "pill secondary", id: "copy" }, "Copy link");
   const show = el("button", { type: "button", class: "pill secondary", id: "show" }, "Show link");
-  const toggle = el("button", { type: "button", class: "pill secondary", id: "toggle" }, "Video");
-  buttons.append(copy, show, toggle);
+  buttons.append(copy, show);
 
   wrap.append(addrField, noteRow, status, buttons);
 
@@ -187,27 +169,22 @@ function noteForm() {
     note = field.value;
     address = addrField.value.trim();
     const bytes = utf8Bytes(note).length;
-    counter.textContent = `${bytes} / ${MAX_MEMO_BYTES}`;
+    counter.textContent = bytes ? `${bytes} / ${MAX_MEMO_BYTES}` : "";
     counter.classList.toggle("over", bytes > MAX_MEMO_BYTES);
 
     const problem = addressProblem(address);
-    addrField.classList.toggle("invalid", Boolean(address) && Boolean(problem));
+    addrField.classList.toggle("invalid", Boolean(problem));
 
     const before = uri;
     uri = null;
     let message = "";
     if (problem) message = problem;
-    else if (!note.trim()) message = "Now type a note.";
-    else if (bytes > MAX_MEMO_BYTES) message = `Too long. Cut it to ${MAX_MEMO_BYTES} bytes.`;
-    else {
-      uri = buildUri({ address, amount: AMOUNT, memo: note, message: MESSAGE });
-      message = `Scan the QR in Zodl, or copy the link. ${AMOUNT} testnet ZEC, Zodl sets the fee.`;
-    }
+    else if (bytes > MAX_MEMO_BYTES) message = "Note is too long.";
+    else if (problem === "" && note.trim()) uri = buildUri({ address, amount: AMOUNT, memo: note, message: MESSAGE });
     status.textContent = message;
 
     copy.disabled = !uri;
     show.disabled = !uri;
-    toggle.disabled = !uri;
     $("uri").textContent = uri || "";
     $("qr").replaceChildren(...(uri ? [qrSvg(uri)] : []));
 
@@ -220,15 +197,11 @@ function noteForm() {
   addrField.addEventListener("input", update);
   copy.addEventListener("click", async () => {
     const ok = await copyText(uri);
-    status.textContent = ok ? "Link copied. Paste it in Zodl's send screen." : "Could not copy. Tap Show link and copy it by hand.";
+    copy.textContent = ok ? "Copied" : "Copy failed";
+    setTimeout(() => (copy.textContent = "Copy link"), 1600);
   });
   show.addEventListener("click", () => {
     view = view === "link" ? "qr" : "link";
-    showView();
-  });
-  toggle.addEventListener("click", () => {
-    view = view === "video" ? "qr" : "video";
-    if (view === "video") replay();
     showView();
   });
   queueMicrotask(update);
@@ -306,7 +279,7 @@ document.addEventListener("click", (e) => {
 const app = document.querySelector(".app");
 app.addEventListener("click", (e) => {
   if (e.defaultPrevented) return;
-  if (e.target.closest("a, button, input, textarea, label, .actions, .top, .linkview, .card")) return;
+  if (e.target.closest("a, button, input, textarea, label, .actions, .top, .linkview")) return;
   if (String(window.getSelection() || "")) return;
   const n = currentStep() || 1;
   const rect = app.getBoundingClientRect();

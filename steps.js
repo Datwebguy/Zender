@@ -1,4 +1,4 @@
-import { ZODL_URL, APP_STORE_URL, PLAY_STORE_URL, FAUCETS, ACTIVE_FAUCET } from "./config.js";
+import { ZODL_URL, FAUCETS, ACTIVE_FAUCET } from "./config.js";
 
 const faucet = FAUCETS[ACTIVE_FAUCET];
 
@@ -7,18 +7,13 @@ export const STEPS = [
     title: "Install Zodl",
     sentence: "Install the wallet, then switch it to testnet.",
     video: "/videos/1.mp4",
-    button: { label: "Open Zodl", href: ZODL_URL },
-    links: [
-      { label: "App Store", href: APP_STORE_URL },
-      { label: "Google Play", href: PLAY_STORE_URL },
-    ],
+    button: { label: "Get Zodl", href: ZODL_URL },
   },
   {
     title: "Get testnet ZEC",
     sentence: faucet.sentence,
     video: "/videos/2.mp4",
     button: { label: "Open faucet", href: faucet.url },
-    note: faucet.opens,
   },
   {
     title: "Shield it",
@@ -35,7 +30,6 @@ export const STEPS = [
     title: "Read it back",
     sentence: "Open Activity in Zodl and find the same note.",
     video: "/videos/5.mp4",
-    showNote: true,
   },
   {
     title: "Unshield",

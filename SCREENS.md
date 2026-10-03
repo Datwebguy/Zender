@@ -30,9 +30,14 @@ Video: welcome screen, tap Create New Wallet, wallet ready. Creating a wallet sh
 
 Title: Get a little ZEC
 
-Sentence: Buy a dollar's worth and send it to your transparent address.
+Sentence: Buy about $5 worth and send it to your transparent address.
 
-Buttons: Gemini, Coinbase, Kraken. Names only, no logos. Each opens the exchange's site.
+Buttons: Gemini, Coinbase, Kraken. Names only, no logos. Each opens that exchange's Zcash page:
+- https://www.gemini.com/prices/zcash
+- https://www.coinbase.com/price/zcash
+- https://www.kraken.com/buy/zec
+
+ZEC was about $1,368 on 3 Oct 2026, so 0.001 ZEC is about $1.37. $5 covers the send and the fees.
 
 Video: Receive, copy the transparent address, wait for the balance.
 

@@ -10,9 +10,9 @@ export const MESSAGE = "Zender";
 
 export const ZODL_URL = "https://zodl.com/";
 
-// Exchanges that list ZEC (checked 3 Oct 2026). Plain links, no logos.
+// Each exchange's Zcash page (checked 3 Oct 2026). Plain links, no logos.
 export const EXCHANGES = [
-  { label: "Gemini", href: "https://www.gemini.com/" },
-  { label: "Coinbase", href: "https://www.coinbase.com/" },
-  { label: "Kraken", href: "https://www.kraken.com/" },
+  { label: "Gemini", href: "https://www.gemini.com/prices/zcash" },
+  { label: "Coinbase", href: "https://www.coinbase.com/price/zcash" },
+  { label: "Kraken", href: "https://www.kraken.com/buy/zec" },
 ];

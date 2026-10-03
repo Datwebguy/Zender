@@ -2,16 +2,20 @@
 
 One scrolling page per round. Steps hang on a vertical chain, one open at a time, each with a timer. Public steps are checked on chain, live.
 
-## Look
+## Look: the post office
 
-- Art: our own 3D render (`art/main.jpg` gold, `art/test.jpg` ice blue). A public chain of obsidian blocks with readable data lines; one amber block carries a gold wax seal with a Z. Public chain, one sealed letter. Rendered with three.js, served as a 108 KB JPEG.
-- Logo: a gold wax seal with a Z (`favicon.svg`, also inline in the header).
-- Type: Inter for everything, Newsreader italic for the gold accent line and for letters. Self-hosted in `fonts/`.
-- Black, gold for mainnet, ice blue for testnet.
+Zender is a letter, so the whole site is stationery. Nothing dark, nothing 3D.
+
+- Paper: warm cream with a faint grain, ink-black type, airmail stripes (gold and ink) on the header and footer.
+- Type: Fraunces (editorial serif) for headings and text, Courier Prime (typewriter) for labels, buttons, tickets and receipts, Caveat (handwriting) for anything you write. Self-hosted in `fonts/`.
+- Logo: a perforated postage stamp with a gold face and an ink Z (`favicon.svg`).
+- Stamps: gold "0.0001 ZEC" for mainnet, blue "FREE TEST" for testnet, perforated edges.
+- Postmarks: round blue rubber stamps with wavy cancellation lines. Every finished step gets one.
+- Buttons: ink on paper with a hard offset shadow, like a pressed rubber stamp.
 
 ## Pages
 
-- `/` Home. The render, then "The blockchain is public. Your letter isn't." types out. Two buttons, two round cards (with progress if started), "Same transaction. Two views.", and Write · Seal · Open.
+- `/` Home. An airmail envelope addressed "To: me, one year from now", stamped and postmarked, beside "The blockchain is public. Your letter isn't." (typed, the second line under a gold highlighter). Choose your post (Practice post / Real post), "Same letter. Two views." (your letter on lined paper vs the sealed envelope back with redacted From, To, Amount, Letter), and a post office receipt: postage 0.0001 ZEC, comes back to you, fees, readable by only you, what this site sees.
 - `/testnet` Practice round. Zingo, free test ZEC, testnet.zec.rocks:443.
 - `/mainnet` The real round. Zodl, a dollar or two of real ZEC.
 - Old links (`/1`–`/6`, `/done`, `/t/…`) redirect to the matching round.
@@ -22,13 +26,13 @@ Footer: Built for ZECATHON · Not affiliated with any wallet, exchange or Zcash 
 
 ## A round, top to bottom
 
-1. Stage: the render on top, the copy rising out of its reflection. Live network pill ("Testnet live · block 4,446,087" from `/api/check`), two-line title (second line gold serif italic), one sentence.
-2. The rail, sticky under the header: six linked blocks that turn gold as steps are sealed, n/6 and total time. Tap a block to jump to its step.
-3. Six steps on a vertical chain. Card head: number (✓ when done), title, one-line subtitle, mm:ss timer. The timer starts when a card first opens and stops when it's done. Finishing a card opens the next one.
-4. Step body: one lead sentence, a numbered how-to list, a small note for the usual snag, links, tip boxes, "Watch how" (mainnet clips), then the action.
-5. The letter card: locked until all six are done, then the letter gets its wax seal, stamped with network, block and total time, next to what the whole world sees. Post on X, Share image, Remind me next year. On testnet: Now do it on mainnet.
+1. The tracking slip: title, one sentence, "Post office open · testnet block 4,446,274" (live from `/api/check`), and a ticket with a tracking number (ZND-XXXX-XX, kept in this browser), service, network, wallet, postage, n of 6 postmarked, total time and a barcode.
+2. A sticky strip of six stamps. Each one is cancelled with postmark lines when its step is done. Tap one to jump to its step.
+3. Six steps on a ledger. A finished step's number becomes a round postmark. Card head: number (✓ when done), title, one-line subtitle, mm:ss timer. The timer starts when a card first opens and stops when it's done. Finishing a card opens the next one.
+4. Open step: an index card with a red margin and a strip of tape: one lead sentence, a numbered how-to list, a small note for the usual snag, links, tip boxes, "Watch how" (mainnet clips), then the action.
+5. The last stop: your letter on lined paper next to the back of its envelope. Locked until all six are done; then the wax seal presses down and a postmark lands with the network, block and total time. "Opens 3 October 2027." Post on X, Share image, Remind me next year. On testnet: Now send it for real.
 6. Start this round over · progress saves in this browser.
-7. Stuck? beside a card for the other round. Short answers: can't spend yet, exchange won't take my address, QR won't scan, still watching, is this safe, switching Zingo to testnet.
+7. Stuck at the counter? beside a card for the other round. Short answers: can't spend yet, exchange won't take my address, QR won't scan, still watching, is this safe, switching Zingo to testnet.
 
 ## The six steps
 
@@ -53,7 +57,7 @@ Steps 1, 4 and 5 are confirmed by the visitor: the letter is sealed, so only the
 
 ## Motion
 
-- The render drifts slowly. Home: the two lines type out.
-- Cards rise in as they open. The watching dot pulses.
-- QR materialises. Finish: "hidden" and "sealed" unscramble, then the wax seal stamps the letter.
+- Home: the two lines type out, the stamp drops onto the envelope and the postmark thumps down.
+- Step cards slide in. Each finished step's postmark thumps on. The watching dot pulses.
+- The letter is written in handwriting on lined paper. Finish: the wax seal presses on and the postmark lands.
 - Reduce motion turns all of it off.

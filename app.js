@@ -35,8 +35,15 @@ function externalLink(label, href, className) {
 
 /* Saved progress, per round, in this browser. Never the letter. */
 
+function makeRef() {
+  const a = new Uint8Array(3);
+  crypto.getRandomValues(a);
+  const h = [...a].map((x) => x.toString(16).padStart(2, "0")).join("").toUpperCase();
+  return `ZND-${h.slice(0, 4)}-${h.slice(4)}`;
+}
+
 function fresh() {
-  return { done: Array(6).fill(false), start: Array(6).fill(null), end: Array(6).fill(null), open: 0, seen: null, sealed: false, skipped: [] };
+  return { ref: makeRef(), done: Array(6).fill(false), start: Array(6).fill(null), end: Array(6).fill(null), open: 0, seen: null, sealed: false, skipped: [] };
 }
 function load(n) {
   try {
@@ -106,65 +113,96 @@ function render() {
 function renderHome() {
   document.title = "Zender · A letter to future you, sealed on Zcash";
   const l1 = el("span", { class: "line" });
-  const l2 = el("span", { class: "line serif" });
-  const hero = el("section", { class: "stage home" },
-    el("img", { class: "stage-art", src: "/art/main.jpg", alt: "", "aria-hidden": "true", decoding: "async" }),
-    el("div", { class: "stage-copy" },
-      el("p", { class: "eyebrow" }, el("i", { class: "seal-dot" }), "A letter to future you, sealed on Zcash"),
-      el("h1", {}, l1, l2),
-      el("p", { class: "lede" }, "Write to yourself, one year from now. Send it through Zcash's shielded pool. It sits on a public chain, and only your wallet can open it."),
-      el("div", { class: "cta" },
-        el("a", { href: "/testnet", class: "btn primary lg", "data-nav": true }, "Practice free on testnet"),
-        el("a", { href: "/mainnet", class: "btn ghost lg", "data-nav": true }, "Go straight to mainnet"),
+  const l2 = el("span", { class: "line" }, el("mark", { id: "hl" }));
+  const copy = el("div", { class: "hero-copy" },
+    el("p", { class: "kicker" }, "№ 001 · A letter to future you"),
+    el("h1", {}, l1, l2),
+    el("p", { class: "lede" }, "Write to yourself, one year from now. Post it through Zcash's shielded pool. It sits on a public chain for anyone to see, and only your wallet can open it."),
+    el("div", { class: "cta" },
+      el("a", { href: "/testnet", class: "btn ink", "data-nav": true }, "Practice free", arrow()),
+      el("a", { href: "/mainnet", class: "btn line", "data-nav": true }, "Send it for real"),
+    ),
+    el("p", { class: "hand note-hand" }, "takes about 15 minutes ↗"),
+  );
+  const hero = el("section", { class: "hero" }, el("div", { class: "hero-env" }, envelope({ big: true })), copy);
+
+  const posts = el("section", { class: "posts" },
+    el("h2", { class: "sec" }, "Choose your post"),
+    el("div", { class: "posts-grid" }, postCard("test"), postCard("main")),
+  );
+
+  const views = el("section", { class: "views" },
+    el("h2", { class: "sec" }, "Same letter. Two views."),
+    el("div", { class: "views-grid" },
+      el("figure", {},
+        el("div", { class: "sheet-paper" }, el("p", { class: "hand big" }, "Dear me,"), el("p", { class: "hand" }, "one year from now. Did you keep going? I hope you did. Be kind to yourself."), el("p", { class: "hand sign" }, "– me, today")),
+        el("figcaption", {}, "What your wallet shows you"),
+      ),
+      el("figure", {},
+        el("div", { class: "env-back" },
+          el("span", { class: "flap" }),
+          el("span", { class: "wax" }, el("img", { src: "/favicon.svg", alt: "", width: 34, height: 34 })),
+          el("dl", { class: "redact" },
+            [["From", 7], ["To", 6], ["Amount", 5], ["Letter", 9]].map(([k, n]) => el("div", {}, el("dt", {}, k), el("dd", {}))),
+          ),
+        ),
+        el("figcaption", {}, "What the rest of the world sees"),
       ),
     ),
   );
 
-  const rounds = el("section", { class: "duo" },
-    roundCard("test", "Practice round", "Free test ZEC in Zingo. Make every mistake for nothing.", "About 15 min"),
-    roundCard("main", "The real thing", "A dollar or two of real ZEC in Zodl. It all comes back to you.", "About 20 min"),
-  );
-
-  const sees = el("section", { class: "compare" },
-    el("p", { class: "eyebrow" }, "Why it's different"),
-    el("h2", {}, "Same transaction. Two views."),
-    el("div", { class: "compare-grid" },
-      el("div", { class: "view mine" },
-        el("p", { class: "plabel" }, "Your wallet sees"),
-        el("p", { class: "letter-text" }, "Dear me, one year from now. Did you keep going? I hope you did."),
-        el("p", { class: "meta" }, "0.0001 ZEC · from you · to you"),
-      ),
-      el("div", { class: "view theirs" },
-        el("p", { class: "plabel" }, "The whole world sees"),
-        el("p", { class: "prow" }, el("span", {}, "Sender"), el("b", {}, "hidden")),
-        el("p", { class: "prow" }, el("span", {}, "Receiver"), el("b", {}, "hidden")),
-        el("p", { class: "prow" }, el("span", {}, "Amount"), el("b", {}, "hidden")),
-        el("p", { class: "prow" }, el("span", {}, "Letter"), el("b", {}, "sealed")),
-      ),
+  const receipt = el("section", { class: "receipt-wrap" },
+    el("div", { class: "receipt" },
+      el("p", { class: "r-head" }, "ZENDER POST OFFICE"),
+      el("p", { class: "r-sub" }, "receipt · keep for your records"),
+      receiptRows([
+        ["1 × Letter to future you", "sealed"],
+        ["Postage", "0.0001 ZEC"],
+        ["Postage comes back to", "you"],
+        ["Network fees", "≈ 0.0003 ZEC"],
+        ["Readable by", "only you"],
+        ["Seen by this site", "public t-address"],
+      ]),
+      el("p", { class: "r-total" }, el("span", {}, "TOTAL"), el("span", {}, "a few cents")),
+      el("p", { class: "r-foot" }, "thank you for writing ✉"),
     ),
   );
 
-  const how = el("section", { class: "how3" },
-    [["01", "Write", "A short letter to the person you'll be next year."], ["02", "Seal", "Send it to your own shielded address. The letter rides inside."], ["03", "Open", "Your wallet decrypts it. Nobody else ever can."]].map(([n, t, p]) =>
-      el("div", {}, el("span", { class: "n" }, n), el("h3", {}, t), el("p", {}, p))),
-  );
-
-  main.replaceChildren(hero, rounds, sees, how);
-  typeText(l1, "The blockchain is public.", { delay: 250, speed: 38 });
-  typeText(l2, "Your letter isn't.", { delay: 1350, speed: 48 });
+  main.replaceChildren(hero, posts, views, receipt);
+  typeText(l1, "The blockchain is public.", { delay: 200, speed: 34 });
+  typeText($("hl"), "Your letter isn't.", { delay: 1150, speed: 44 });
+  after(2000, () => hero.classList.add("posted"));
 }
 
-function roundCard(n, title, sub, time) {
+function receiptRows(rows) {
+  return el("dl", { class: "r-rows" }, rows.map(([k, v]) => el("div", {}, el("dt", {}, k), el("dd", {}, v))));
+}
+
+function postCard(n) {
   const r = ROUNDS[n];
   const count = load(n).done.filter(Boolean).length;
-  return el("a", { href: r.path, class: `round ${n}`, "data-nav": true },
-    el("img", { src: r.art, alt: "", "aria-hidden": "true", loading: "lazy", decoding: "async" }),
-    el("span", { class: "round-in" },
-      el("span", { class: "chip" }, el("i", {}), n === "test" ? "Testnet" : "Mainnet"),
-      el("span", { class: "round-title" }, title),
-      el("span", { class: "round-sub" }, sub),
-      el("span", { class: "round-foot" }, el("span", {}, count ? `${count} of 6 sealed` : time), el("span", { class: "go" }, count ? "Continue →" : "Begin →")),
+  const test = n === "test";
+  return el("a", { href: r.path, class: `post ${n}`, "data-nav": true },
+    stamp(test ? "FREE" : "0.0001", test ? "TEST" : "ZEC", n),
+    el("span", { class: "post-kicker" }, test ? "Testnet · Zingo" : "Mainnet · Zodl"),
+    el("span", { class: "post-title" }, test ? "Practice post" : "Real post"),
+    el("span", { class: "post-sub" }, test ? "Free test coins. Make every mistake for nothing." : "A dollar or two of real ZEC. It all comes back to you."),
+    el("span", { class: "post-foot" }, el("span", {}, count ? `${count} of 6 postmarked` : test ? "≈ 15 min" : "≈ 20 min"), el("span", { class: "go" }, count ? "Continue" : test ? "Start practice" : "Start", arrow())),
+  );
+}
+
+// The envelope on the home page. Pure markup; the stamp and postmark are ours.
+function envelope({ big }) {
+  return el("div", { class: `envelope${big ? " big" : ""}` },
+    stamp("0.0001", "ZEC", "main"),
+    postmark({ top: "ZCASH · SHIELDED", mid: ["SEALED", "2026"], bottom: "ONLY YOU READ", cls: "env-pm" }),
+    el("div", { class: "addr" },
+      el("p", { class: "hand" }, "To: me,"),
+      el("p", { class: "hand" }, "one year from now"),
+      el("p", { class: "hand" }, "wherever I am"),
     ),
+    el("p", { class: "from" }, "FROM: ME, TODAY"),
+    el("p", { class: "via" }, "VIA SHIELDED POOL"),
   );
 }
 
@@ -172,43 +210,60 @@ function roundCard(n, title, sub, time) {
 
 function renderRound() {
   const r = ROUNDS[net];
-  document.title = `${net === "test" ? "Testnet" : "Mainnet"} · Zender`;
-  const hero = el("section", { class: "stage" },
-    el("img", { class: "stage-art", src: r.art, alt: "", "aria-hidden": "true", decoding: "async" }),
-    el("div", { class: "stage-copy" },
-      el("p", { class: "eyebrow" }, el("span", { class: "chain", id: "chain" }, el("i", { class: "dot" }), el("span", {}, "Connecting…")), el("span", { class: "sep" }), r.tag),
-      el("h1", {}, el("span", { class: "line" }, r.title[0]), el("span", { class: "line serif" }, r.title[1])),
+  const unit = net === "test" ? "TAZ" : "ZEC";
+  document.title = `${net === "test" ? "Practice post" : "Real post"} · Zender`;
+
+  const ticket = el("aside", { class: "ticket", "aria-label": "Tracking slip" },
+    el("p", { class: "t-head" }, el("span", {}, "TRACKING"), el("b", {}, state.ref)),
+    receiptRows([
+      ["Service", "Shielded, sealed"],
+      ["Network", net === "test" ? "Testnet" : "Mainnet"],
+      ["Wallet", net === "test" ? "Zingo" : "Zodl"],
+      ["Postage", `0.0001 ${unit}`],
+    ]),
+    el("p", { class: "t-status" }, el("span", { id: "count" }), el("span", { id: "total" })),
+    el("div", { class: "barcode", "aria-hidden": "true" }),
+  );
+  const head = el("section", { class: "slip" },
+    el("div", { class: "slip-copy" },
+      el("p", { class: "kicker" }, r.tag),
+      el("h1", {}, r.title),
       el("p", { class: "lede" }, r.sub),
+      el("p", { class: "office", id: "chain" }, el("i", { class: "dot" }), el("span", {}, "Calling the post office…")),
     ),
+    ticket,
   );
 
-  // The rail: six linked blocks that fill as steps are sealed.
-  const rail = el("nav", { class: "rail", "aria-label": "Your progress" },
-    el("ol", { class: "blocks" }, r.steps.map((s, i) => {
-      const b = el("button", { type: "button", class: "blk", id: `blk-${i + 1}`, "aria-label": `Step ${i + 1}: ${s.title}` }, String(i + 1));
+  // A strip of six stamps. Each one gets postmarked when its step is done.
+  const strip = el("nav", { class: "strip", "aria-label": "Your progress" },
+    el("ol", {}, r.steps.map((s, i) => {
+      const b = el("button", { type: "button", class: "mini", id: `blk-${i + 1}`, "aria-label": `Step ${i + 1}: ${s.title}` }, el("span", {}, String(i + 1)));
       b.addEventListener("click", () => openCard(i, true));
       return el("li", {}, b);
     })),
-    el("p", { class: "rail-meta" }, el("b", { id: "count" }), el("span", { id: "total" })),
   );
 
-  const list = el("ol", { class: "steps", id: "cards" });
-  r.steps.forEach((_, i) => list.append(el("li", { class: "step", id: `step-${i + 1}` })));
+  const list = el("ol", { class: "ledger", id: "cards" });
+  r.steps.forEach((_, i) => list.append(el("li", { class: "entry", id: `step-${i + 1}` })));
 
-  const finish = el("section", { class: "letter-card", id: "finish" });
+  const finish = el("section", { class: "finale", id: "finish" });
   const over = el("button", { type: "button", class: "link" }, "Start this round over");
   over.addEventListener("click", startOver);
 
-  const other = el("a", { class: "round slim", href: r.other.href, "data-nav": true },
-    el("img", { src: r.other.href === "/mainnet" ? "/art/main.jpg" : "/art/test.jpg", alt: "", "aria-hidden": "true", loading: "lazy" }),
-    el("span", { class: "round-in" }, el("span", { class: "round-title" }, r.other.title), el("span", { class: "round-sub" }, r.other.text), el("span", { class: "round-foot" }, el("span", {}), el("span", { class: "go" }, `${r.other.label} →`))),
-  );
-  const faq = el("section", { class: "faq" },
-    el("h2", {}, "Stuck?"),
+  const faq = el("section", { class: "desk" },
+    el("h2", { class: "sec" }, "Stuck at the counter?"),
     FAQ.filter((f) => net === "test" || !f.test).map((f) => el("details", {}, el("summary", {}, f.q), el("p", {}, f.a))),
   );
+  const other = el("a", { class: `post ${net === "test" ? "main" : "test"} slim`, href: r.other.href, "data-nav": true },
+    stamp(net === "test" ? "0.0001" : "FREE", net === "test" ? "ZEC" : "TEST", net === "test" ? "main" : "test"),
+    el("span", { class: "post-title" }, r.other.title),
+    el("span", { class: "post-sub" }, r.other.text),
+    el("span", { class: "post-foot" }, el("span", {}), el("span", { class: "go" }, r.other.label, arrow())),
+  );
 
-  main.replaceChildren(hero, el("div", { class: "round-body" }, rail, list, finish, el("p", { class: "center small" }, over, el("span", { class: "saved" }, " · progress saves in this browser")), el("div", { class: "tail" }, faq, other)));
+  main.replaceChildren(head, el("div", { class: `desk-wrap ${net}` }, strip, list, finish,
+    el("p", { class: "center small" }, over, el("span", {}, " · progress saves in this browser")),
+    el("div", { class: "tail" }, faq, other)));
 
   if (state.open >= 0 && !state.done[state.open] && !state.start[state.open]) state.start[state.open] = Date.now();
   save();
@@ -227,14 +282,14 @@ async function liveChain() {
     const h = await tip(n);
     if (n !== net) return;
     height = h;
-    line.className = "chain on";
-    line.lastChild.textContent = `${n === "test" ? "Testnet" : "Mainnet"} live · block ${h.toLocaleString("en-US")}`;
+    line.className = "office on";
+    line.lastChild.textContent = `Post office open · ${n === "test" ? "testnet" : "mainnet"} block ${h.toLocaleString("en-US")}`;
     if (state.open === 0) renderCard(0);
     renderFinish(false);
   } catch {
     if (n !== net) return;
-    line.className = "chain off";
-    line.lastChild.textContent = "Network unreachable, retrying";
+    line.className = "office off";
+    line.lastChild.textContent = "Post office unreachable, will retry";
   }
 }
 
@@ -277,11 +332,10 @@ function tick() {
 
 function renderProgress() {
   const count = state.done.filter(Boolean).length;
-  $("count").textContent = `${count}/6 sealed`;
+  $("count").textContent = count === 6 ? "Delivered" : `${count} of 6 postmarked`;
   for (let i = 0; i < 6; i++) {
     const b = $(`blk-${i + 1}`);
-    b.className = `blk${state.done[i] ? " done" : ""}${state.open === i ? " now" : ""}`;
-    b.replaceChildren(state.done[i] ? checkSvg() : String(i + 1));
+    b.className = `mini${state.done[i] ? " done" : ""}${state.open === i ? " now" : ""}`;
   }
   tick();
 }
@@ -335,16 +389,20 @@ function renderCard(i) {
   if (!card) return;
   const done = state.done[i];
   const open = state.open === i;
-  card.className = `step${done ? " done" : ""}${open ? " open" : ""}`;
-  const head = el("button", { type: "button", class: "step-head", "aria-expanded": String(open), "aria-controls": `body-${i + 1}` },
-    el("span", { class: "node", "aria-hidden": "true" }, done ? checkSvg() : String(i + 1)),
-    el("span", { class: "step-title" }, el("b", {}, step.title), el("small", {}, done ? doneLabel(i) : step.sub)),
+  card.className = `entry${done ? " done" : ""}${open ? " open" : ""}`;
+  const head = el("button", { type: "button", class: "entry-head", "aria-expanded": String(open), "aria-controls": `body-${i + 1}` },
+    done
+      ? el("span", { class: "no pm-no" }, postmark({ top: net === "test" ? "TESTNET" : "MAINNET", mid: ["DONE"], bottom: `STEP ${i + 1}`, cls: "entry-pm", waves: false }))
+      : el("span", { class: "no" }, String(i + 1).padStart(2, "0")),
+    el("span", { class: "entry-title" }, el("b", {}, step.title), el("small", {}, done ? doneLabel(i) : step.sub)),
     el("span", { class: "timer", role: "timer", "aria-label": "Time on this step" }, elapsed(i) == null ? "--:--" : mmss(elapsed(i))),
   );
   head.addEventListener("click", () => (open ? closeCard() : openCard(i, false)));
-  const body = el("div", { class: "step-body", id: `body-${i + 1}`, hidden: !open });
+  const kids = [head];
+  const body = el("div", { class: "card", id: `body-${i + 1}`, hidden: !open });
   if (open) fillBody(body, step, i);
-  card.replaceChildren(head, body);
+  kids.push(body);
+  card.replaceChildren(...kids);
   if (i === 5 && $("blk-1")) renderProgress();
 }
 
@@ -357,7 +415,7 @@ function fillBody(body, step, i) {
   body.append(el("p", { class: "lead" }, rich(step.lead)));
   if (step.list) body.append(el("ol", { class: "how" }, step.list.map((t) => el("li", {}, rich(t)))));
   if (step.note) body.append(el("p", { class: "note" }, rich(step.note)));
-  if (step.links) body.append(el("div", { class: "row" }, step.links.map((l) => externalLink(l.label, l.href, "btn ghost small"))));
+  if (step.links) body.append(el("div", { class: "row" }, step.links.map((l) => externalLink(l.label, l.href, "btn line small"))));
   if (step.more) body.append(el("p", { class: "note" }, step.more));
   if (step.tips) {
     const h = height ? height.toLocaleString("en-US") : "4.4 million";
@@ -369,7 +427,7 @@ function fillBody(body, step, i) {
   if (step.kind === "letter") body.append(letterForm());
   if (step.kind === "verify") body.append(verifyBlock(step, i));
   if (step.kind === "confirm" || step.kind === "letter") {
-    const b = el("button", { type: "button", class: "btn primary" }, state.done[i] ? "Done" : step.confirm);
+    const b = el("button", { type: "button", class: "btn ink" }, state.done[i] ? "Done" : step.confirm);
     b.disabled = state.done[i];
     b.addEventListener("click", () => complete(i));
     body.append(el("div", { class: "row" }, b));
@@ -378,7 +436,7 @@ function fillBody(body, step, i) {
 
 function clip(src) {
   const wrap = el("div", { class: "clip" });
-  const btn = el("button", { type: "button", class: "btn ghost small" }, playSvg(), " Watch how");
+  const btn = el("button", { type: "button", class: "btn line small" }, playSvg(), " Watch how");
   btn.addEventListener("click", () => {
     const video = el("video", { src, playsinline: true, controls: true, preload: "auto" });
     video.muted = true;
@@ -412,7 +470,7 @@ function verifyBlock(step, i) {
     });
     input.value = address;
     const err = el("p", { class: "status bad", "aria-live": "polite" });
-    const go = el("button", { type: "button", class: "btn primary" }, address ? "Watch this address" : "Start watching");
+    const go = el("button", { type: "button", class: "btn ink" }, address ? "Watch this address" : "Start watching");
     const use = () => {
       const v = input.value.trim();
       if (!isPublicAddress(v, net)) {
@@ -536,8 +594,8 @@ function letterForm() {
   });
   field.value = note;
   const counter = el("span", { class: "counter", "aria-live": "polite" });
-  const copy = el("button", { type: "button", class: "btn primary" }, "Copy letter");
-  const toggle = el("button", { type: "button", class: "btn ghost" }, qrOpen ? "Hide QR" : "Show QR");
+  const copy = el("button", { type: "button", class: "btn ink" }, "Copy letter");
+  const toggle = el("button", { type: "button", class: "btn line" }, qrOpen ? "Hide QR" : "Show QR");
   const addr = el("input", {
     type: "text",
     class: "field",
@@ -627,84 +685,115 @@ async function copyText(text) {
   }
 }
 
-/* Finish: the letter itself, sealed. */
+/* Finish: the letter folds into its envelope and gets a wax seal. */
 
 function renderFinish(animate) {
   const box = $("finish");
   const all = state.done.every(Boolean);
   box.classList.toggle("locked", !all);
-  const rows = [["Sender", "hidden"], ["Receiver", "hidden"], ["Amount", "hidden"], ["Letter", "sealed"]].map(([k, v]) => {
-    const b = el("b", {}, all ? v : "······");
-    if (all && animate) scramble(b, v, 300);
-    return el("p", { class: "prow" }, el("span", {}, k), b);
-  });
-  const paper = el("div", { class: "paper" },
-    el("span", { class: "wax", "aria-hidden": "true" }, sealSvg(46)),
-    el("p", { class: "plabel" }, all ? "Sealed" : "Your letter"),
-    el("p", { class: "letter-text" }, all ? note.trim() || "Only you can read what's inside." : "Finish all six steps and your letter gets its seal here."),
-    el("div", { class: "stamp" },
-      el("span", {}, net === "test" ? "Zcash testnet" : "Zcash mainnet"),
-      el("span", {}, (all && state.block) || height ? `block ${((all && state.block) || height).toLocaleString("en-US")}` : "shielded pool"),
-      el("span", {}, all ? mmss(total()) : `${state.done.filter(Boolean).length}/6`),
-    ),
+  const opens = new Date();
+  opens.setFullYear(opens.getFullYear() + 1);
+  const opensText = opens.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  const block = (all && state.block) || height;
+
+  const letter = el("div", { class: "sheet-paper" },
+    el("p", { class: "hand big" }, all ? "Dear me," : "Dear me,"),
+    el("p", { class: "hand" }, all ? note.trim() || "(your letter, safe in your wallet)" : "…finish all six steps and this letter gets sealed."),
   );
-  const world = el("div", { class: "view theirs" }, el("p", { class: "plabel" }, "The whole world sees"), rows);
+  const env = el("div", { class: "env-back" },
+    el("span", { class: "flap" }),
+    el("span", { class: "wax" }, el("img", { src: "/favicon.svg", alt: "", width: 34, height: 34 })),
+    el("dl", { class: "redact" }, [["From", 7], ["To", 6], ["Amount", 5], ["Letter", 9]].map(([k, n]) => el("div", {}, el("dt", {}, k), el("dd", {})))),
+    postmark({ top: net === "test" ? "ZCASH TESTNET" : "ZCASH MAINNET", mid: [block ? `#${block}` : "SEALED", all ? mmss(total()) : `${state.done.filter(Boolean).length}/6`], bottom: all ? `OPENS ${opens.getFullYear()}` : "AWAITING POSTAGE", cls: "fin-pm" }),
+  );
 
   const head = all
     ? net === "test"
-      ? [el("p", { class: "eyebrow" }, "Practice complete"), el("h2", {}, "You've done it once. ", el("span", { class: "serif" }, "Now for real."))]
-      : [el("p", { class: "eyebrow" }, "Sealed for a year"), el("h2", {}, "Only you can open it. ", el("span", { class: "serif" }, "Keep your phrase safe."))]
-    : [el("p", { class: "eyebrow" }, "The finish"), el("h2", {}, "Your sealed letter")];
+      ? [el("p", { class: "kicker" }, "Practice delivered"), el("h2", {}, "You've done it once."), el("p", { class: "lede" }, "That was free test ZEC. Now post the real one.")]
+      : [el("p", { class: "kicker" }, "Sealed for a year"), el("h2", {}, `Opens ${opensText}.`), el("p", { class: "lede" }, "Only you can open it. Keep your recovery phrase and it stays yours.")]
+    : [el("p", { class: "kicker" }, "The last stop"), el("h2", {}, "Your sealed letter"), el("p", { class: "lede" }, "Postmark all six steps and your letter goes into its envelope.")];
 
   const actions = el("div", { class: "actions" });
   if (!all) {
-    actions.append(el("button", { type: "button", class: "btn primary", disabled: true }, "Finish all six steps to seal it"));
+    actions.append(el("button", { type: "button", class: "btn ink", disabled: true }, `${state.done.filter(Boolean).length} of 6 · keep going`));
   } else if (net === "test") {
-    actions.append(el("a", { href: "/mainnet", class: "btn primary", "data-nav": true }, "Now do it on mainnet"));
+    actions.append(el("a", { href: "/mainnet", class: "btn ink", "data-nav": true }, "Now send it for real", arrow()));
   } else {
-    const share = el("button", { type: "button", class: "btn ghost" }, "Share image");
+    const share = el("button", { type: "button", class: "btn line" }, "Share image");
     share.addEventListener("click", async () => {
       if ((await shareImage()) === "saved") {
         share.textContent = "Saved";
         setTimeout(() => (share.textContent = "Share image"), 1600);
       }
     });
-    const remind = el("button", { type: "button", class: "btn ghost" }, "Remind me next year");
+    const remind = el("button", { type: "button", class: "btn line" }, "Remind me next year");
     remind.addEventListener("click", () => {
       saveReminder();
       remind.textContent = "Saved";
       setTimeout(() => (remind.textContent = "Remind me next year"), 1600);
     });
-    actions.append(externalLink("Post on X", postUrl(), "btn primary"), share, remind);
+    actions.append(externalLink("Post on X", postUrl(), "btn ink"), share, remind);
   }
-  box.replaceChildren(el("div", { class: "lc-head" }, head), el("div", { class: "lc-grid" }, paper, world), actions);
-  box.classList.remove("stamped");
+  box.replaceChildren(el("div", { class: "fin-head" }, head), el("div", { class: "fin-stage" }, letter, env), actions);
+  box.classList.remove("sealed-now");
   if (all) {
-    if (animate) after(700, () => box.classList.add("stamped"));
-    else box.classList.add("stamped");
+    if (animate) after(500, () => box.classList.add("sealed-now"));
+    else box.classList.add("sealed-now");
   }
 }
 
-/* Icons */
+/* Stamps, postmarks, icons */
 
 function svgEl(tag, attrs) {
   const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
   for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
   return n;
 }
-function checkSvg() {
+
+function stamp(value, unit, n) {
+  return el("span", { class: `stamp ${n}`, "aria-hidden": "true" },
+    el("span", { class: "stamp-face" }, el("span", { class: "stamp-z" }, "Z"), el("span", { class: "stamp-v" }, value), el("span", { class: "stamp-u" }, unit)),
+  );
+}
+
+let pmId = 0;
+// A round rubber postmark with wavy cancellation lines.
+function postmark({ top, mid, bottom, cls, waves = true }) {
+  const id = `pm${++pmId}`;
+  const svg = svgEl("svg", { viewBox: waves ? "0 0 210 120" : "0 0 120 120", class: `postmark ${cls || ""}`, "aria-hidden": "true" });
+  const defs = svgEl("defs", {});
+  defs.append(svgEl("path", { id: `${id}t`, d: "M 18 60 A 42 42 0 0 1 102 60" }), svgEl("path", { id: `${id}b`, d: "M 13 60 A 47 47 0 0 0 107 60" }));
+  svg.append(defs, svgEl("circle", { cx: 60, cy: 60, r: 55, fill: "none", "stroke-width": 3 }), svgEl("circle", { cx: 60, cy: 60, r: 37, fill: "none", "stroke-width": 1.5 }));
+  const arc = (ref, text, dy) => {
+    const t = svgEl("text", { class: "pm-arc", dy });
+    const tp = svgEl("textPath", { href: `#${ref}`, startOffset: "50%", "text-anchor": "middle" });
+    tp.textContent = text;
+    t.append(tp);
+    return t;
+  };
+  svg.append(arc(`${id}t`, top, 0), arc(`${id}b`, bottom, 8));
+  mid.forEach((line, k) => {
+    const t = svgEl("text", { x: 60, y: mid.length === 1 ? 65 : 56 + k * 16, "text-anchor": "middle", class: k === 0 ? "pm-mid" : "pm-sub" });
+    t.textContent = line;
+    svg.append(t);
+  });
+  for (let k = 0; waves && k < 4; k++) {
+    let d = `M 116 ${36 + k * 15}`;
+    for (let x = 0; x < 6; x++) d += ` q 7.5 ${x % 2 ? 7 : -7} 15 0`;
+    svg.append(svgEl("path", { d, fill: "none", "stroke-width": 2.4, "stroke-linecap": "round" }));
+  }
+  return svg;
+}
+
+function arrow() {
   const s = svgEl("svg", { viewBox: "0 0 24 24", width: 16, height: 16, "aria-hidden": "true" });
-  s.append(svgEl("path", { d: "M5 12.5l4.5 4.5L19 7.5", fill: "none", stroke: "currentColor", "stroke-width": 3, "stroke-linecap": "round", "stroke-linejoin": "round" }));
+  s.append(svgEl("path", { d: "M5 12h13M13 6l6 6-6 6", fill: "none", stroke: "currentColor", "stroke-width": 2.2, "stroke-linecap": "round", "stroke-linejoin": "round" }));
   return s;
 }
 function playSvg() {
   const s = svgEl("svg", { viewBox: "0 0 24 24", width: 14, height: 14, "aria-hidden": "true" });
   s.append(svgEl("path", { d: "M8 5.5v13l11-6.5z", fill: "currentColor" }));
   return s;
-}
-function sealSvg(size) {
-  const img = el("img", { src: "/favicon.svg", width: size, height: size, alt: "" });
-  return img;
 }
 
 /* Wiring */

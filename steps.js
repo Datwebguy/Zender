@@ -5,9 +5,8 @@ import { ZODL_URL, EXCHANGES, MORE_EXCHANGES, OTHER_WALLETS, ZINGO_URL, TESTNET_
 export const ROUNDS = {
   test: {
     path: "/testnet",
-    tag: "Practice round",
-    art: "/art/test.jpg",
-    title: ["Your first sealed letter.", "Practice it free."],
+    tag: "Practice post · Testnet",
+    title: "Your first sealed letter",
     sub: "Six steps on the real Zcash testnet. Your public steps are checked on chain, live.",
     other: { title: "Then do it on mainnet", text: "Same six steps with real ZEC, in Zodl. A dollar or two is plenty.", label: "Go to Mainnet", href: "/mainnet" },
     steps: [
@@ -98,9 +97,8 @@ export const ROUNDS = {
   },
   main: {
     path: "/mainnet",
-    tag: "The real thing",
-    art: "/art/main.jpg",
-    title: ["Seal a letter to future you.", "For real this time."],
+    tag: "Real post · Mainnet",
+    title: "Seal a letter to future you",
     sub: "The same six steps with real ZEC in Zodl. A dollar or two is plenty, and it comes back to you.",
     other: { title: "New to this?", text: "Run the free practice round on testnet first. Same steps, nothing at stake.", label: "Go to Testnet", href: "/testnet" },
     steps: [

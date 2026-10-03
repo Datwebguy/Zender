@@ -925,8 +925,10 @@ function renderFinish(animate) {
   const opensText = opens.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
   const block = (all && state.block) || height;
 
+  // Only add "Dear me," when the letter doesn't already open with a greeting.
+  const greets = all && /^\s*(dear|hi|hey|hello)\b/i.test(note);
   const letter = el("div", { class: "sheet-paper" },
-    el("p", { class: "hand big" }, all ? "Dear me," : "Dear me,"),
+    greets ? null : el("p", { class: "hand big" }, "Dear me,"),
     el("p", { class: "hand" }, all ? note.trim() || "(safe in your wallet)" : "…"),
   );
   const env = el("div", { class: "env-back" },

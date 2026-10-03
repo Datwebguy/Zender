@@ -9,3 +9,10 @@ export const AMOUNT = "0.001";
 export const MESSAGE = "Zender";
 
 export const ZODL_URL = "https://zodl.com/";
+
+// Exchanges that list ZEC (checked 3 Oct 2026). Plain links, no logos.
+export const EXCHANGES = [
+  { label: "Gemini", href: "https://www.gemini.com/" },
+  { label: "Coinbase", href: "https://www.coinbase.com/" },
+  { label: "Kraken", href: "https://www.kraken.com/" },
+];

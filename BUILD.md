@@ -57,7 +57,7 @@ Until a clip exists, the player area stays, with the sentence as the instruction
 - No seed input.
 - No viewing-key input.
 - Note text stays in the browser and in the QR. Do not POST it.
-- External links are only Zodl and the Post on X link, both opened by the visitor.
+- External links are only Zodl, three exchanges on step 2 (Gemini, Coinbase, Kraken, names only, no logos), and the Post on X link, all opened by the visitor.
 - localStorage holds only the step number, to resume. Never the note or the address.
 
 ## Test before tweet

@@ -249,6 +249,8 @@ input[type="text"]:focus, textarea:focus { outline: 2px solid var(--yellow); out
 
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .row .pill { min-height: 42px; padding: 0 8px; font-size: 15px; }
+.row.links { grid-template-columns: repeat(3, 1fr); }
+.row.links .pill { min-height: 46px; }
 
 
 /* Bottom actions */

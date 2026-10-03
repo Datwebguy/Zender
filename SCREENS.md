@@ -30,9 +30,9 @@ Video: welcome screen, tap Create New Wallet, wallet ready. Creating a wallet sh
 
 Title: Get a little ZEC
 
-Sentence: Have it sent to your transparent address. A dollar's worth is plenty.
+Sentence: Buy a dollar's worth and send it to your transparent address.
 
-No button. They get ZEC from an exchange, a friend, or Zodl's own options.
+Buttons: Gemini, Coinbase, Kraken. Names only, no logos. Each opens the exchange's site.
 
 Video: Receive, copy the transparent address, wait for the balance.
 

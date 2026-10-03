@@ -116,10 +116,6 @@ Buttons: Post on X (yellow, full width), then Share image (a card drawn on the p
 - Clip captions type out.
 - Reduce motion turns all of it off.
 
-## Progress
-
-The last step reached is saved on the phone (localStorage, step number only). Opening the site at / resumes there.
-
 ## Footer on every screen
 
 Real ZEC · small amounts · ZECATHON

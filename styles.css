@@ -76,6 +76,8 @@ a { color: inherit; }
   border-radius: 50%;
 }
 .close:hover, .close:focus-visible { color: var(--fg); }
+.close svg { pointer-events: none; }
+.close[hidden] { display: grid !important; visibility: hidden; }
 
 .ticks {
   list-style: none;

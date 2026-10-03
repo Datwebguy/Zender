@@ -31,22 +31,6 @@ function pathFor(n) {
   return n === DONE ? "/done" : `/${n}`;
 }
 
-// Only the step number is remembered, on this phone, so a visitor can come back after waiting for funds.
-function saveProgress(n) {
-  try {
-    localStorage.setItem("zender:step", String(n));
-  } catch {}
-}
-
-function savedProgress() {
-  try {
-    const n = Number(localStorage.getItem("zender:step"));
-    return n >= 1 && n <= DONE ? n : 1;
-  } catch {
-    return 1;
-  }
-}
-
 function go(n) {
   if (n < 1 || n > DONE) return;
   const path = pathFor(n);
@@ -68,11 +52,11 @@ function externalLink(label, href, className) {
 function render() {
   let n = currentStep();
   if (!n) {
-    n = location.pathname === "/" ? savedProgress() : 1;
+    n = 1;
     history.replaceState(null, "", pathFor(n));
   }
-  saveProgress(n);
   document.body.dataset.step = String(n);
+  document.querySelector(".close").hidden = n === 1;
   stopAll();
   enter($("main"), n >= lastStep ? 1 : -1);
   lastStep = n;

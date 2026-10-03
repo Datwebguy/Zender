@@ -28,7 +28,7 @@ export const STEPS = [
   },
   {
     title: "Read it back",
-    sentence: "Open Activity in Zodl and find the same note.",
+    sentence: "Tap the new transaction in Zodl and read your note.",
     video: "/videos/5.mp4",
   },
   {

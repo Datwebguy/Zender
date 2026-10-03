@@ -22,6 +22,8 @@ verify.js           chain checks: address check, rules for steps 2, 3, 6, live b
 api/check.js        the only server code: t1/tm balance and tx count from lightwalletd over gRPC
 package.json        @grpc/grpc-js, @grpc/proto-loader for api/check.js
 styles.css
+art/main.jpg art/test.jpg   the hero renders (three.js, rendered offline)
+fonts/              Inter and Newsreader italic, self-hosted (OFL)
 vendor/qrcode.js    QR encoder, MIT, served from our origin
 videos/1.mp4 ... 6.mp4
 tests/zip321.test.mjs tests/verify.test.mjs

@@ -22,3 +22,6 @@ SOFTWARE.
 
 vendor/qrcode.js is QR Code Generator for JavaScript, Copyright (c) 2009
 Kazuhiko Arase, MIT license.
+
+Fonts in fonts/: Inter (c) The Inter Project Authors and Newsreader (c) Production Type,
+both under the SIL Open Font License 1.1.

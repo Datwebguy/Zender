@@ -30,14 +30,14 @@ Video: welcome screen, tap Create New Wallet, wallet ready. Creating a wallet sh
 
 Title: Get a little ZEC
 
-Sentence: Buy about $5 worth and send it to your transparent address.
+Sentence: Buy a dollar or two and send it to your transparent address.
 
 Buttons: Gemini, Coinbase, Kraken. Names only, no logos. Each opens that exchange's Zcash page:
 - https://www.gemini.com/prices/zcash
 - https://www.coinbase.com/price/zcash
 - https://www.kraken.com/buy/zec
 
-ZEC was about $1,368 on 3 Oct 2026, so 0.001 ZEC is about $1.37. $5 covers the send and the fees.
+ZEC was about $1,368 on 3 Oct 2026. The send is 0.0001 ZEC (about $0.14) and comes back. Fees are about 0.0001 ZEC per transaction (ZIP 317 minimum), so shield, send and unshield cost about $0.40 in all.
 
 Video: Receive, copy the transparent address, wait for the balance.
 
@@ -61,8 +61,8 @@ Controls:
 
 - Address field: Your shielded address (u1…). Empty. The visitor pastes their own Zcash Shielded Address from Zodl Receive. Accept only a mainnet unified address with a valid Bech32m checksum. Reject testnet utest1, transparent t1 and anything else with one short line.
 - Note field. Empty. Max 512 UTF-8 bytes. Show n / 512.
-- Amount fixed at 0.001 ZEC. It goes to their own address. Do not let them edit the fee.
-- QR of the ZIP-321 URI to their own address: amount 0.001, memo the note, message Zender.
+- Amount fixed at 0.0001 ZEC. It goes to their own address. Do not let them edit the fee.
+- QR of the ZIP-321 URI to their own address: amount 0.0001, memo the note, message Zender.
 - Copy link, same URI.
 - Show link, same URI as text.
 - No QR until both the address and the note are valid.

@@ -35,7 +35,7 @@ Source: https://x.com/zksnarks_/status/2104718302606205130
 
 - Mainnet, 3 Oct 2026. Zodl ships only mainnet builds (its testnet app is a source-only build target), so the store app cannot do a testnet run. Zender moved to mainnet with small amounts. The faucet step became "Get a little ZEC".
 - Store links taken from https://zodl.com/ on build day. The App Store listing URL still carries the old Zashi slug.
-- Step 4 asks the visitor for their own Zodl shielded address (`u1…`) and builds the ZIP-321 link to it. They send 0.001 ZEC to themselves and read the note in Zodl. Zender holds no address.
+- Step 4 asks the visitor for their own Zodl shielded address (`u1…`) and builds the ZIP-321 link to it. They send 0.0001 ZEC to themselves and read the note in Zodl. Zender holds no address.
 - `videos/1.mp4` to `videos/6.mp4` are animated guide clips, not Zodl screen recordings. Swap in real recordings with the same names. A missing clip shows "Video coming" with the step sentence.
 
 ## Run locally

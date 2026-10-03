@@ -9,7 +9,7 @@ export const STEPS = [
   },
   {
     title: "Get a little ZEC",
-    sentence: "Buy about $5 worth and send it to your transparent address.",
+    sentence: "Buy a dollar or two and send it to your transparent address.",
     video: "/videos/2.mp4",
     links: EXCHANGES,
   },

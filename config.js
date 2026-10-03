@@ -3,7 +3,7 @@
 
 // Mainnet. Each visitor sends this to their own shielded address, so it comes straight back.
 // No fee field: Zodl applies ZIP 317.
-export const AMOUNT = "0.001";
+export const AMOUNT = "0.0001";
 
 // Display text for the wallet. The note itself always goes in memo.
 export const MESSAGE = "Zender";

@@ -33,7 +33,7 @@ Zodl memo facts from their support page, checked June 2026: memos ride on shield
 - Memo param is base64url, no = padding.
 - Decoded memo must be 512 bytes or less. Shorter memos are padded with zeros to 512 by the protocol.
 - A memo on a transparent address makes the URI invalid.
-- Example shape: zcash:<own-u1-address>?amount=0.001&memo=<base64url>&message=Zender
+- Example shape: zcash:<own-u1-address>?amount=0.0001&memo=<base64url>&message=Zender
 
 Message is display text for the wallet. Memo is the note. Do not put the note only in message.
 

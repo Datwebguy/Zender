@@ -22,7 +22,7 @@ Zender is a letter, so the whole site is stationery. Nothing dark, nothing 3D.
 
 Header on every page: Zender (home), Testnet / Mainnet tabs, ? (Envelopes and postcards: plain words for u1, t1, Shield, Unshield, Letter, Testnet).
 
-Footer: Built for ZECATHON · Not affiliated with any wallet, exchange or Zcash organisation · Open source.
+Footer: Testnet, Mainnet, Share on X, Source. Built for ZECATHON · Not affiliated with any wallet, exchange or Zcash organisation · Open source.
 
 ## A round, top to bottom
 
@@ -30,7 +30,13 @@ Footer: Built for ZECATHON · Not affiliated with any wallet, exchange or Zcash 
 2. A sticky strip of six stamps. Each one is cancelled with postmark lines when its step is done. Tap one to jump to its step.
 3. Six steps on a ledger. A finished step's number becomes a round postmark. Card head: number (✓ when done), title, one-line subtitle, mm:ss timer. The timer starts when a card first opens and stops when it's done. Finishing a card opens the next one.
 4. Open step: an index card with a red margin and a strip of tape: one lead sentence, a numbered how-to list, a small note for the usual snag, links, tip boxes, "Watch how" (mainnet clips), then the action.
-5. The last stop: your letter on lined paper next to the back of its envelope. Locked until all six are done; then the wax seal presses down and a postmark lands with the network, block and total time. "Opens 3 October 2027." Post on X, Share image, Remind me next year. On testnet: Now send it for real.
+5. The last stop: your letter on lined paper next to the back of its envelope. Locked until all six are done; then the wax seal presses down and a postmark lands with the network, block and total time. "Opens 3 October 2027." On testnet: Now send it for real. On mainnet: Remind me next year.
+   - Send a postcard to the timeline (both rounds): a preview of your postcard, the post text, Post on X, Share image, Download card.
+   - The postcard (1200×630, drawn on the phone): "I sealed a letter to future me.", stamp, postmark with network and time, block, steps and time, "To: me, one year from now". Never the letter, never an address.
+   - Post text, mainnet: "I sealed a letter to my future self on Zcash. It sits on a public blockchain, and only I can open it. Opens 3 October 2027. Write yours: tryzender.vercel.app @zksnarks_ #ZECATHON"
+   - Post text, testnet: "I just sent my first shielded Zcash transaction: a letter to my future self, sealed on testnet in 14:52. The real one is next. Try it free: …"
+   - X links can't attach images, so Share image opens the phone's share sheet (pick X) and Download card saves it for a computer.
+   - `og.png` is the same postcard without a block or time, so any post with the link shows it.
 6. Start this round over · progress saves in this browser.
 7. Stuck at the counter? beside a card for the other round. Short answers: can't spend yet, exchange won't take my address, QR won't scan, still watching, is this safe, switching Zingo to testnet.
 

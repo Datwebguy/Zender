@@ -301,6 +301,17 @@ textarea::placeholder { color: #8d97b5; }
 .desk details[open] summary::after { content: "−"; }
 .desk details p { margin: 0 0 16px; color: var(--ink-2); font-size: 16px; }
 
+/* Share: a postcard for the timeline */
+.share { max-width: 900px; margin: 6px auto 26px; padding-top: 24px; border-top: 1.5px dashed var(--rule); text-align: left; }
+.share > .kicker { text-align: center; }
+.share-grid { display: grid; gap: 22px; align-items: center; }
+@media (min-width: 760px) { .share-grid { grid-template-columns: 1.15fr 1fr; } }
+.postcard-wrap { margin: 0; }
+.postcard { width: 100%; height: auto; aspect-ratio: 1200 / 630; border-radius: 6px; background: var(--paper-3); box-shadow: 0 16px 34px -18px rgba(60, 40, 10, 0.55); transform: rotate(-1.2deg); }
+.draft { margin: 6px 0 16px; padding: 14px 16px; border: 1.5px solid var(--ink); border-radius: 10px; background: #fff; font-size: 15.5px; line-height: 1.5; white-space: pre-line; }
+.draft-link { color: var(--blue); }
+.share .row { margin-bottom: 12px; }
+
 /* Footer */
 .foot { margin-top: 80px; background: var(--ink); color: var(--paper); }
 .foot::before { content: ""; display: block; height: 6px; background: repeating-linear-gradient(-45deg, var(--gold) 0 12px, var(--paper) 12px 18px, var(--ink) 18px 30px, var(--paper) 30px 36px); }

@@ -3,7 +3,7 @@ import { ROUNDS, FAQ } from "./steps.js";
 import { CHECKS, check, tip, isPublicAddress, zec } from "./verify.js";
 import { AMOUNT, MESSAGE } from "./config.js";
 import { MAX_MEMO_BYTES, utf8Bytes, buildUri, isUnifiedAddress } from "./zip321.js";
-import { postUrl, shareImage, saveReminder } from "./share.js";
+import { postUrl, postText, drawCard, shareImage, saveReminder } from "./share.js";
 import { typeText, scramble, after, stopAll, calm } from "./motion.js";
 
 const $ = (id) => document.getElementById(id);
@@ -714,33 +714,66 @@ function renderFinish(animate) {
     : [el("p", { class: "kicker" }, "The last stop"), el("h2", {}, "Your sealed letter"), el("p", { class: "lede" }, "Postmark all six steps and your letter goes into its envelope.")];
 
   const actions = el("div", { class: "actions" });
+  let shareBox = null;
   if (!all) {
     actions.append(el("button", { type: "button", class: "btn ink", disabled: true }, `${state.done.filter(Boolean).length} of 6 · keep going`));
-  } else if (net === "test") {
-    actions.append(el("a", { href: "/mainnet", class: "btn ink", "data-nav": true }, "Now send it for real", arrow()));
   } else {
-    const share = el("button", { type: "button", class: "btn line" }, "Share image");
-    share.addEventListener("click", async () => {
-      if ((await shareImage()) === "saved") {
-        share.textContent = "Saved";
-        setTimeout(() => (share.textContent = "Share image"), 1600);
-      }
-    });
-    const remind = el("button", { type: "button", class: "btn line" }, "Remind me next year");
-    remind.addEventListener("click", () => {
-      saveReminder();
-      remind.textContent = "Saved";
-      setTimeout(() => (remind.textContent = "Remind me next year"), 1600);
-    });
-    actions.append(externalLink("Post on X", postUrl(), "btn ink"), share, remind);
+    if (net === "test") actions.append(el("a", { href: "/mainnet", class: "btn ink", "data-nav": true }, "Now send it for real", arrow()));
+    else {
+      const remind = el("button", { type: "button", class: "btn line" }, "Remind me next year");
+      remind.addEventListener("click", () => {
+        saveReminder();
+        remind.textContent = "Saved";
+        setTimeout(() => (remind.textContent = "Remind me next year"), 1600);
+      });
+      actions.append(remind);
+    }
+    shareBox = sharePanel({ net, block, time: mmss(total()), opens: net === "main" ? opensText : "" });
   }
-  box.replaceChildren(el("div", { class: "fin-head" }, head), el("div", { class: "fin-stage" }, letter, env), actions);
+  box.replaceChildren(...[el("div", { class: "fin-head" }, head), el("div", { class: "fin-stage" }, letter, env), shareBox, actions].filter(Boolean));
   box.classList.remove("sealed-now");
   if (all) {
     if (animate) after(500, () => box.classList.add("sealed-now"));
     else box.classList.add("sealed-now");
   }
 }
+
+// Share: a postcard drawn on the phone, a post for X, and the card itself.
+function sharePanel(info) {
+  const preview = el("img", { class: "postcard", alt: "Your Zender postcard: sealed, with your network, block and time. Never your letter.", width: 1200, height: 630 });
+  const canvas = document.createElement("canvas");
+  drawCard(canvas, info).then(() => (preview.src = canvas.toDataURL("image/png")));
+
+  const flash = (btn, text, back) => {
+    btn.textContent = text;
+    setTimeout(() => (btn.textContent = back), 1600);
+  };
+  const share = el("button", { type: "button", class: "btn line" }, "Share image");
+  share.addEventListener("click", async () => {
+    const r = await shareImage(info);
+    if (r === "saved") flash(share, "Saved", "Share image");
+  });
+  const save = el("button", { type: "button", class: "btn line" }, "Download card");
+  save.addEventListener("click", async () => {
+    await shareImage(info, { download: true });
+    flash(save, "Saved", "Download card");
+  });
+  const draft = el("p", { class: "draft" }, postText(info), el("br", {}), el("span", { class: "draft-link" }, "tryzender.vercel.app @zksnarks_ #ZECATHON"));
+
+  return el("section", { class: "share", "aria-label": "Share on X" },
+    el("p", { class: "kicker" }, "Send a postcard to the timeline"),
+    el("div", { class: "share-grid" },
+      el("figure", { class: "postcard-wrap" }, preview),
+      el("div", { class: "share-side" },
+        el("p", { class: "label" }, "Your post"),
+        draft,
+        el("div", { class: "row" }, externalLink("Post on X", postUrl(info), "btn ink"), share, save),
+        el("p", { class: "fine" }, "X links can't carry a picture. On a phone, tap Share image and pick X. On a computer, download the card and add it to your post. Your letter is never in it."),
+      ),
+    ),
+  );
+}
+
 
 /* Stamps, postmarks, icons */
 

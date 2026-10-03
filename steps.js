@@ -17,14 +17,14 @@ export const ROUNDS = {
         list: [
           "Install **Zingo** from its download page.",
           "Already use Zingo? Write down that wallet's seed first: menu → **Options** → **Wallet Seed**. Switching network takes it off the phone.",
-          "Tap the gear → **Server**. Set **Network** to **Testnet**.",
+          "Tap **☰** (top left) → **Options** → the gear **⚙** (top right) → **Server**. Set **Network** to **Testnet**.",
           `Choose **Custom** and enter \`https://${TESTNET_SERVER}\`. Save and accept the warning.`,
           "Tap **Create New Wallet**. Write the 24 words on paper, not a screenshot.",
           "Wait for the first sync.",
         ],
         links: [{ label: "Get Zingo", href: ZINGO_URL }],
         tips: [
-          { title: "Am I on testnet?", text: "Your addresses start with **utest1** and **tm**, not u1 and t1. The block height is near {height}." },
+          { title: "Am I on testnet?", text: "On **Receive**, your address starts with **utest1**, not u1. If it says u1 and shows a dollar price, you are still on mainnet. Testnet is near block {height}." },
           { title: "Back to mainnet later", text: "Gear → **Server** → Network: **Mainnet**. Then restore your real wallet from its seed." },
         ],
         kind: "confirm",
@@ -35,7 +35,7 @@ export const ROUNDS = {
         sub: "A free faucet · lands in your shielded balance",
         lead: "On mainnet you'd buy ZEC on an exchange. Here a free faucet sends you test ZEC, straight into your **shielded** balance.",
         list: [
-          "In Zingo, open **Receive** and copy your **utest1** address (the shielded one).",
+          "In Zingo, tap **Receive** (the download button, bottom right). Under **Shielded Address**, tap the copy icon. It starts with **utest1**.",
           "Open the faucet, paste it, pass the quick check and ask for test ZEC.",
           "Wait for it to show in Zingo. Usually a few minutes.",
         ],
@@ -49,7 +49,7 @@ export const ROUNDS = {
         sub: "Verified live · envelope to postcard",
         lead: "Most exchanges only take **transparent** addresses, so you'll need to leave the envelope sometimes. Practice it: send a little to your own public address.",
         list: [
-          "In Zingo, open **Receive** and copy your **tm** address (the transparent one).",
+          "In Zingo, tap **Receive**, tap **Shielded Address** at the top and switch it to **Transparent**. Copy the address that starts with **tm**.",
           "Paste it below, so this page can watch it.",
           "Tap **Send**, paste the same tm address, send `0.002`.",
         ],

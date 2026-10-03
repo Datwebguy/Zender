@@ -210,7 +210,7 @@ function qrSvg(text) {
   const svg = document.createElementNS(ns, "svg");
   svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
   svg.setAttribute("role", "img");
-  svg.setAttribute("aria-label", "QR code of the ZIP 321 payment request");
+  svg.setAttribute("aria-label", "Payment QR code");
   svg.setAttribute("shape-rendering", "crispEdges");
   const bg = document.createElementNS(ns, "rect");
   bg.setAttribute("width", size);

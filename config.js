@@ -26,7 +26,7 @@ export const FAUCETS = {
   fallback: {
     url: "https://zechub.wiki/tools?tool=faucet",
     sentence: "Request testnet ZEC, then wait until Zodl shows a balance.",
-    opens: "Opens the ZecHub testnet faucet, which requests from fauzec.com.",
+    opens: "Opens the ZecHub testnet faucet.",
   },
 };
 

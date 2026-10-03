@@ -1,5 +1,6 @@
 import qrcode from "./vendor/qrcode.js";
-import { STEPS } from "./steps.js";
+import { STEPS, TEST_STEPS } from "./steps.js";
+import { CHECKS, check, isPublicAddress } from "./verify.js";
 import { AMOUNT, MESSAGE } from "./config.js";
 import { MAX_MEMO_BYTES, utf8Bytes, buildUri, isUnifiedAddress } from "./zip321.js";
 import { postUrl, shareImage, saveReminder } from "./share.js";
@@ -22,17 +23,33 @@ let view = "video";
 let uri = null;
 
 // Steps are 1 to 6; 7 is the finish screen at /done.
+// Testnet practice lives under /t/, mainnet at the root.
 const DONE = 7;
+const ROUTE = /^(\/t)?\/([1-6]|done)\/?$/;
+
+function net() {
+  return location.pathname.startsWith("/t/") || location.pathname === "/" ? "test" : "main";
+}
+
+function steps() {
+  return net() === "test" ? TEST_STEPS : STEPS;
+}
 
 function currentStep() {
-  const m = location.pathname.match(/^\/([1-6]|done)\/?$/);
+  const m = location.pathname.match(ROUTE);
   if (!m) return null;
-  return m[1] === "done" ? DONE : Number(m[1]);
+  return m[2] === "done" ? DONE : Number(m[2]);
 }
 
-function pathFor(n) {
-  return n === DONE ? "/done" : `/${n}`;
+function pathFor(n, network = net()) {
+  const prefix = network === "test" ? "/t" : "";
+  return prefix + (n === DONE ? "/done" : `/${n}`);
 }
+
+// Live chain checks, per network. Only the public transparent address is kept, in memory.
+const proof = { main: { address: "", result: null }, test: { address: "", result: null } };
+let pollTimer = null;
+let checking = false;
 
 function go(n) {
   if (n < 1 || n > DONE) return;
@@ -58,15 +75,23 @@ function render() {
     n = 1;
     history.replaceState(null, "", pathFor(n));
   }
+  const network = net();
   document.body.dataset.step = String(n);
-  document.querySelector(".close").hidden = n === 1;
+  document.body.dataset.net = network;
+  const close = document.querySelector(".close");
+  close.hidden = n === 1;
+  close.href = pathFor(1);
+  $("net").textContent = network === "test" ? "Testnet" : "Mainnet";
+  $("net").setAttribute("aria-label", network === "test" ? "Testnet practice. Switch to mainnet" : "Mainnet. Switch to testnet practice");
+  $("foot").textContent = network === "test" ? "Testnet practice · free test ZEC · ZECATHON" : "Real ZEC · small amounts · ZECATHON";
+  clearTimeout(pollTimer);
   stopAll();
   enter($("main"), n >= lastStep ? 1 : -1);
   lastStep = n;
   if (n === DONE) return renderDone();
   $("sealed").hidden = true;
   $("media").hidden = false;
-  const step = STEPS[n - 1];
+  const step = steps()[n - 1];
 
   document.title = `${step.title} · Zender`;
   $("count").textContent = `Step ${n} of 6`;
@@ -78,10 +103,11 @@ function render() {
     if (i + 1 === n) li.setAttribute("aria-current", "step");
     else li.removeAttribute("aria-current");
   });
+  markVerified();
 
   const back = $("back");
   back.hidden = n === 1;
-  back.href = `/${Math.max(1, n - 1)}`;
+  back.href = pathFor(Math.max(1, n - 1));
 
   const next = $("next");
   next.classList.remove("quiet");
@@ -93,11 +119,73 @@ function render() {
   loadVideo(step);
   renderExtras(step);
   showView();
+  renderVerify(n, step);
 
   $("main").focus({ preventScroll: true });
 }
 
+// Adds a check mark to every step the chain has confirmed on this network.
+function markVerified() {
+  const result = proof[net()].result;
+  [...$("ticks").children].forEach((li, i) => {
+    const c = CHECKS[i + 1];
+    li.classList.toggle("verified", Boolean(result && c && c.ok(result)));
+  });
+}
+
+function renderVerify(n, step) {
+  const chip = $("verify");
+  chip.hidden = !step.verify;
+  if (!step.verify) return;
+  const p = proof[net()];
+  const c = CHECKS[n];
+  chip.classList.remove("ok", "wait");
+  if (p.result && c.ok(p.result)) {
+    chip.textContent = `✓ ${c.done}`;
+    chip.classList.add("ok");
+  } else if (checking) {
+    chip.textContent = "Checking the chain…";
+  } else if (p.result) {
+    chip.textContent = "Not yet · checking again";
+    chip.classList.add("wait");
+  } else {
+    chip.textContent = "Check on chain";
+  }
+}
+
+async function runCheck() {
+  const n = currentStep();
+  const step = n && n < DONE ? steps()[n - 1] : null;
+  if (!step || !step.verify) return;
+  const network = net();
+  const p = proof[network];
+  clearTimeout(pollTimer);
+  checking = true;
+  renderVerify(n, step);
+  try {
+    p.result = await check(p.address, network);
+    $("vmsg").textContent = "";
+  } catch (e) {
+    $("vmsg").textContent = e.message;
+  }
+  checking = false;
+  // The visitor may have moved on while the check ran.
+  if (currentStep() !== n || net() !== network) return;
+  markVerified();
+  renderVerify(n, step);
+  if (p.result && CHECKS[n].ok(p.result)) {
+    $("vsheet").hidden = true;
+    const next = $("next");
+    next.classList.remove("nudge");
+    void next.offsetWidth;
+    next.classList.add("nudge");
+  } else {
+    pollTimer = setTimeout(runCheck, 20000);
+  }
+}
+
 function renderDone() {
+  if (net() === "test") return renderPracticeDone();
   document.title = "Sealed for a year · Zender";
   $("count").textContent = "Finished";
   $("title").textContent = "Sealed for a year.";
@@ -118,11 +206,11 @@ function renderDone() {
 
   const back = $("back");
   back.hidden = false;
-  back.href = "/6";
+  back.href = pathFor(6);
   const next = $("next");
   next.classList.add("quiet");
   next.textContent = "Start over";
-  next.href = "/1";
+  next.href = pathFor(1);
 
   const box = $("extras");
   box.replaceChildren();
@@ -147,10 +235,46 @@ function renderDone() {
   $("main").focus({ preventScroll: true });
 }
 
+// The practice round on testnet: same sealed letter, then the way into the real thing.
+function renderPracticeDone() {
+  document.title = "Practice done · Zender";
+  $("count").textContent = "Practice finished";
+  $("title").textContent = "Practice done.";
+  typeText($("sentence"), "That was free test ZEC. Now do it with real ZEC in Zodl.", { delay: 120 });
+  document.querySelectorAll("#sealed [data-final]").forEach((b, i) => scramble(b, b.dataset.final, 500 + i * 260));
+  $("sealed").classList.remove("stamped");
+  after(1500, () => $("sealed").classList.add("stamped"));
+  [...$("ticks").children].forEach((li) => {
+    li.className = "done";
+    li.removeAttribute("aria-current");
+  });
+  markVerified();
+  $("video").pause();
+  $("media").hidden = true;
+  $("sealed").hidden = false;
+  $("mynote").textContent = note.trim() || "Your practice letter";
+  const back = $("back");
+  back.hidden = false;
+  back.href = pathFor(6);
+  const next = $("next");
+  next.classList.add("quiet");
+  next.textContent = "Start over";
+  next.href = pathFor(1);
+  const box = $("extras");
+  box.replaceChildren(el("a", { href: "/1", class: "pill primary", "data-nav": "" }, "Now do it for real"));
+  $("main").focus({ preventScroll: true });
+}
+
 function loadVideo(step) {
   const video = $("video");
   video.dataset.missing = "";
-  $("coming-text").textContent = step.sentence;
+  $("coming-text").textContent = step.video ? step.sentence : "";
+  $("coming-tag").textContent = step.video ? "Video coming" : "Practice round";
+  if (!step.video) {
+    video.removeAttribute("src");
+    video.dataset.missing = "1";
+    return;
+  }
   video.src = step.video;
   video.load();
   const playing = video.play();
@@ -198,6 +322,12 @@ function renderExtras(step) {
 // Only real problems get a message. An empty field just waits.
 function addressProblem(value) {
   if (!value) return null;
+  if (net() === "test") {
+    if (/^u1/i.test(value)) return "That is a mainnet address. Use your Zingo testnet address.";
+    if (/^t/i.test(value)) return "Use your shielded address, not transparent.";
+    if (!isUnifiedAddress(value, "utest")) return "Use your utest1 address from Zingo.";
+    return "";
+  }
   if (/^utest1/i.test(value)) return "That is a testnet address. Use your Zodl address.";
   if (/^t/i.test(value)) return "Use your shielded address, not transparent.";
   if (!isUnifiedAddress(value)) return "Use your shielded address from Zodl.";
@@ -221,7 +351,9 @@ function noteForm() {
   const counter = el("span", { class: "counter", id: "counter", "aria-live": "polite" });
   noteRow.append(field, counter);
 
-  const how = el("p", { class: "how" }, `In Zodl: Send → your own u1 address → ${AMOUNT} → paste in Message.`);
+  const how = el("p", { class: "how" }, net() === "test"
+    ? `In Zingo: Send → your own utest1 address → ${AMOUNT} → paste in Memo.`
+    : `In Zodl: Send → your own u1 address → ${AMOUNT} → paste in Message.`);
 
   // Second screen only: the address turns the letter into a QR that Zodl's camera can scan.
   const addrField = el("input", {
@@ -232,7 +364,7 @@ function noteForm() {
     autocapitalize: "none",
     autocorrect: "off",
     "aria-label": "Your Zodl shielded address",
-    placeholder: "Your shielded address (u1…)",
+    placeholder: net() === "test" ? "Your shielded address (utest1…)" : "Your shielded address (u1…)",
   });
   addrField.value = address;
   addrField.hidden = !qrMode;
@@ -263,7 +395,7 @@ function noteForm() {
     let message = "";
     if (tooLong) message = "Letter is too long.";
     else if (problem) message = problem;
-    else if (qrMode && problem === "" && note.trim()) uri = buildUri({ address, amount: AMOUNT, memo: note, message: MESSAGE });
+    else if (qrMode && problem === "" && note.trim()) uri = buildUri({ address, amount: AMOUNT, memo: note, message: MESSAGE, hrp: net() === "test" ? "utest" : "u" });
     status.textContent = message;
 
     $("uri").textContent = uri || "";
@@ -348,15 +480,28 @@ function finish() {
   go(1);
 }
 
+// Switches between testnet practice and mainnet, keeping the step.
+function switchNet() {
+  const n = currentStep() || 1;
+  const other = net() === "test" ? "main" : "test";
+  note = "";
+  address = "";
+  qrMode = false;
+  history.pushState(null, "", pathFor(n, other));
+  render();
+}
+
 // Links inside the site move between steps without a page load.
 document.addEventListener("click", (e) => {
   const a = e.target.closest("a[data-nav]");
   if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-  const m = a.getAttribute("href").match(/^\/([1-6]|done)$/);
+  const href = a.getAttribute("href");
+  const m = href.match(ROUTE);
   if (!m) return;
   e.preventDefault();
-  if ((a.id === "next" && a.textContent === "Start over") || a.classList.contains("close")) finish();
-  else go(m[1] === "done" ? DONE : Number(m[1]));
+  if ((a.id === "next" && a.textContent === "Start over") || a.classList.contains("close")) return finish();
+  if (location.pathname !== href) history.pushState(null, "", href);
+  render();
 });
 
 // Tap the right side of the screen for next, the left side for back.
@@ -404,6 +549,32 @@ sheet.addEventListener("click", (e) => {
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") sheet.hidden = true;
 });
+
+// Check on chain: ask once for the public transparent address, then check and keep checking.
+const vsheet = $("vsheet");
+$("verify").addEventListener("click", () => {
+  if (proof[net()].address) return runCheck();
+  const test = net() === "test";
+  $("vwhere").textContent = test ? "In Zingo, open Receive and copy your transparent address (tm…)." : "In Zodl, open Receive and copy your Zcash Transparent Address (t1…).";
+  $("vaddr").placeholder = test ? "tm…" : "t1…";
+  $("vaddr").value = "";
+  $("vmsg").textContent = "";
+  vsheet.hidden = false;
+  $("vaddr").focus();
+});
+$("vgo").addEventListener("click", () => {
+  const value = $("vaddr").value.trim();
+  if (!isPublicAddress(value, net())) {
+    $("vmsg").textContent = net() === "test" ? "That is not a testnet transparent address. It starts with tm." : "That is not a t1 address. Copy the transparent one from Zodl.";
+    return;
+  }
+  proof[net()].address = value;
+  runCheck();
+});
+vsheet.addEventListener("click", (e) => {
+  if (e.target === vsheet || e.target.closest("[data-close]")) vsheet.hidden = true;
+});
+$("net").addEventListener("click", switchNet);
 
 render();
 intro($("intro"), render);

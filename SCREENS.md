@@ -1,5 +1,15 @@
 # Screens
 
+## Two rounds
+
+- Testnet practice at /t/1 to /t/6 and /t/done. Zingo, free test ZEC, testnet.zec.rocks:443. Opening the site at / starts here. Practice done → "Now do it for real" → /1.
+- Mainnet at /1 to /6 and /done. Zodl, real ZEC.
+- A pill next to the wordmark shows Testnet or Mainnet; tap it to switch and keep the step.
+
+## Check on chain
+
+Steps 2, 3 and 6 (both rounds) have a "Check on chain" chip on the video. The first tap asks for the public transparent address (t1 on mainnet, tm on testnet) in a sheet, then Zender's /api/check reads its balance and transaction count from a light server. ✓ ZEC arrived (any history), ✓ Shielded (two or more transactions and empty, or three or more), ✓ Back on postcard (three or more and a balance). Verified steps turn their progress tick green. Not yet: it checks again every 20 seconds while the visitor stays on the step. Steps 4 and 5 are the sealed letter: only the visitor's wallet can prove them.
+
 One route per step: /1 through /6. / redirects to /1. State is the step index in the URL. No account.
 
 Shared chrome:

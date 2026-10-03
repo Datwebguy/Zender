@@ -50,14 +50,15 @@ Static. `vercel.json` holds the rewrites, the redirect from `/` to `/1`, and the
 
 Live: https://tryzender.vercel.app · Track: Wildcard
 
-**What it is.** A letter to your future self, sealed on Zcash. Six one-screen steps take someone with no wallet to their first shielded send in Zodl, with a short guide clip on each: install, get a little ZEC, shield, seal a letter, read it back, unshield. The letter is a shielded memo sent to their own address: it lives on a public blockchain, and only their wallet can open it. The finish screen shows what they see next to what everyone else sees, and offers Post on X, a share card and a one-year calendar reminder.
+**What it is.** A letter to your future self, sealed on Zcash. Practise free on testnet with Zingo (`/t/1`), then do it for real on mainnet with Zodl (`/1`). Public steps are checked live on chain. Six one-screen steps take someone with no wallet to their first shielded send in Zodl, with a short guide clip on each: install, get a little ZEC, shield, seal a letter, read it back, unshield. The letter is a shielded memo sent to their own address: it lives on a public blockchain, and only their wallet can open it. The finish screen shows what they see next to what everyone else sees, and offers Post on X, a share card and a one-year calendar reminder.
 
 **Why it is worth making.** Education and experience in one: people learn the whole shielded flow because they want to send something only their future self can read. "The blockchain is public. Your letter isn't."
 
 **Privacy design.**
 - Zender never holds a key, seed or viewing key, and has no field for one. Zodl does every send.
 - The address and note stay in the page's memory. They go into the QR and the copy link, nowhere else.
-- Nothing is sent anywhere: CSP `connect-src 'none'`, no analytics, no third-party scripts, fonts or media. Clips are served from the same origin.
+- The page talks to one place only, its own `/api/check` (CSP `connect-src 'self'`). No analytics, no third-party scripts, fonts or media. Clips are served from the same origin.
+- "Check on chain" (steps 2, 3, 6) sends only the visitor's public transparent address (t1 or tm), on request. `/api/check` asks a Zcash light server (zec.rocks, the kind of server wallets use) for that address's balance and transaction count and returns just those numbers. It holds no keys, never sees the letter, stores and logs nothing.
 - Nothing is stored on the phone, not even progress.
 - The share card is drawn on the phone and never includes the letter or an address.
 - The reminder is a calendar file made on the phone. It has the date and "Open your Zcash letter", never the letter.

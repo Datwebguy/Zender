@@ -80,6 +80,15 @@ a { color: inherit; }
 .right { display: flex; align-items: center; }
 .cheat { display: grid; place-items: center; width: 44px; height: 44px; margin-left: auto; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
 .cheat:hover, .cheat:focus-visible { color: var(--yellow); }
+.net { margin-left: 10px; padding: 4px 10px; border: 1px solid #52525b; border-radius: 999px; background: none; color: var(--muted); font: 600 12px/1.2 system-ui, sans-serif; letter-spacing: 0.04em; cursor: pointer; }
+body[data-net="test"] .net { border-color: rgba(52, 211, 153, 0.6); color: #34d399; }
+.net:hover, .net:focus-visible { color: var(--fg); }
+.chip.verify { left: 50%; top: 10px; transform: translateX(-50%); width: max-content; max-width: 92%; min-height: 32px; padding: 6px 14px; border-radius: 16px; white-space: nowrap; font-size: 12px; line-height: 1.25; background: rgba(0, 0, 0, 0.78); color: #fff; border: 1px solid #52525b; }
+.chip.verify.ok { border-color: #34d399; color: #34d399; }
+.chip.verify.wait { color: var(--muted); }
+.vtext { margin: 0 0 12px; font-size: 15px; line-height: 1.4; color: #e4e4e7; }
+.vtext.small { margin-top: 12px; font-size: 12px; color: var(--muted); }
+.sheet input[type="text"] { width: 100%; }
 
 /* Cheat sheet */
 .sheet { position: fixed; inset: 0; z-index: 9; display: flex; align-items: flex-end; justify-content: center; background: rgba(0, 0, 0, 0.6); }
@@ -342,6 +351,7 @@ main.enter .media { animation: pop 0.5s 0.1s ease-out both; }
 
 .ticks li { transform-origin: left; }
 .ticks li.current { animation: fill 0.5s ease-out both; }
+.ticks li.verified { background: #34d399; }
 
 .qr:not([hidden]) svg { animation: materialise 0.5s ease-out both; }
 

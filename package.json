@@ -1,0 +1,12 @@
+{
+  "name": "zender",
+  "private": true,
+  "description": "Zender: seal a letter to your future self on Zcash.",
+  "scripts": {
+    "test": "node --test tests/"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.12.0",
+    "@grpc/proto-loader": "^0.7.13"
+  }
+}

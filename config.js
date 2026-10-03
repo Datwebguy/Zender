@@ -22,3 +22,8 @@ export const MORE_EXCHANGES = "Withdraw to your t1. Also OKX, Bybit, Binance, or
 
 // Other Zcash wallets (checked 3 Oct 2026). Named only, no links.
 export const OTHER_WALLETS = "Other Zcash wallets: Vizor, Zafu.";
+
+// Testnet practice round (checked 3 Oct 2026). Zodl has no testnet build, Zingo does.
+export const ZINGO_URL = "https://zingolabs.org/zingo/download/";
+export const TESTNET_SERVER = "testnet.zec.rocks:443";
+export const FAUCET_URL = "https://zechub.wiki/tools?tool=faucet";

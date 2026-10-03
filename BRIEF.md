@@ -10,7 +10,7 @@ Someone who has never used Zcash. They are on a phone. They can install an app. 
 
 ## Network
 
-Mainnet, small amounts. Zodl has no testnet in its store builds. Each visitor needs a dollar or two of ZEC (ZEC was about $1,368 on 3 Oct 2026). The 0.0001 ZEC note goes to their own address, so only fees are spent.
+Testnet practice first (Zingo, free test ZEC, `/t/`), then mainnet with small amounts (Zodl, `/`). Zodl has no testnet in its store builds; Zingo does (Settings → Server → Testnet, testnet.zec.rocks:443). Each visitor needs a dollar or two of ZEC (ZEC was about $1,368 on 3 Oct 2026). The 0.0001 ZEC note goes to their own address, so only fees are spent.
 
 ## Wallet
 

@@ -18,6 +18,9 @@ zip321.js           UTF-8 to base64url memo, u1 check, URI builder
 config.js           amount 0.0001, message, Zodl link
 share.js            share card, Post on X link, reminder file
 motion.js           typing text, step entrances, scramble-to-sealed, opening scene
+verify.js           Check on chain: address check, rules for steps 2, 3, 6
+api/check.js        the only server code: t1/tm balance and tx count from lightwalletd over gRPC
+package.json        @grpc/grpc-js, @grpc/proto-loader for api/check.js
 styles.css
 vendor/qrcode.js    QR encoder, MIT, served from our origin
 videos/1.mp4 ... 6.mp4

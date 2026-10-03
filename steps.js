@@ -20,14 +20,14 @@ export const STEPS = [
     video: "/videos/3.mp4",
   },
   {
-    title: "Send a shielded note",
-    sentence: "Type a note, scan the QR in Zodl, and confirm.",
+    title: "Seal a letter",
+    sentence: "Write to yourself, one year from now. Scan the QR in Zodl and confirm.",
     video: "/videos/4.mp4",
     form: true,
   },
   {
     title: "Read it back",
-    sentence: "Tap the new transaction in Zodl and read your note.",
+    sentence: "Tap the new transaction in Zodl. Your letter is there.",
     video: "/videos/5.mp4",
   },
   {

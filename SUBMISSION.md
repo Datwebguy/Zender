@@ -7,9 +7,11 @@ Post text:
 ```
 @zksnarks_ #ZECATHON Wildcard Track submission
 
-Zender: your first private Zcash payment, on your phone.
+Zender: seal a letter to your future self on Zcash.
 
-Install Zodl, get a little ZEC, shield, send yourself a sealed note, read it back, unshield. One screen and a short video per step.
+The blockchain is public. Your letter isn't.
+
+Install Zodl, get a little ZEC, shield, seal your letter, read it back, unshield. One screen and a short video per step.
 
 No account. No tracking. No keys on the site.
 

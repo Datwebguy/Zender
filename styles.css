@@ -196,6 +196,7 @@ body[data-step="4"] .media video { object-fit: contain; }
 .extras { flex: none; height: 46px; margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
 body[data-step="4"] .extras { height: auto; }
 body[data-step="7"] .stage { align-items: center; }
+body[data-step="7"] .extras { height: auto; }
 
 .pill {
   display: flex;
@@ -249,7 +250,7 @@ input[type="text"]:focus, textarea:focus { outline: 2px solid var(--yellow); out
 
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .row .pill { min-height: 42px; padding: 0 8px; font-size: 15px; }
-.row.links { grid-template-columns: repeat(3, 1fr); }
+.row.links, .row.three { grid-template-columns: repeat(3, 1fr); }
 body[data-step="2"] .extras { height: auto; gap: 6px; }
 .more { margin: 0; text-align: center; color: var(--muted); font-size: 13px; }
 .row.links .pill { min-height: 46px; }

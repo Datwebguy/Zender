@@ -6,7 +6,7 @@ The agent builds this. Do not invent a second product. Do not add a portfolio, l
 
 ## What it is
 
-A six-step site. Each step plays a short guide video, then the visitor does that step in Zodl on mainnet with a small amount of real ZEC. The send step turns their note into a ZIP-321 QR to their own address. They scan it, send, and read the note back in Zodl. The last step is unshield. A finish screen lets them post to X.
+A six-step site. Each step plays a short guide video, then the visitor does that step in Zodl on mainnet with a small amount of real ZEC. Step 4 is the twist: they write a letter to themselves one year from now, and it becomes a ZIP-321 QR to their own address. The letter sits on the public chain, encrypted, and only their wallet can open it. They read it back in Zodl, unshield, and finish with "Sealed for a year": post to X, share a card, or save a calendar reminder for next year.
 
 ## Bounty this must cover
 
@@ -50,16 +50,17 @@ Static. `vercel.json` holds the rewrites, the redirect from `/` to `/1`, and the
 
 Live: https://tryzender.vercel.app · Track: Wildcard
 
-**What it is.** Six one-screen steps that take someone with no wallet to a shielded Zcash send in Zodl, with a short guide clip on each: install, get a little ZEC, shield, send a sealed note, read it back, unshield. The visitor sends the note to their own shielded address, so the "receive" is their own wallet and no one else is involved. A finish screen shows what they see next to what everyone else sees, and lets them post it to X.
+**What it is.** A letter to your future self, sealed on Zcash. Six one-screen steps take someone with no wallet to their first shielded send in Zodl, with a short guide clip on each: install, get a little ZEC, shield, seal a letter, read it back, unshield. The letter is a shielded memo sent to their own address: it lives on a public blockchain, and only their wallet can open it. The finish screen shows what they see next to what everyone else sees, and offers Post on X, a share card and a one-year calendar reminder.
 
-**Why it is worth making.** The first private payment is where most people give up. Zender makes it a tap-through, and ends with something people want to share.
+**Why it is worth making.** Education and experience in one: people learn the whole shielded flow because they want to send something only their future self can read. "The blockchain is public. Your letter isn't."
 
 **Privacy design.**
 - Zender never holds a key, seed or viewing key, and has no field for one. Zodl does every send.
 - The address and note stay in the page's memory. They go into the QR and the copy link, nowhere else.
 - Nothing is sent anywhere: CSP `connect-src 'none'`, no analytics, no third-party scripts, fonts or media. Clips are served from the same origin.
 - The phone remembers only the step number (localStorage), to resume.
-- The share card is drawn on the phone and never includes the note or an address.
+- The share card is drawn on the phone and never includes the letter or an address.
+- The reminder is a calendar file made on the phone. It has the date and "Open your Zcash letter", never the letter.
 
 **How it works.** Step 4 checks the pasted address is a mainnet unified address (Bech32m, hrp `u`), encodes the note as a base64url memo (max 512 UTF-8 bytes), and builds a ZIP 321 URI: `zcash:<u1…>?amount=0.0001&memo=<memo>&message=Zender`. No fee field; Zodl applies ZIP 317. The site cannot see the wallet, so it never claims to detect the send.
 

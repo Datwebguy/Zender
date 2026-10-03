@@ -23,11 +23,11 @@ Do not build a wallet. Do not embed a prover. Zodl does install, shield, send, r
 1. Install Zodl and tap Create New Wallet.
 2. Get a little ZEC sent to their transparent address.
 3. Shield it by sending the transparent balance to their own unified address.
-4. Send a shielded note to themselves. They paste their own shielded address (u1) from Zodl. The site makes a ZIP-321 QR to that address. The memo is the note they typed.
+4. Seal a letter to themselves, one year from now, as a shielded memo. They paste their own shielded address (u1) from Zodl. The site makes a ZIP-321 QR to that address. The memo is the note they typed.
 5. Receive. Open Activity in Zodl and find the same note. The self-send is the receive.
 6. Unshield. Send a little ZEC to their own transparent address.
 
-Then a finish screen: "Sealed.", what they see next to what everyone else sees, Post on X and a share card.
+Then a finish screen: "Sealed for a year.", what they see next to what everyone else sees, Post on X, a share card and a one-year calendar reminder.
 
 ## Visual system
 

@@ -2,7 +2,7 @@ import qrcode from "./vendor/qrcode.js";
 import { STEPS } from "./steps.js";
 import { AMOUNT, MESSAGE } from "./config.js";
 import { MAX_MEMO_BYTES, utf8Bytes, buildUri, isUnifiedAddress } from "./zip321.js";
-import { postUrl, shareImage } from "./share.js";
+import { postUrl, shareImage, saveReminder } from "./share.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -104,10 +104,10 @@ function render() {
 }
 
 function renderDone() {
-  document.title = "Sealed · Zender";
+  document.title = "Sealed for a year · Zender";
   $("count").textContent = "Finished";
-  $("title").textContent = "Sealed.";
-  $("sentence").textContent = "Your note went out and came back. Only you can read it.";
+  $("title").textContent = "Sealed for a year.";
+  $("sentence").textContent = "Only you can open it. Keep your recovery phrase and it stays yours.";
   [...$("ticks").children].forEach((li) => {
     li.className = "done";
     li.removeAttribute("aria-current");
@@ -117,7 +117,7 @@ function renderDone() {
   video.pause();
   $("media").hidden = true;
   $("sealed").hidden = false;
-  $("mynote").textContent = note.trim() || "Your note";
+  $("mynote").textContent = note.trim() || "Your letter";
 
   const back = $("back");
   back.hidden = false;
@@ -132,6 +132,12 @@ function renderDone() {
   const row = el("div", { class: "row" });
   const post = externalLink("Post on X", postUrl(), "pill primary");
   const save = el("button", { type: "button", class: "pill secondary", id: "share-image" }, "Share image");
+  const remind = el("button", { type: "button", class: "pill secondary", id: "remind" }, "Remind me");
+  remind.addEventListener("click", () => {
+    saveReminder();
+    remind.textContent = "Saved";
+    setTimeout(() => (remind.textContent = "Remind me"), 1600);
+  });
   save.addEventListener("click", async () => {
     const result = await shareImage();
     if (result === "saved") {
@@ -139,8 +145,8 @@ function renderDone() {
       setTimeout(() => (save.textContent = "Share image"), 1600);
     }
   });
-  row.append(post, save);
-  box.append(row);
+  row.append(save, remind);
+  box.append(post, row);
   $("main").focus({ preventScroll: true });
 }
 
@@ -226,8 +232,8 @@ function noteForm() {
     spellcheck: "false",
     autocomplete: "off",
     autocapitalize: "sentences",
-    "aria-label": "Your note",
-    placeholder: "Your note",
+    "aria-label": "Your letter to yourself, one year from now",
+    placeholder: "Dear me, one year from now…",
   });
   field.value = note;
   const counter = el("span", { class: "counter", id: "counter", "aria-live": "polite" });
@@ -256,7 +262,7 @@ function noteForm() {
     uri = null;
     let message = "";
     if (problem) message = problem;
-    else if (bytes > MAX_MEMO_BYTES) message = "Note is too long.";
+    else if (bytes > MAX_MEMO_BYTES) message = "Letter is too long.";
     else if (problem === "" && note.trim()) uri = buildUri({ address, amount: AMOUNT, memo: note, message: MESSAGE });
     status.textContent = message;
 

@@ -53,11 +53,13 @@ No QR on this step. They do it inside Zodl.
 
 Video: copy the shielded address, Send, shielded balance afterwards.
 
-## 4. Send a shielded note
+## 4. Seal a letter
 
-Title: Send a shielded note
+Title: Seal a letter
 
-Sentence: Type a note, scan the QR in Zodl, and confirm.
+Sentence: Write to yourself, one year from now. Scan the QR in Zodl and confirm.
+
+Note field placeholder: "Dear me, one year from now…"
 
 Controls:
 
@@ -79,7 +81,7 @@ Video must show: scan QR, confirm send, memo visible on the confirmation screen.
 
 Title: Read it back
 
-Sentence: Open Activity in Zodl and find the same note.
+Sentence: Tap the new transaction in Zodl. Your letter is there.
 
 Next goes to /6.
 
@@ -97,13 +99,13 @@ Video must show: shielded balance, own transparent address, send, transparent ba
 
 ## Finish (/done)
 
-Title: Sealed.
+Title: Sealed for a year.
 
-Sentence: Your note went out and came back. Only you can read it.
+Sentence: Only you can open it. Keep your recovery phrase and it stays yours.
 
-Two panels: "You see" with the note (kept in memory only), and "Everyone else sees": sender hidden, amount hidden, note sealed.
+Two panels: "You see" with the letter (kept in memory only), and "Everyone else sees": sender hidden, amount hidden, letter sealed.
 
-Buttons: Post on X (yellow, opens an X post with the link, @zksnarks_ and #ZECATHON) and Share image (a card drawn on the phone, shared through the phone's share sheet or saved). The card never shows the note or an address. Start over returns to /1.
+Buttons: Post on X (yellow, full width), then Share image (a card drawn on the phone) and Remind me (a calendar file for one year from today, titled "Open your Zcash letter"). The card and the reminder never contain the letter or an address. Start over returns to /1.
 
 ## Progress
 

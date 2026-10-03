@@ -1,7 +1,7 @@
 // Share card and post-to-X link. The card is drawn in the browser; nothing is uploaded.
 
 export const SITE_URL = "https://tryzender.vercel.app";
-export const POST_TEXT = "I just sent myself a shielded Zcash note. Nobody else can read it.\n\nSix steps, one tap each:";
+export const POST_TEXT = "I sealed a letter to my future self on Zcash. It sits on a public blockchain, and only I can read it.\n\nWrite yours:";
 
 export function postUrl() {
   const params = new URLSearchParams({ text: `${POST_TEXT} ${SITE_URL}\n\n@zksnarks_ #ZECATHON` });
@@ -28,7 +28,7 @@ export function drawCard(canvas) {
   c.font = font(700, 34);
   c.fillText("Zender", 72, 92);
 
-  ["Sent.", "Sealed.", "Only I can read it."].forEach((line, i) => {
+  ["Sealed.", "Opens in a year.", "Only I can read it."].forEach((line, i) => {
     c.font = font(800, i === 2 ? 58 : 68);
     c.fillStyle = i === 2 ? "#f4b728" : "#fff";
     c.fillText(line, 72, 250 + i * 84);
@@ -36,7 +36,7 @@ export function drawCard(canvas) {
 
   c.fillStyle = "#a1a1aa";
   c.font = font(500, 28);
-  c.fillText("My first shielded Zcash note, sent to myself.", 72, 520);
+  c.fillText("A letter to my future self, on Zcash.", 72, 520);
 
   // Sealed envelope with a wax seal.
   const x = 780, y = 170, w = 340, h = 230;
@@ -67,7 +67,7 @@ export function drawCard(canvas) {
 
   c.font = font(600, 24);
   c.fillStyle = "#71717a";
-  ["Sender  hidden", "Amount  hidden", "Note  sealed"].forEach((t, i) => c.fillText(t, x + 20, y + h + 52 + i * 34));
+  ["Sender  hidden", "Amount  hidden", "Letter  sealed"].forEach((t, i) => c.fillText(t, x + 20, y + h + 52 + i * 34));
 
   c.fillStyle = "#52525b";
   c.font = font(500, 22);
@@ -111,4 +111,39 @@ export async function shareImage() {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   return "saved";
+}
+
+// A calendar reminder for one year from today. It never contains the letter.
+export function saveReminder() {
+  const now = new Date();
+  const open = new Date(now);
+  open.setFullYear(now.getFullYear() + 1);
+  const end = new Date(open);
+  end.setDate(open.getDate() + 1);
+  const day = (d) => `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  const stamp = now.toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+  const sealed = now.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Zender//Letter//EN",
+    "BEGIN:VEVENT",
+    `UID:${stamp}-${Math.random().toString(36).slice(2)}@zender`,
+    `DTSTAMP:${stamp}`,
+    `DTSTART;VALUE=DATE:${day(open)}`,
+    `DTEND;VALUE=DATE:${day(end)}`,
+    "SUMMARY:Open your Zcash letter",
+    `DESCRIPTION:You sealed a letter to yourself on ${sealed}. Open Zodl and tap that transaction to read it.`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+    "",
+  ].join("\r\n");
+  const blob = new Blob([ics], { type: "text/calendar" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "open-your-zcash-letter.ics";
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }

@@ -14,8 +14,9 @@ Suggested host: any static host. A pages.dev or similar URL is enough for Sunday
 index.html          shell, chrome, video, next, CSP
 app.js              routing /1 to /6, video, step 4 form, QR, copy
 steps.js            the six titles, sentences, video paths, external links
-zip321.js           UTF-8 to base64url memo, utest1 check, URI builder
-config.js           amount 0.001, message, store links, faucets
+zip321.js           UTF-8 to base64url memo, u1 check, URI builder
+config.js           amount 0.001, message, Zodl link
+share.js            share card and Post on X link
 styles.css
 vendor/qrcode.js    QR encoder, MIT, served from our origin
 videos/1.mp4 ... 6.mp4
@@ -28,7 +29,7 @@ config.js holds no address. RECEIVE_ADDRESS stays empty. Never a seed, spending 
 
 ## ZIP-321
 
-The visitor pastes their own testnet unified address. Trim it. Accept only hrp utest with a valid Bech32m checksum. Reject mainnet u1 and everything else.
+The visitor pastes their own shielded address. Trim it. Accept only hrp u (mainnet unified) with a valid Bech32m checksum. Reject utest1, t1 and everything else.
 
 Encode the note as UTF-8. Reject if the byte length is over 512. Base64url without padding. Build:
 
@@ -38,7 +39,7 @@ zcash: + address + ?amount=0.001&memo= + memo + &message=Zender
 
 Render that string as a QR and as a copy button. If Zodl does not scan the QR, the copy link is the fallback. Test both before calling it done.
 
-Amount is 0.001 so a 0.1 TAZ faucet drip can cover it and the fee. Do not set a fee field. Zodl applies ZIP 317.
+Amount is 0.001 ZEC to the visitor's own address, so it comes back; only the fee is spent. Do not set a fee field. Zodl applies ZIP 317.
 
 Tests: node --test tests/*.mjs
 
@@ -46,7 +47,7 @@ Tests: node --test tests/*.mjs
 
 Six clips, one per step. Muted, autoplay, no native controls, because a tap on the screen moves between steps. A Replay button shows when a clip ends. Each clip under about 40 seconds.
 
-The current clips are animated guides (720x1280, H.264), not screen recordings. Replace them with real Zodl testnet recordings when you have them, same file names.
+The current clips are animated guides (720x1280, H.264), not screen recordings. The clips use real Zodl screenshots with tap markers. Replace them with screen recordings when you have them, same file names.
 
 Until a clip exists, the player area stays, with the sentence as the instruction. Do not ship a fake play button that does nothing. Label it "Video coming" only if the file is missing, and replace it before the tweet.
 
@@ -56,15 +57,15 @@ Until a clip exists, the player area stays, with the sentence as the instruction
 - No seed input.
 - No viewing-key input.
 - Note text stays in the browser and in the QR. Do not POST it.
-- External links are only Zodl, the faucet, and the Post on X link, all opened by the visitor.
+- External links are only Zodl and the Post on X link, both opened by the visitor.
 - localStorage holds only the step number, to resume. Never the note or the address.
 
 ## Test before tweet
 
-1. Fresh Zodl testnet wallet.
-2. Faucet drip arrives.
+1. Fresh Zodl wallet.
+2. A little ZEC arrives on the transparent address.
 3. Shield works.
-4. Paste your own utest1 address. QR scan or Copy link pays 0.001 to yourself and the memo matches the typed note.
+4. Paste your own u1 address. QR scan or Copy link pays 0.001 to yourself and the memo matches the typed note.
 5. Activity shows the note on the self-send.
 6. Unshield to the transparent address works.
 7. Page has no third-party requests. Check the network panel.

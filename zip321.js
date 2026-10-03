@@ -61,13 +61,13 @@ export function bech32mHrp(str) {
   return bech32Polymod([...hrpExpand(hrp), ...data]) === BECH32M_CONST ? hrp : null;
 }
 
-// Testnet unified address: hrp "utest", valid Bech32m checksum. Mainnet u1 fails.
-export function isTestnetUnified(address) {
-  return typeof address === "string" && address.length > 60 && bech32mHrp(address) === "utest";
+// Mainnet unified address (Zodl's "Zcash Shielded Address", starts u1): hrp "u", valid Bech32m checksum.
+export function isUnifiedAddress(address) {
+  return typeof address === "string" && address.length > 60 && bech32mHrp(address) === "u";
 }
 
 export function buildUri({ address, amount, memo, message }) {
-  if (!isTestnetUnified(address)) throw new Error("Receive address is not a testnet unified address.");
+  if (!isUnifiedAddress(address)) throw new Error("Address is not a unified address.");
   let uri = `zcash:${address}?amount=${amount}&memo=${encodeMemo(memo)}`;
   if (message) uri += `&message=${encodeURIComponent(message)}`;
   return uri;

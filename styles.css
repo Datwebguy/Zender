@@ -102,7 +102,7 @@ main {
 
 h1 { flex: none; margin: 0; font-size: 26px; line-height: 1.15; letter-spacing: -0.02em; text-align: center; }
 
-.sentence { flex: none; margin: 6px auto 16px; max-width: 30ch; color: #a1a1aa; font-size: 16px; text-align: center; text-wrap: balance; }
+.sentence { flex: none; min-height: 2.8em; margin: 6px auto 16px; max-width: 30ch; color: #a1a1aa; font-size: 16px; text-align: center; text-wrap: balance; }
 
 .stage {
   flex: 1;

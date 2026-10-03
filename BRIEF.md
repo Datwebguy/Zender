@@ -2,7 +2,7 @@
 
 Name: Zender
 
-One line: A six-step site that takes a new person from no wallet to a shielded testnet send, with a guide video on every step.
+One line: A six-step site that takes a new person from no wallet to a shielded Zcash send, with a guide video on every step.
 
 ## User
 
@@ -10,7 +10,7 @@ Someone who has never used Zcash. They are on a phone. They can install an app. 
 
 ## Network
 
-Testnet only. Do not offer mainnet. Testnet ZEC has no market value.
+Mainnet, small amounts. Zodl has no testnet in its store builds. Each visitor needs about a dollar of ZEC. The 0.001 ZEC note goes to their own address, so only fees are spent.
 
 ## Wallet
 
@@ -20,12 +20,14 @@ Do not build a wallet. Do not embed a prover. Zodl does install, shield, send, r
 
 ## The six steps
 
-1. Install Zodl and switch it to testnet.
-2. Get testnet ZEC from a faucet.
+1. Install Zodl and tap Create New Wallet.
+2. Get a little ZEC sent to their transparent address.
 3. Shield it by sending the transparent balance to their own unified address.
-4. Send a shielded note to themselves. They paste their own testnet unified address from Zodl. The site makes a ZIP-321 QR to that address. The memo is the note they typed.
+4. Send a shielded note to themselves. They paste their own shielded address (u1) from Zodl. The site makes a ZIP-321 QR to that address. The memo is the note they typed.
 5. Receive. Open Activity in Zodl and find the same note. The self-send is the receive.
-6. Unshield. Send the testnet ZEC to their own transparent address.
+6. Unshield. Send a little ZEC to their own transparent address.
+
+Then a finish screen: "Sealed.", what they see next to what everyone else sees, Post on X and a share card.
 
 ## Visual system
 
@@ -43,4 +45,4 @@ Reference the organiser poster only for the name ZECATHON in the footer. Do not 
 
 ## Out of scope
 
-Login, admin, music, theme picker, address book, swaps, mainnet, a server that stores notes, a reply bot, analytics.
+Login, admin, music, theme picker, address book, swaps, a network toggle, a server that stores notes, a reply bot, analytics.

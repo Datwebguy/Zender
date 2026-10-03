@@ -1,23 +1,20 @@
-import { ZODL_URL, FAUCETS, ACTIVE_FAUCET } from "./config.js";
-
-const faucet = FAUCETS[ACTIVE_FAUCET];
+import { ZODL_URL } from "./config.js";
 
 export const STEPS = [
   {
     title: "Install Zodl",
-    sentence: "Install the wallet, then switch it to testnet.",
+    sentence: "Install it and tap Create New Wallet. About 10 minutes in all.",
     video: "/videos/1.mp4",
     button: { label: "Get Zodl", href: ZODL_URL },
   },
   {
-    title: "Get testnet ZEC",
-    sentence: faucet.sentence,
+    title: "Get a little ZEC",
+    sentence: "Have it sent to your transparent address. A dollar's worth is plenty.",
     video: "/videos/2.mp4",
-    button: { label: "Open faucet", href: faucet.url },
   },
   {
     title: "Shield it",
-    sentence: "Send the faucet ZEC to your own unified address.",
+    sentence: "Send it to your own shielded address.",
     video: "/videos/3.mp4",
   },
   {
@@ -33,7 +30,7 @@ export const STEPS = [
   },
   {
     title: "Unshield",
-    sentence: "Send the testnet ZEC to your own transparent address.",
+    sentence: "Send a little ZEC to your own transparent address.",
     video: "/videos/6.mp4",
     done: true,
   },

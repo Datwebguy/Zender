@@ -20,43 +20,31 @@ Shared chrome:
 
 Title: Install Zodl
 
-Sentence: Install the wallet, then switch it to testnet.
+Sentence: Install it and tap Create New Wallet. About 10 minutes in all.
 
-Button under the video: Open Zodl. Links to https://zodl.com/
+Button under the video: Get Zodl. Links to https://zodl.com/
 
-Next goes to /2.
+Video: welcome screen, tap Create New Wallet, wallet ready. Creating a wallet shows no phrase; the phrase is exported later from Advanced Settings.
 
-Video must show: store install, open app, settings, testnet on.
+## 2. Get a little ZEC
 
-## 2. Get testnet ZEC
+Title: Get a little ZEC
 
-Title: Get testnet ZEC
+Sentence: Have it sent to your transparent address. A dollar's worth is plenty.
 
-Sentence: Request testnet ZEC, then wait until Zodl shows a balance.
+No button. They get ZEC from an exchange, a friend, or Zodl's own options.
 
-Use "Request 0.1 TAZ" only while the primary faucet is the one the button opens.
-
-Button: Open faucet. Primary faucet: https://zcashfaucet.jinolabs.xyz
-
-Fallback faucet page: https://zechub.wiki/tools?tool=faucet which requests from fauzec.com. Use this only if the primary faucet is down. Say which one the button opens.
-
-Build day, 2 Oct 2026: the primary faucet reset every connection, so the button opens the fallback and the hint under it says so. config.js ACTIVE_FAUCET switches between them.
-
-Next goes to /3.
-
-Video must show: copy a testnet unified address from Zodl, paste it into the faucet, wait for a balance.
+Video: Receive, copy the transparent address, wait for the balance.
 
 ## 3. Shield
 
 Title: Shield it
 
-Sentence: Send the faucet ZEC to your own unified address.
+Sentence: Send it to your own shielded address.
 
 No QR on this step. They do it inside Zodl.
 
-Next goes to /4.
-
-Video must show: transparent balance, own unified address, send, shielded balance afterwards.
+Video: copy the shielded address, Send, shielded balance afterwards.
 
 ## 4. Send a shielded note
 
@@ -66,9 +54,9 @@ Sentence: Type a note, scan the QR in Zodl, and confirm.
 
 Controls:
 
-- Address field: Your testnet unified address. Empty. The visitor pastes their own utest1 address from Zodl Receive. Accept only a testnet unified address with a valid Bech32m checksum. Reject mainnet u1 with a message telling them to switch Zodl to testnet. Reject anything else, including Sapling and transparent addresses.
+- Address field: Your shielded address (u1…). Empty. The visitor pastes their own Zcash Shielded Address from Zodl Receive. Accept only a mainnet unified address with a valid Bech32m checksum. Reject testnet utest1, transparent t1 and anything else with one short line.
 - Note field. Empty. Max 512 UTF-8 bytes. Show n / 512.
-- Amount fixed at 0.001 testnet ZEC. Do not let them edit the fee.
+- Amount fixed at 0.001 ZEC. It goes to their own address. Do not let them edit the fee.
 - QR of the ZIP-321 URI to their own address: amount 0.001, memo the note, message Zender.
 - Copy link, same URI.
 - Show link, same URI as text.
@@ -94,7 +82,7 @@ Video must show: Activity row, memo text matching what was typed.
 
 Title: Unshield
 
-Sentence: Send the testnet ZEC to your own transparent address.
+Sentence: Send a little ZEC to your own transparent address.
 
 Button: Done. Goes to /done.
 
@@ -116,4 +104,4 @@ The last step reached is saved on the phone (localStorage, step number only). Op
 
 ## Footer on every screen
 
-Testnet only. No account. Notes stay in Zodl.
+Real ZEC · small amounts · ZECATHON

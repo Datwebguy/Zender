@@ -7,7 +7,7 @@ import {
   encodeMemo,
   bech32Polymod,
   bech32mHrp,
-  isTestnetUnified,
+  isUnifiedAddress,
   buildUri,
 } from "../zip321.js";
 
@@ -25,7 +25,7 @@ function fakeBech32m(hrp, length) {
   return `${hrp}1${[...data, ...checksum].map((v) => CHARSET[v]).join("")}`;
 }
 
-const TEST_UA = fakeBech32m("utest", 180);
+const TEST_UA = fakeBech32m("u", 180);
 
 test("memo encodes as base64url without padding", () => {
   assert.equal(encodeMemo("Hello from Zender"), "SGVsbG8gZnJvbSBaZW5kZXI");
@@ -53,14 +53,14 @@ test("Bech32m checksum matches BIP 350 vectors", () => {
   assert.equal(bech32mHrp("a12uel5l"), null);
 });
 
-test("only testnet unified addresses pass", () => {
-  assert.ok(isTestnetUnified(TEST_UA));
-  assert.equal(isTestnetUnified(fakeBech32m("u", 180)), false, "mainnet u1");
-  assert.equal(isTestnetUnified(fakeBech32m("ztestsapling", 70)), false, "testnet Sapling");
-  assert.equal(isTestnetUnified("tmEZhbWHTpdKMw5it8YDspUXSMGQyFwovpU"), false, "testnet transparent");
-  assert.equal(isTestnetUnified(TEST_UA.slice(0, -1) + (TEST_UA.endsWith("q") ? "p" : "q")), false, "bad checksum");
-  assert.equal(isTestnetUnified(TEST_UA.toUpperCase()), false, "uppercase");
-  assert.equal(isTestnetUnified(""), false);
+test("only mainnet unified addresses pass", () => {
+  assert.ok(isUnifiedAddress(TEST_UA));
+  assert.equal(isUnifiedAddress(fakeBech32m("utest", 180)), false, "testnet utest1");
+  assert.equal(isUnifiedAddress(fakeBech32m("zs", 70)), false, "Sapling");
+  assert.equal(isUnifiedAddress("t1bsR1XZCkAbcdefghijkLXZqx9e4PW"), false, "transparent");
+  assert.equal(isUnifiedAddress(TEST_UA.slice(0, -1) + (TEST_UA.endsWith("q") ? "p" : "q")), false, "bad checksum");
+  assert.equal(isUnifiedAddress(TEST_UA.toUpperCase()), false, "uppercase");
+  assert.equal(isUnifiedAddress(""), false);
 });
 
 test("URI has address, fixed amount, memo, message", () => {
@@ -77,7 +77,7 @@ test("URI has address, fixed amount, memo, message", () => {
   assert.equal(parsed.searchParams.has("fee"), false);
 });
 
-test("URI refuses a non-testnet address", () => {
-  assert.throws(() => buildUri({ address: fakeBech32m("u", 180), amount: "0.001", memo: "x" }));
+test("URI refuses a non-unified address", () => {
+  assert.throws(() => buildUri({ address: fakeBech32m("utest", 180), amount: "0.001", memo: "x" }));
   assert.throws(() => buildUri({ address: "", amount: "0.001", memo: "x" }));
 });

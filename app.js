@@ -1,7 +1,7 @@
 import qrcode from "./vendor/qrcode.js";
 import { STEPS } from "./steps.js";
 import { AMOUNT, MESSAGE } from "./config.js";
-import { MAX_MEMO_BYTES, utf8Bytes, buildUri, isTestnetUnified } from "./zip321.js";
+import { MAX_MEMO_BYTES, utf8Bytes, buildUri, isUnifiedAddress } from "./zip321.js";
 import { postUrl, shareImage } from "./share.js";
 
 const $ = (id) => document.getElementById(id);
@@ -191,8 +191,9 @@ function renderExtras(step) {
 // Only real problems get a message. An empty field just waits.
 function addressProblem(value) {
   if (!value) return null;
-  if (/^u1/i.test(value)) return "Mainnet address. Switch Zodl to testnet.";
-  if (!isTestnetUnified(value)) return "Use your utest1 address from Zodl.";
+  if (/^utest1/i.test(value)) return "That is a testnet address. Use your Zodl address.";
+  if (/^t/i.test(value)) return "Use your shielded address, not transparent.";
+  if (!isUnifiedAddress(value)) return "Use your shielded address from Zodl.";
   return "";
 }
 
@@ -207,8 +208,8 @@ function noteForm() {
     autocapitalize: "none",
     autocorrect: "off",
     enterkeyhint: "next",
-    "aria-label": "Your testnet unified address",
-    placeholder: "Your utest1 address",
+    "aria-label": "Your Zodl shielded address",
+    placeholder: "Your shielded address (u1…)",
   });
   addrField.value = address;
 

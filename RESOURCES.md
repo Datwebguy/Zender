@@ -1,6 +1,6 @@
 # Resources
 
-Use these. If a link is dead on build day, record that in the README and switch to the listed fallback. Do not invent a faucet.
+Use these. If a link is dead on build day, record that in the README.
 
 ## Bounty
 
@@ -21,13 +21,11 @@ Use these. If a link is dead on build day, record that in the README and switch 
 
 Zodl memo facts from their support page, checked June 2026: memos ride on shielded sends, recipient can read them in Activity, max they document as 512 characters, no memo to a transparent address.
 
-## Faucets
+## Network
 
-- Primary: https://zcashfaucet.jinolabs.xyz
-- Stated drip: 0.1 TAZ per address every 24 hours, shielded z-to-z, browser puzzle instead of a captcha. Confirm the live page before shipping the copy.
-- Code: https://github.com/jinolabs-xyz/zcash-faucet
-- Forum note: https://forum.zcashcommunity.com/t/retroactive-grant-application-self-sovereign-zcash-testnet-faucet/57002
-- Fallback: https://zechub.wiki/tools?tool=faucet which requests from fauzec.com and says it never uses mainnet funds.
+- Zodl store and F-Droid builds are mainnet only. Android releases attach only app-zcashmainnet APKs: https://github.com/zodl-inc/zodl-android/releases
+- Zodl's F-Droid repo lists one app, mainnet: https://foss.zodl.com/
+- The testnet faucets (zcashfaucet.jinolabs.xyz, zechub.wiki faucet) are no longer used.
 
 ## Payment request
 
@@ -35,7 +33,7 @@ Zodl memo facts from their support page, checked June 2026: memos ride on shield
 - Memo param is base64url, no = padding.
 - Decoded memo must be 512 bytes or less. Shorter memos are padded with zeros to 512 by the protocol.
 - A memo on a transparent address makes the URI invalid.
-- Example shape: zcash:<testnet-unified-address>?amount=0.001&memo=<base64url>&message=Zender
+- Example shape: zcash:<own-u1-address>?amount=0.001&memo=<base64url>&message=Zender
 
 Message is display text for the wallet. Memo is the note. Do not put the note only in message.
 
@@ -46,7 +44,7 @@ Message is display text for the wallet. Memo is the note. Do not put the note on
 - ZIPs index: https://zips.z.cash/
 - Fee policy, do not set a custom fee: https://zips.z.cash/zip-0317
 - Lightwalletd: https://github.com/zcash/lightwalletd
-- Public light servers, including testnet.zec.rocks:443: https://github.com/ZecHub/zechub/blob/main/site/Zcash_Tech/Lightwallet_Nodes.md
+- Public light servers: https://github.com/ZecHub/zechub/blob/main/site/Zcash_Tech/Lightwallet_Nodes.md
 
 The site does not talk to lightwalletd. Zodl does.
 

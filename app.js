@@ -988,7 +988,7 @@ function sharePanel(info) {
     await shareImage(info, { download: true });
     flash(save, "Saved", "Download card");
   });
-  const draft = el("p", { class: "draft" }, postText(info), el("br", {}), el("span", { class: "draft-link" }, "tryzender.vercel.app @zksnarks_ #ZECATHON"));
+  const draft = el("p", { class: "draft" }, postText(info), el("br", {}), el("span", { class: "draft-link" }, "tryzender.vercel.app"));
 
   return el("section", { class: "share", "aria-label": "Share on X" },
     el("p", { class: "kicker" }, "Share it"),

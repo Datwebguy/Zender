@@ -10,7 +10,7 @@ export function postText({ net = "main", time = "", opens = "" } = {}) {
 }
 
 export function postUrl(info = {}) {
-  const params = new URLSearchParams({ text: `${postText(info)} ${SITE_URL}\n\n@zksnarks_ #ZECATHON` });
+  const params = new URLSearchParams({ text: `${postText(info)} ${SITE_URL}` });
   return `https://x.com/intent/post?${params}`;
 }
 
@@ -93,7 +93,7 @@ export async function drawCard(canvas, info = {}) {
 
   c.fillStyle = MUTED;
   c.font = type(20);
-  c.fillText("tryzender.vercel.app  ·  #ZECATHON", 70, 572);
+  c.fillText("tryzender.vercel.app", 70, 572);
 
   // Divider like a real postcard.
   c.strokeStyle = "#ddd2bf";
@@ -246,7 +246,7 @@ export async function cardBlob(info) {
 export async function shareImage(info = {}, { download = false } = {}) {
   const blob = await cardBlob(info);
   const file = new File([blob], "zender.png", { type: "image/png" });
-  const text = `${postText(info)} ${SITE_URL}\n\n@zksnarks_ #ZECATHON`;
+  const text = `${postText(info)} ${SITE_URL}`;
   if (!download && navigator.canShare && navigator.canShare({ files: [file] })) {
     try {
       await navigator.share({ files: [file], text });

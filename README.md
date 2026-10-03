@@ -1,59 +1,71 @@
 # Zender
 
-A letter to your future self, sealed on Zcash. Built for the ZECATHON Wildcard onboarding track.
+A letter to your future self, sealed on Zcash.
 
-**Live:** https://tryzender.vercel.app · **Track:** Wildcard · **Deadline:** tweet tagging @zksnarks_ before Sunday 4 Oct 2026
+**Live:** https://tryzender.vercel.app
 
 > The blockchain is public. Your letter isn't.
 
 ## What it is
 
-Two rounds of six steps that take someone with no wallet to their first private Zcash send:
+Zender takes someone with no wallet to their first private Zcash send, in two rounds of six steps:
 
-- **Practice** (`/testnet`): Zingo on testnet with free coins from a one-tap faucet.
-- **Real** (`/mainnet`): Zodl on mainnet with a dollar or two of ZEC.
+- **Practice** (`/testnet`): Zingo on testnet, with free coins from a one-tap faucet.
+- **Real** (`/mainnet`): Zodl on mainnet, with a dollar or two of ZEC.
 
-Along the way they shield, unshield, and send a tiny amount to themselves with a letter inside. The letter sits on a public blockchain, and only their wallet can open it. The finish seals it in an envelope ("Opens 3 October 2027"), with a postcard to share on X and a one-year calendar reminder.
+Along the way you set up a wallet, get ZEC, shield and unshield, and send a tiny amount to yourself with a letter inside. The letter sits on a public blockchain, and only your wallet can open it. At the end it's sealed in an envelope ("Opens 3 October 2027"), with a postcard to share and a one-year calendar reminder.
 
-Bounty topics covered: wallet setup, getting ZEC, shielding and unshielding, sending and receiving.
-Source: https://x.com/zksnarks_/status/2104718302606205130
+## Features
 
-## Read order
+- A post office design (paper, stamps, postmarks, handwriting) in light and dark mode.
+- Each step is timed, and the public steps are watched for you and turn green by themselves.
+- A built-in testnet faucet: one tap sends free test ZEC.
+- Real wallet screenshots and short guide clips.
+- A shareable postcard, drawn on the device.
 
-1. BRIEF.md: the product in one page
-2. SCREENS.md: every page, step and state
-3. BUILD.md: files, server functions, how to run and test
-4. RESOURCES.md: links and facts checked on build day
-5. SUBMISSION.md: the tweet
+## Privacy
 
-## For judges
-
-**Why it's worth making.** People learn the whole private flow because they want to send something only their future self can read. Education and experience in one.
-
-**What makes it work**
-- A post office design: paper, stamps, postmarks, handwriting, in light and dark.
-- Every step is timed, and the public steps are watched for you: they turn green by themselves.
-- A built-in faucet: one tap sends free test ZEC.
-- Real screenshots of Zingo and short guide clips for Zodl.
-- A shareable postcard drawn on the phone.
-
-**Privacy design**
 - Zender never holds a key, seed or viewing key, and has no field for one. The wallet does every send.
-- The letter never leaves the page: no network request, no storage, no share card, no reminder. Spellcheck is off on it.
-- The page only talks to its own two functions (CSP `connect-src 'self'`). No analytics, no third-party scripts, fonts or media.
-- `/api/check` gets only the public address the visitor pastes (t1 or tm) and returns its balance and transaction count from a Zcash light server. It stores and logs nothing.
-- `/api/faucet` (testnet only) passes the visitor's utest1 address to fauzec.com to send test coins. The address is kept in page memory only.
-- Saved in this browser only: which steps are done, their times, the public address, and the theme. Start over clears a round.
-- The share postcard and post show the time and network, never a block number, address or letter, so a post can't be tied to an address.
+- The letter never leaves the page: no network request, no storage, no share card, no reminder.
+- The page only talks to its own two functions. No analytics, no third-party scripts, fonts or media.
+- `/api/check` receives only the public address you paste (t1 or tm) and returns its balance and transaction count from a Zcash light server. It stores and logs nothing.
+- `/api/faucet` (testnet only) passes your utest1 address to fauzec.com to send test coins. The address stays in page memory only.
+- Saved in your browser only: which steps are done, their times, your public address, and your theme. Start over clears a round.
+- The share postcard shows the time and network, never a block number, address or letter.
 
-**How the letter works.** Step "Seal a letter" is a letter box with Copy letter: paste it into the wallet's Message (Zodl) or Memo (Zingo) and send 0.0001 to your own private address. Optional Show QR builds a ZIP 321 URI to the visitor's own unified address: `zcash:<u1…>?amount=0.0001&memo=<base64url>&message=Zender` (max 512 UTF-8 bytes, Bech32m checked, no fee field). Zender can't see a private send, so the visitor confirms that step.
+## How the letter works
 
-## Run locally
+Write it, tap Copy letter, and paste it into your wallet's Message (Zodl) or Memo (Zingo) when you send 0.0001 to your own private address. Optional Show QR builds a ZIP 321 request to your own unified address: `zcash:<u1…>?amount=0.0001&memo=<base64url>&message=Zender` (512 bytes max, checksum verified, no fee field). Zender can't see a private send, so you confirm those steps yourself.
 
-Any static server that serves the repo, rewrites `/testnet` and `/mainnet` to `index.html`, and runs `api/*.js` as Node functions (Vercel does all three). Tests: `npm test`.
+## Project layout
 
-## Deploy
+```
+index.html        page shell, header, footer, plain-words sheet, CSP
+theme.js          light/dark before first paint
+app.js            routes, step cards, timers, watching, faucet, letter, finish, share
+steps.js          both rounds' copy
+verify.js         step checks and the /api/check client
+zip321.js         memo encoding, unified address check, ZIP 321 URI
+share.js          postcard, post text, reminder file
+motion.js         small animations (off with reduced motion)
+config.js         amounts and links
+styles.css        light and dark palettes
+api/check.js      balance and tx count for one public address (lightwalletd, gRPC)
+api/faucet.js     testnet faucet claims via fauzec.com
+api/_guard.js     same-origin and JSON-only request checks
+fonts/ guide/ videos/ vendor/   self-hosted assets
+tests/            unit tests
+```
 
-Vercel. `vercel.json` holds the rewrites, redirects from old links, function limits, and the security headers. Deploy from branch `ccr-e772dae0-12fuwn`.
+## Run and test
 
-Built during the ZECATHON window, Oct 2026. MIT license.
+Deploys on Vercel: `vercel.json` holds the rewrites, redirects, function limits and security headers. Any host that serves the repo, rewrites `/testnet` and `/mainnet` to `index.html`, and runs `api/*.js` as Node functions will work.
+
+```
+npm install
+npm test
+```
+
+## License
+
+MIT. See LICENSE.

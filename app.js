@@ -431,6 +431,10 @@ function fillBody(body, step, i) {
       el("div", { class: "tip" }, el("b", {}, t.title), el("p", {}, rich(t.text.replace("{height}", h)))),
     )));
   }
+  if (step.shots) {
+    body.append(el("div", { class: "shots" }, step.shots.map((p) =>
+      el("figure", {}, el("img", { src: p.src, alt: p.cap, loading: "lazy", width: 360, height: 800 }), el("figcaption", {}, p.cap)))));
+  }
   if (step.video) body.append(clip(step.video));
   if (step.kind === "letter") body.append(letterForm());
   if (step.kind === "verify") body.append(verifyBlock(step, i));

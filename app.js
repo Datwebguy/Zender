@@ -1,12 +1,13 @@
 import qrcode from "./vendor/qrcode.js";
 import { STEPS } from "./steps.js";
-import { RECEIVE_ADDRESS, AMOUNT, MESSAGE } from "./config.js";
+import { AMOUNT, MESSAGE } from "./config.js";
 import { MAX_MEMO_BYTES, utf8Bytes, buildUri, isTestnetUnified } from "./zip321.js";
 
 const $ = (id) => document.getElementById(id);
 
-// The note lives only in this variable. It is never stored or sent.
+// The note and address live only in these variables. They are never stored or sent.
 let note = "";
+let address = "";
 
 function stepFromPath() {
   const m = location.pathname.match(/^\/([1-6])\/?$/);
@@ -116,8 +117,27 @@ function renderExtras(step) {
   }
 }
 
+function addressProblem(value) {
+  if (!value) return "Paste your testnet unified address from Zodl to make the QR.";
+  if (/^u1/i.test(value)) return "That is a mainnet address. Switch Zodl to testnet and copy the address that starts with utest1.";
+  if (!isTestnetUnified(value)) return "That is not a testnet unified address. Copy the address that starts with utest1 from Zodl.";
+  return "";
+}
+
 function noteForm() {
   const wrap = el("div", { class: "send" });
+  const addrLabel = el("label", { for: "address", class: "label" }, "Your testnet unified address");
+  const addrField = el("input", {
+    id: "address",
+    type: "text",
+    spellcheck: "false",
+    autocomplete: "off",
+    autocapitalize: "none",
+    autocorrect: "off",
+    placeholder: "utest1…",
+  });
+  addrField.value = address;
+  const addrHint = el("p", { class: "hint" }, "In Zodl, open Receive and copy your shielded address. You send to yourself.");
   const label = el("label", { for: "note", class: "label" }, "Your note");
   const field = el("textarea", {
     id: "note",
@@ -125,7 +145,7 @@ function noteForm() {
     spellcheck: "false",
     autocomplete: "off",
     autocapitalize: "sentences",
-    placeholder: "Write a note. Only the receiver can read it.",
+    placeholder: "Write a note. Only you will be able to read it.",
   });
   field.value = note;
   const counter = el("p", { class: "counter", id: "counter", "aria-live": "polite" });
@@ -137,10 +157,13 @@ function noteForm() {
   const linkText = el("code", { id: "uri" });
   details.append(el("summary", {}, "Show link"), linkText);
 
-  wrap.append(label, field, counter, amount, qr, copy, status, details);
+  wrap.append(addrLabel, addrField, addrHint, label, field, counter, amount, qr, copy, status, details);
 
   const update = () => {
     note = field.value;
+    address = addrField.value.trim();
+    const problem = addressProblem(address);
+    addrField.classList.toggle("invalid", Boolean(address) && Boolean(problem));
     const bytes = utf8Bytes(note).length;
     counter.textContent = `${bytes} / ${MAX_MEMO_BYTES}`;
     counter.classList.toggle("over", bytes > MAX_MEMO_BYTES);
@@ -148,10 +171,10 @@ function noteForm() {
 
     let uri = null;
     let message = "";
-    if (!isTestnetUnified(RECEIVE_ADDRESS)) message = "Receive address is not set. Add a testnet unified address to config.js.";
+    if (problem) message = problem;
     else if (!note.trim()) message = "Type a note to make the QR.";
     else if (bytes > MAX_MEMO_BYTES) message = `Too long. Cut it to ${MAX_MEMO_BYTES} bytes.`;
-    else uri = buildUri({ address: RECEIVE_ADDRESS, amount: AMOUNT, memo: note, message: MESSAGE });
+    else uri = buildUri({ address, amount: AMOUNT, memo: note, message: MESSAGE });
 
     qr.replaceChildren(uri ? qrSvg(uri) : el("p", { class: "qr-empty" }, message));
     copy.disabled = !uri;
@@ -161,6 +184,7 @@ function noteForm() {
   };
 
   field.addEventListener("input", update);
+  addrField.addEventListener("input", update);
   copy.addEventListener("click", async () => {
     const ok = await copyText(copy.dataset.uri);
     status.textContent = ok ? "Link copied." : "Could not copy. Open Show link and copy it by hand.";

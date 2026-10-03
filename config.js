@@ -1,8 +1,8 @@
 // Zender configuration. Public values only.
 // Never put a seed, spending key, or viewing key in this file.
 
-// Testnet unified address we control. Starts with utest1, never u1.
-// Step 4 shows no QR until this is set to a valid testnet unified address.
+// Not used. In step 4 the visitor pastes their own utest1 address and sends to themselves.
+// Leave empty. Never put a seed, spending key, or viewing key here.
 export const RECEIVE_ADDRESS = "";
 
 // Fixed. A 0.1 TAZ faucet drip covers it and the fee. No fee field: Zodl applies ZIP 317.

@@ -169,7 +169,7 @@ body[data-step="4"] .media {
 
 .send { display: flex; flex-direction: column; gap: 10px; }
 
-textarea {
+textarea, input[type="text"] {
   width: 100%;
   min-height: 96px;
   padding: 12px 14px;
@@ -181,7 +181,9 @@ textarea {
   font-size: 16px;
   resize: vertical;
 }
-textarea:focus { outline: 2px solid var(--yellow); outline-offset: 1px; border-color: transparent; }
+input[type="text"] { min-height: 0; font: 14px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+input[type="text"].invalid { border-color: var(--danger); }
+textarea:focus, input[type="text"]:focus { outline: 2px solid var(--yellow); outline-offset: 1px; border-color: transparent; }
 
 .counter { margin: -4px 0 0; text-align: right; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 .counter.over { color: var(--danger); }

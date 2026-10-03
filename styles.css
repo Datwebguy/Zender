@@ -25,7 +25,7 @@
 }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; scroll-padding-top: 140px; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 160px; }
 body {
   margin: 0; min-height: 100vh; display: flex; flex-direction: column;
   color: var(--ink); font: 400 17px/1.55 var(--serif); font-variation-settings: "opsz" 14, "SOFT" 50;
@@ -199,7 +199,7 @@ figcaption { margin-top: 14px; text-align: center; font: 700 12.5px var(--type);
 
 /* Round: strip of stamps */
 .desk-wrap { max-width: 860px; margin: 0 auto; }
-.strip { position: sticky; top: calc(67px + env(safe-area-inset-top)); z-index: 10; margin: 0 -16px; padding: 10px 16px 14px; background: linear-gradient(var(--paper) 78%, rgba(243, 236, 223, 0)); }
+.strip { position: sticky; top: calc(67px + env(safe-area-inset-top)); z-index: 10; margin: 0 -16px; padding: 10px 16px 12px; background: var(--paper); border-bottom: 1.5px solid var(--rule); }
 .strip ol { display: flex; justify-content: space-between; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .mini { position: relative; display: grid; place-items: center; width: 46px; height: 54px; padding: 3px; border: 0; background: var(--paper-2); cursor: pointer; filter: drop-shadow(1px 2px 1px rgba(60, 40, 10, 0.2));
   -webkit-mask: conic-gradient(#000 0 0) content-box, radial-gradient(circle 2.3px, transparent 96%, #000) -3px -3px / 6px 6px round;
@@ -259,7 +259,8 @@ figcaption { margin-top: 14px; text-align: center; font: 700 12.5px var(--type);
 .watch { margin: 0 0 14px; padding: 16px 18px; border: 2px dashed var(--pm); border-radius: 10px; background: rgba(47, 90, 168, 0.05); }
 .watch b { display: flex; align-items: center; font: 700 15px var(--type); color: var(--pm); }
 .watch p { margin: 6px 0 0; font-size: 15px; color: var(--ink-2); }
-.watch .addr { font: 12.5px var(--type); color: var(--muted); }
+.watch .watch-addr { font: 12.5px var(--type); color: var(--muted); }
+.watch-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 14px; }
 .watch.ok { border-style: solid; border-color: var(--green); background: rgba(47, 125, 79, 0.07); }
 .watch.ok b { color: var(--green); }
 .watch.bad p { color: var(--red); }

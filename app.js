@@ -322,6 +322,9 @@ function total() {
 }
 
 function tick() {
+  document.querySelectorAll(".ago[data-at]").forEach((n) => {
+    if (n.dataset.at) n.textContent = agoText(Number(n.dataset.at));
+  });
   for (let i = 0; i < 6; i++) {
     const t = document.querySelector(`#step-${i + 1} .timer`);
     if (t) t.textContent = elapsed(i) == null ? "--:--" : mmss(elapsed(i));
@@ -500,10 +503,25 @@ function verifyBlock(step, i) {
   if (done) {
     box.append(el("b", {}, `${CHECKS[i + 1].done}. Seen on chain.`));
   } else if (address) {
+    const now = el("button", { type: "button", class: "btn line small" }, "Check now");
+    now.addEventListener("click", async () => {
+      now.disabled = true;
+      now.textContent = "Checking…";
+      await runCheck(i);
+    });
+    const change = el("button", { type: "button", class: "link" }, "Use a different address");
+    change.addEventListener("click", () => {
+      address = "";
+      saveAddress();
+      delete lastCheck[i];
+      clearTimeout(pollTimer);
+      renderCard(i);
+    });
     box.append(
       el("b", {}, el("i", { class: "dot pulse" }), step.watching),
       el("p", {}, s ? s.text : step.watchingSub),
-      el("p", { class: "addr" }, `${address.slice(0, 8)}…${address.slice(-6)}`),
+      el("p", { class: "watch-addr" }, `${address.slice(0, 8)}…${address.slice(-6)} · `, el("span", { class: "ago", "data-at": s ? String(s.at) : "" }, s ? agoText(s.at) : "checking…")),
+      el("div", { class: "watch-row" }, now, change),
     );
   } else {
     box.append(el("b", {}, "Waiting for your address"), el("p", {}, "Paste it above and this page starts watching."));
@@ -540,14 +558,40 @@ async function runCheck(i) {
       complete(i);
       return;
     }
-    const unit = n === "test" ? "TAZ" : "ZEC";
-    lastCheck[i] = { text: `Not yet. ${zec(s.balanceZat)} ${unit} here, ${s.txCount} ${s.txCount === 1 ? "transaction" : "transactions"} so far. Checking again shortly.` };
+    lastCheck[i] = { text: notYet(i, s, n), at: Date.now() };
   } catch (e) {
     if (n !== net) return;
-    lastCheck[i] = { text: e.message || "Couldn't check just now. Trying again shortly.", bad: true };
+    lastCheck[i] = { text: e.message || "Couldn't check just now. Trying again shortly.", bad: true, at: Date.now() };
   }
   if (state.open === i) renderCard(i);
   schedulePoll(POLL_MS);
+}
+
+// Plain words for what the chain shows so far, per step.
+function notYet(i, s, n) {
+  const unit = n === "test" ? "TAZ" : "ZEC";
+  const wallet = n === "test" ? "Zingo" : "Zodl";
+  const amount = `${zec(s.balanceZat)} ${unit}`;
+  if (i === 1) {
+    return s.txCount === 0
+      ? "Nothing has arrived yet. Withdrawals can take a few minutes to leave the exchange, then about a minute for a block."
+      : `Not yet. ${amount} on this address so far.`;
+  }
+  if (i === 2) {
+    return s.balanceZat > 0
+      ? `Your ${amount} is still on this public address. Tap Shield in ${wallet} and confirm. This turns green about a minute after your shield is in a block.`
+      : "Not yet. Waiting for your shield to show up in a block.";
+  }
+  return s.balanceZat > 0
+    ? `Not yet. ${amount} here, but no new send since your shield. Send a little from your shielded balance to this address.`
+    : `Nothing has come back to this address yet. In ${wallet}, send a little from your shielded balance to it. Blocks come about every 75 seconds.`;
+}
+
+function agoText(at) {
+  const sec = Math.max(0, Math.round((Date.now() - at) / 1000));
+  if (sec < 5) return "checked just now";
+  if (sec < 60) return `checked ${sec}s ago`;
+  return `checked ${Math.floor(sec / 60)}m ago`;
 }
 
 // While a verify card is open and the address is known, keep checking quietly.

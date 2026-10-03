@@ -23,8 +23,8 @@ Do not build a wallet. Do not embed a prover. Zodl does install, shield, send, r
 1. Install Zodl and switch it to testnet.
 2. Get testnet ZEC from a faucet.
 3. Shield it by sending the transparent balance to their own unified address.
-4. Send a shielded note. The site makes a ZIP-321 QR. The memo is the note they typed.
-5. Receive. Open Activity in Zodl and find the same note.
+4. Send a shielded note to themselves. They paste their own testnet unified address from Zodl. The site makes a ZIP-321 QR to that address. The memo is the note they typed.
+5. Receive. Open Activity in Zodl and find the same note. The self-send is the receive.
 6. Unshield. Send the testnet ZEC to their own transparent address.
 
 ## Visual system

@@ -29,11 +29,15 @@ Video must show: store install, open app, settings, testnet on.
 
 Title: Get testnet ZEC
 
-Sentence: Request 0.1 TAZ, then wait until Zodl shows a balance.
+Sentence: Request testnet ZEC, then wait until Zodl shows a balance.
+
+Use "Request 0.1 TAZ" only while the primary faucet is the one the button opens.
 
 Button: Open faucet. Primary faucet: https://zcashfaucet.jinolabs.xyz
 
 Fallback faucet page: https://zechub.wiki/tools?tool=faucet which requests from fauzec.com. Use this only if the primary faucet is down. Say which one the button opens.
+
+Build day, 2 Oct 2026: the primary faucet reset every connection, so the button opens the fallback and the hint under it says so. config.js ACTIVE_FAUCET switches between them.
 
 Next goes to /3.
 
@@ -59,12 +63,15 @@ Sentence: Type a note, scan the QR in Zodl, and confirm.
 
 Controls:
 
-- Text field. Empty. Max 512 UTF-8 bytes. Show n / 512.
+- Address field: Your testnet unified address. Empty. The visitor pastes their own utest1 address from Zodl Receive. Accept only a testnet unified address with a valid Bech32m checksum. Reject mainnet u1 with a message telling them to switch Zodl to testnet. Reject anything else, including Sapling and transparent addresses.
+- Note field. Empty. Max 512 UTF-8 bytes. Show n / 512.
 - Amount fixed at 0.001 testnet ZEC. Do not let them edit the fee.
-- QR of the ZIP-321 URI.
+- QR of the ZIP-321 URI to their own address: amount 0.001, memo the note, message Zender.
 - Copy link, same URI.
+- Show link, same URI as text.
+- No QR until both the address and the note are valid.
 
-Receive address is a testnet unified address the builder controls. Put it in config.js. Do not hardcode a mainnet address. Do not commit a seed.
+They send to themselves, then read the note in their own Activity on step 5. The site holds no receive address. RECEIVE_ADDRESS in config.js stays empty. Do not generate a wallet. Do not commit a seed.
 
 Next goes to /5 only as a manual advance. The site cannot see their Zodl, so do not pretend to detect the send.
 

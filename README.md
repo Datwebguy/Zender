@@ -62,7 +62,7 @@ Live: https://tryzender.vercel.app · Track: Wildcard
 - The share card is drawn on the phone and never includes the letter or an address.
 - The reminder is a calendar file made on the phone. It has the date and "Open your Zcash letter", never the letter.
 
-**How it works.** Step 4 checks the pasted address is a mainnet unified address (Bech32m, hrp `u`), encodes the note as a base64url memo (max 512 UTF-8 bytes), and builds a ZIP 321 URI: `zcash:<u1…>?amount=0.0001&memo=<memo>&message=Zender`. No fee field; Zodl applies ZIP 317. The site cannot see the wallet, so it never claims to detect the send.
+**How it works.** Step 4 is a letter box with Copy letter: the visitor pastes it into Zodl's Message field and sends 0.0001 ZEC to their own address. For a second screen, Show QR checks the pasted address is a mainnet unified address (Bech32m, hrp `u`), encodes the note as a base64url memo (max 512 UTF-8 bytes), and builds a ZIP 321 URI: `zcash:<u1…>?amount=0.0001&memo=<memo>&message=Zender`. No fee field; Zodl applies ZIP 317. The site cannot see the wallet, so it never claims to detect the send.
 
 **Run it.** Any static server that rewrites `/1`–`/6` and `/done` to `index.html` (see `vercel.json`). Tests: `node --test tests/*.mjs`.
 

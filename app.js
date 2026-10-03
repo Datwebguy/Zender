@@ -14,6 +14,9 @@ let address = "";
 // Last step shown, to slide the next one in from the right side.
 let lastStep = 0;
 
+// Step 4: whether the visitor asked for a QR to scan from a second screen.
+let qrMode = false;
+
 // What the media area shows: "video", "qr" or "link".
 let view = "video";
 let uri = null;
@@ -164,8 +167,6 @@ function showView() {
   $("linkview").hidden = view !== "link";
   $("replay").hidden = view !== "video" || missing || !video.ended;
 
-  const show = $("show");
-  if (show) show.textContent = view === "link" ? "Hide link" : "Show link";
 
   if (view !== "video") video.pause();
 }
@@ -206,19 +207,6 @@ function addressProblem(value) {
 function noteForm() {
   const wrap = el("div", { class: "send" });
 
-  const addrField = el("input", {
-    id: "address",
-    type: "text",
-    spellcheck: "false",
-    autocomplete: "off",
-    autocapitalize: "none",
-    autocorrect: "off",
-    enterkeyhint: "next",
-    "aria-label": "Your Zodl shielded address",
-    placeholder: "Your shielded address (u1…)",
-  });
-  addrField.value = address;
-
   const noteRow = el("div", { class: "note-row" });
   const field = el("textarea", {
     id: "note",
@@ -233,14 +221,30 @@ function noteForm() {
   const counter = el("span", { class: "counter", id: "counter", "aria-live": "polite" });
   noteRow.append(field, counter);
 
+  const how = el("p", { class: "how" }, `In Zodl: Send → your own u1 address → ${AMOUNT} → paste in Message.`);
+
+  // Second screen only: the address turns the letter into a QR that Zodl's camera can scan.
+  const addrField = el("input", {
+    id: "address",
+    type: "text",
+    spellcheck: "false",
+    autocomplete: "off",
+    autocapitalize: "none",
+    autocorrect: "off",
+    "aria-label": "Your Zodl shielded address",
+    placeholder: "Your shielded address (u1…)",
+  });
+  addrField.value = address;
+  addrField.hidden = !qrMode;
+
   const status = el("p", { class: "hint", id: "status", "aria-live": "polite" });
 
   const buttons = el("div", { class: "row" });
-  const copy = el("button", { type: "button", class: "pill secondary", id: "copy" }, "Copy link");
-  const show = el("button", { type: "button", class: "pill secondary", id: "show" }, "Show link");
+  const copy = el("button", { type: "button", class: "pill primary", id: "copy" }, "Copy letter");
+  const show = el("button", { type: "button", class: "pill secondary", id: "show" }, qrMode ? "Hide QR" : "Show QR");
   buttons.append(copy, show);
 
-  wrap.append(addrField, noteRow, status, buttons);
+  wrap.append(noteRow, how, addrField, status, buttons);
 
   const update = () => {
     note = field.value;
@@ -248,20 +252,20 @@ function noteForm() {
     const bytes = utf8Bytes(note).length;
     counter.textContent = bytes ? `${bytes} / ${MAX_MEMO_BYTES}` : "";
     counter.classList.toggle("over", bytes > MAX_MEMO_BYTES);
+    const tooLong = bytes > MAX_MEMO_BYTES;
+    copy.disabled = !note.trim() || tooLong;
 
-    const problem = addressProblem(address);
+    const problem = qrMode ? addressProblem(address) : null;
     addrField.classList.toggle("invalid", Boolean(problem));
 
     const before = uri;
     uri = null;
     let message = "";
-    if (problem) message = problem;
-    else if (bytes > MAX_MEMO_BYTES) message = "Letter is too long.";
-    else if (problem === "" && note.trim()) uri = buildUri({ address, amount: AMOUNT, memo: note, message: MESSAGE });
+    if (tooLong) message = "Letter is too long.";
+    else if (problem) message = problem;
+    else if (qrMode && problem === "" && note.trim()) uri = buildUri({ address, amount: AMOUNT, memo: note, message: MESSAGE });
     status.textContent = message;
 
-    copy.disabled = !uri;
-    show.disabled = !uri;
     $("uri").textContent = uri || "";
     $("qr").replaceChildren(...(uri ? [qrSvg(uri)] : []));
 
@@ -273,13 +277,16 @@ function noteForm() {
   field.addEventListener("input", update);
   addrField.addEventListener("input", update);
   copy.addEventListener("click", async () => {
-    const ok = await copyText(uri);
+    const ok = await copyText(note);
     copy.textContent = ok ? "Copied" : "Copy failed";
-    setTimeout(() => (copy.textContent = "Copy link"), 1600);
+    setTimeout(() => (copy.textContent = "Copy letter"), 1600);
   });
   show.addEventListener("click", () => {
-    view = view === "link" ? "qr" : "link";
-    showView();
+    qrMode = !qrMode;
+    addrField.hidden = !qrMode;
+    show.textContent = qrMode ? "Hide QR" : "Show QR";
+    if (qrMode) addrField.focus();
+    update();
   });
   queueMicrotask(update);
   return wrap;
@@ -337,6 +344,7 @@ async function copyText(text) {
 function finish() {
   note = "";
   address = "";
+  qrMode = false;
   go(1);
 }
 

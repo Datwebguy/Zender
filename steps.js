@@ -16,12 +16,12 @@ export const STEPS = [
   },
   {
     title: "Shield it",
-    sentence: "Send it to your own shielded address.",
+    sentence: "In Zodl, tap Shield on your transparent balance.",
     video: "/videos/3.mp4",
   },
   {
     title: "Seal a letter",
-    sentence: "Write to yourself, one year from now. Scan the QR in Zodl and confirm.",
+    sentence: "Write to yourself, one year from now. Then send it to yourself in Zodl.",
     video: "/videos/4.mp4",
     form: true,
   },

@@ -18,4 +18,4 @@ export const EXCHANGES = [
 ];
 
 // Also list ZEC (checked 3 Oct 2026). Named only, no links.
-export const MORE_EXCHANGES = "Also on OKX, Bybit and Binance.";
+export const MORE_EXCHANGES = "Also on OKX, Bybit and Binance. Or use Swap in Zodl.";

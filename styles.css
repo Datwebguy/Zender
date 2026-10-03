@@ -249,6 +249,7 @@ input[type="text"]:focus, textarea:focus { outline: 2px solid var(--yellow); out
   pointer-events: none;
 }
 .counter.over { color: var(--danger); }
+.how { margin: 0; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.35; }
 
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .row .pill { min-height: 42px; padding: 0 8px; font-size: 15px; }

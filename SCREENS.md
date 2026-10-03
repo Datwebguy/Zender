@@ -37,7 +37,7 @@ Buttons: Gemini, Coinbase, Kraken. Names only, no logos. Each opens that exchang
 - https://www.coinbase.com/price/zcash
 - https://www.kraken.com/buy/zec
 
-Under them, one line, no links: "Also on OKX, Bybit and Binance."
+Under them, one line, no links: "Also on OKX, Bybit and Binance. Or use Swap in Zodl."
 
 ZEC was about $1,368 on 3 Oct 2026. The send is 0.0001 ZEC (about $0.14) and comes back. Fees are about 0.0001 ZEC per transaction (ZIP 317 minimum), so shield, send and unshield cost about $0.40 in all.
 
@@ -47,31 +47,31 @@ Video: Receive, copy the transparent address, wait for the balance.
 
 Title: Shield it
 
-Sentence: Send it to your own shielded address.
+Sentence: In Zodl, tap Shield on your transparent balance.
 
-No QR on this step. They do it inside Zodl.
+No QR on this step. Zodl has a Shield button for transparent funds: a small fee, one block.
 
-Video: copy the shielded address, Send, shielded balance afterwards.
+Video: ZEC lands transparent, tap Shield, shielded.
 
 ## 4. Seal a letter
 
 Title: Seal a letter
 
-Sentence: Write to yourself, one year from now. Scan the QR in Zodl and confirm.
+Sentence: Write to yourself, one year from now. Then send it to yourself in Zodl.
 
 Note field placeholder: "Dear me, one year from now…"
 
 Controls:
 
-- Address field: Your shielded address (u1…). Empty. The visitor pastes their own Zcash Shielded Address from Zodl Receive. Accept only a mainnet unified address with a valid Bech32m checksum. Reject testnet utest1, transparent t1 and anything else with one short line.
-- Note field. Empty. Max 512 UTF-8 bytes. Show n / 512.
-- Amount fixed at 0.0001 ZEC. It goes to their own address. Do not let them edit the fee.
-- QR of the ZIP-321 URI to their own address: amount 0.0001, memo the note, message Zender.
-- Copy link, same URI.
-- Show link, same URI as text.
-- No QR until both the address and the note are valid.
+- Letter box first. "Dear me, one year from now…", max 512 UTF-8 bytes, n / 512.
+- One line: "In Zodl: Send → your own u1 address → 0.0001 → paste in Message."
+- Copy letter (yellow). Copies the letter for Zodl's Message box. Works on one phone.
+- Show QR (optional, second screen). Reveals "Your shielded address (u1…)"; with a valid u1 address and a letter, the QR of the ZIP-321 URI replaces the video for Zodl's camera to scan. Reject utest1, t1 and anything else.
+- Amount 0.0001 ZEC, to their own address. No fee field.
 
-They send to themselves, then read the note in their own Activity on step 5. The site holds no receive address. RECEIVE_ADDRESS in config.js stays empty. Do not generate a wallet. Do not commit a seed.
+Zodl's Send to box takes a plain address, not a payment link, and its gallery import did not read the QR from a screenshot on build day. One phone cannot scan itself, so Copy letter is the main path.
+
+They send to themselves, then read the letter in their own Zodl on step 5. The site holds no receive address. Do not generate a wallet. Do not commit a seed.
 
 Next goes to /5 only as a manual advance. The site cannot see their Zodl, so do not pretend to detect the send.
 

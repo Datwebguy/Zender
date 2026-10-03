@@ -429,4 +429,4 @@ mark, .stamp-face, .mini.done span, .entry.open .timer, .btn.ink:focus-visible {
 :root[data-theme="dark"] .theme-btn .sun { display: none; }
 :root[data-theme="dark"] .theme-btn .moon { display: block; }
 .link.armed { color: var(--red); }
-:root[data-theme="dark"] mark { background: var(--gold); color: var(--on-gold); padding: 0 0.12em; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+:root[data-theme="dark"] mark { display: inline-block; margin-top: 0.14em; padding: 0.02em 0.12em 0.06em; line-height: 0.92; background: var(--gold); color: var(--on-gold); }

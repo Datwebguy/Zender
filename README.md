@@ -45,3 +45,24 @@ Any static server that rewrites `/1` to `/6` to `index.html`. Unit tests: `node 
 ## Deploy
 
 Static. `vercel.json` holds the rewrites, the redirect from `/` to `/1`, and the CSP header. `_redirects` and `_headers` do the same on Cloudflare Pages or Netlify.
+
+## For judges
+
+Live: https://tryzender.vercel.app · Track: Wildcard
+
+**What it is.** Six one-screen steps that take someone with no wallet to a shielded Zcash send in Zodl, with a short guide clip on each: install, get a little ZEC, shield, send a sealed note, read it back, unshield. The visitor sends the note to their own shielded address, so the "receive" is their own wallet and no one else is involved. A finish screen shows what they see next to what everyone else sees, and lets them post it to X.
+
+**Why it is worth making.** The first private payment is where most people give up. Zender makes it a tap-through, and ends with something people want to share.
+
+**Privacy design.**
+- Zender never holds a key, seed or viewing key, and has no field for one. Zodl does every send.
+- The address and note stay in the page's memory. They go into the QR and the copy link, nowhere else.
+- Nothing is sent anywhere: CSP `connect-src 'none'`, no analytics, no third-party scripts, fonts or media. Clips are served from the same origin.
+- The phone remembers only the step number (localStorage), to resume.
+- The share card is drawn on the phone and never includes the note or an address.
+
+**How it works.** Step 4 checks the pasted address is a mainnet unified address (Bech32m, hrp `u`), encodes the note as a base64url memo (max 512 UTF-8 bytes), and builds a ZIP 321 URI: `zcash:<u1…>?amount=0.0001&memo=<memo>&message=Zender`. No fee field; Zodl applies ZIP 317. The site cannot see the wallet, so it never claims to detect the send.
+
+**Run it.** Any static server that rewrites `/1`–`/6` and `/done` to `index.html` (see `vercel.json`). Tests: `node --test tests/*.mjs`.
+
+**Built** during the ZECATHON window, Oct 2026. MIT license.

@@ -45,16 +45,21 @@ function makeRef() {
 function fresh() {
   return { ref: makeRef(), done: Array(6).fill(false), start: Array(6).fill(null), end: Array(6).fill(null), open: 0, seen: null, sealed: false, skipped: [] };
 }
+// Testnet steps were reordered for the shielded-only faucet, so its saved progress starts fresh.
+function storeKey(n) {
+  return n === "test" ? "zender:test:v2" : `zender:${n}`;
+}
+
 function load(n) {
   try {
-    const s = JSON.parse(localStorage.getItem(`zender:${n}`));
+    const s = JSON.parse(localStorage.getItem(storeKey(n)));
     if (s && Array.isArray(s.done) && s.done.length === 6) return { ...fresh(), ...s };
   } catch {}
   return fresh();
 }
 function save() {
   try {
-    localStorage.setItem(`zender:${net}`, JSON.stringify(state));
+    localStorage.setItem(storeKey(net), JSON.stringify(state));
   } catch {}
 }
 function loadAddress(n) {
@@ -296,7 +301,7 @@ async function liveChain() {
 function startOver() {
   if (!confirm("Start this round again? Your progress here is cleared.")) return;
   try {
-    localStorage.removeItem(`zender:${net}`);
+    localStorage.removeItem(storeKey(net));
     localStorage.removeItem(`zender:addr:${net}`);
   } catch {}
   note = "";
@@ -411,7 +416,7 @@ function renderCard(i) {
 
 function doneLabel(i) {
   if (ROUNDS[net].steps[i].kind !== "verify") return "Done";
-  return state.skipped && state.skipped.includes(i) ? "Done · skipped the check" : `${CHECKS[i + 1].done} · checked on chain`;
+  return state.skipped && state.skipped.includes(i) ? "Done · skipped the check" : `${CHECKS[ROUNDS[net].steps[i].check].done} · checked on chain`;
 }
 
 function fillBody(body, step, i) {
@@ -501,7 +506,7 @@ function verifyBlock(step, i) {
   const s = lastCheck[i];
   const box = el("div", { class: `watch${done ? " ok" : ""}${s && s.bad ? " bad" : ""}`, "aria-live": "polite" });
   if (done) {
-    box.append(el("b", {}, `${CHECKS[i + 1].done}. Seen on chain.`));
+    box.append(el("b", {}, `${CHECKS[step.check].done}. Seen on chain.`));
   } else if (address) {
     const now = el("button", { type: "button", class: "btn line small" }, "Check now");
     now.addEventListener("click", async () => {
@@ -552,8 +557,9 @@ async function runCheck(i) {
   try {
     const s = await check(address, n);
     if (n !== net || state.done[i]) return;
-    if (i === 5 ? CHECKS[6].ok(s, state.seen ?? 2) : CHECKS[i + 1].ok(s)) {
-      if (i === 2) state.seen = s.txCount;
+    const kind = ROUNDS[n].steps[i].check;
+    if (CHECKS[kind].ok(s, state.seen ?? 2)) {
+      if (kind === "shield") state.seen = s.txCount;
       delete lastCheck[i];
       complete(i);
       return;
@@ -572,12 +578,14 @@ function notYet(i, s, n) {
   const unit = n === "test" ? "TAZ" : "ZEC";
   const wallet = n === "test" ? "Zingo" : "Zodl";
   const amount = `${zec(s.balanceZat)} ${unit}`;
-  if (i === 1) {
-    return s.txCount === 0
-      ? "Nothing has arrived yet. Withdrawals can take a few minutes to leave the exchange, then about a minute for a block."
-      : `Not yet. ${amount} on this address so far.`;
+  const kind = ROUNDS[n].steps[i].check;
+  if (kind === "arrive") {
+    if (s.txCount > 0) return `Not yet. ${amount} on this address so far.`;
+    return n === "test"
+      ? "Nothing has landed here yet. In Zingo, send a little from your shielded balance to this tm address. Blocks come about every 75 seconds."
+      : "Nothing has arrived yet. Withdrawals can take a few minutes to leave the exchange, then about a minute for a block.";
   }
-  if (i === 2) {
+  if (kind === "shield") {
     return s.balanceZat > 0
       ? `Your ${amount} is still on this public address. Tap Shield in ${wallet} and confirm. This turns green about a minute after your shield is in a block.`
       : "Not yet. Waiting for your shield to show up in a block.";

@@ -6,12 +6,13 @@ const PUBLIC = {
   test: /^tm[1-9A-HJ-NP-Za-km-z]{33}$/,
 };
 
-// What each checkable step needs to see on chain.
+// What each watched step needs to see on the public address.
+// arrive: anything has landed. shield: it has all left again. back: something new landed after the shield.
 export const CHECKS = {
-  2: { done: "Coins arrived", ok: (s) => s.txCount >= 1 || s.balanceZat > 0 },
-  3: { done: "Shielded", ok: (s) => s.txCount >= 2 && (s.balanceZat === 0 || s.txCount >= 3) },
+  arrive: { done: "Coins arrived", ok: (s) => s.txCount >= 1 || s.balanceZat > 0 },
+  shield: { done: "Shielded", ok: (s) => s.txCount >= 2 && (s.balanceZat === 0 || s.txCount >= 3) },
   // `seen` is how many transactions the address had once it was shielded.
-  6: { done: "Back on postcard", ok: (s, seen = 2) => s.txCount > seen && s.balanceZat > 0 },
+  back: { done: "Back on postcard", ok: (s, seen = 2) => s.txCount > seen && s.balanceZat > 0 },
 };
 
 export function isPublicAddress(value, net) {

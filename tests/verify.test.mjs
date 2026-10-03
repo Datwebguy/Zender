@@ -5,20 +5,20 @@ globalThis.fetch ??= () => {};
 const { CHECKS, isPublicAddress, zec } = await import("../verify.js");
 
 test("step 2 passes once coins land", () => {
-  assert.equal(CHECKS[2].ok({ txCount: 0, balanceZat: 0 }), false);
-  assert.equal(CHECKS[2].ok({ txCount: 1, balanceZat: 1000000 }), true);
+  assert.equal(CHECKS.arrive.ok({ txCount: 0, balanceZat: 0 }), false);
+  assert.equal(CHECKS.arrive.ok({ txCount: 1, balanceZat: 1000000 }), true);
 });
 
 test("step 3 passes once the public address empties", () => {
-  assert.equal(CHECKS[3].ok({ txCount: 1, balanceZat: 1000000 }), false);
-  assert.equal(CHECKS[3].ok({ txCount: 2, balanceZat: 0 }), true);
+  assert.equal(CHECKS.shield.ok({ txCount: 1, balanceZat: 1000000 }), false);
+  assert.equal(CHECKS.shield.ok({ txCount: 2, balanceZat: 0 }), true);
 });
 
 test("step 6 needs a new transaction after the shield", () => {
-  assert.equal(CHECKS[6].ok({ txCount: 2, balanceZat: 0 }, 2), false);
-  assert.equal(CHECKS[6].ok({ txCount: 3, balanceZat: 50000 }, 2), true);
+  assert.equal(CHECKS.back.ok({ txCount: 2, balanceZat: 0 }, 2), false);
+  assert.equal(CHECKS.back.ok({ txCount: 3, balanceZat: 50000 }, 2), true);
   // Swap users skip 2 and 3, so their address starts empty.
-  assert.equal(CHECKS[6].ok({ txCount: 1, balanceZat: 50000 }, 0), true);
+  assert.equal(CHECKS.back.ok({ txCount: 1, balanceZat: 50000 }, 0), true);
 });
 
 test("addresses match their network", () => {

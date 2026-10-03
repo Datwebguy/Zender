@@ -25,7 +25,7 @@ Zodl memo facts from their support page, checked June 2026: memos ride on shield
 
 - Zodl store and F-Droid builds are mainnet only. Android releases attach only app-zcashmainnet APKs: https://github.com/zodl-inc/zodl-android/releases
 - Zodl's F-Droid repo lists one app, mainnet: https://foss.zodl.com/
-- The testnet faucets (zcashfaucet.jinolabs.xyz, zechub.wiki faucet) are no longer used.
+- Testnet faucet: https://fauzec.com/ (the one behind zechub.wiki's faucet tool). Checked 3 Oct 2026: it sends to Unified (utest1) and Sapling addresses only, transparent is on its roadmap, with a Turnstile check and per-address limits.
 
 ## Payment request
 

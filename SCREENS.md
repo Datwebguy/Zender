@@ -45,19 +45,25 @@ Footer: Testnet, Mainnet, Share on X, Source. Built for ZECATHON · Not affiliat
 | # | Testnet (Zingo) | Mainnet (Zodl) | Action |
 |---|---|---|---|
 | 1 | Set up a testnet wallet: gear → Server → Network Testnet, Custom `https://testnet.zec.rocks:443`, Create New Wallet, sync. Tips: Am I on testnet? / Back to mainnet later | Set up Zodl: install, Create New Wallet, back up the phrase on paper, sync | I'm ready |
-| 2 | Get test ZEC from the faucet to your tm address | Get a little ZEC: exchange withdrawal to your t1 (Gemini, Coinbase, Kraken links; OKX, Bybit, Binance, THORChain named) | Paste the address once; watched on chain. Mainnet also offers "I used Swap in Zodl instead" |
-| 3 | Shield it | Shield it | Watched on chain |
-| 4 | Seal a practice letter: Send → own utest1 → 0.0001 → Memo | Seal a letter: Send → own u1 → 0.0001 → Message | Letter box, Copy letter, optional Show QR, then I sent it |
-| 5 | Read it back | Read it back. Tips: what everyone sees / what you see | I can read my letter |
-| 6 | Unshield to your own tm | Unshield to your own t1 | Watched on chain |
+| 2 | Get test ZEC: the fauzec faucet sends to your **utest1** address (shielded only; it doesn't take tm yet) | Get a little ZEC: exchange withdrawal to your t1 (Gemini, Coinbase, Kraken links; OKX, Bybit, Binance, THORChain named) | Testnet: "It's in my Zingo". Mainnet: paste t1 once, watched on chain, or "I used Swap in Zodl instead" |
+| 3 | Move some to your public address: send 0.002 to your own tm (an unshield) | Shield it | Watched on chain (testnet: paste tm once) |
+| 4 | Shield it back | Seal a letter: Send → own u1 → 0.0001 → Message | Testnet: watched on chain. Mainnet: letter box, Copy letter, optional Show QR, then I sent it |
+| 5 | Seal a practice letter: Send → own utest1 → 0.0001 → Memo | Read it back. Tips: what everyone sees / what you see | Letter box then I sent it / I can read my letter |
+| 6 | Read it back | Unshield to your own t1 | I can read my letter / watched on chain |
+
+The faucet only pays shielded addresses, so testnet starts in the envelope: get test ZEC, unshield some to tm, shield it back. Mainnet starts on the postcard, because exchanges pay t1: get ZEC, shield, seal, read, unshield. Both rounds cover shield, unshield, a sealed letter and reading it.
 
 ## Watching the chain
 
 Only the public transparent address (t1 or tm) is sent, to Zender's own `/api/check`, which asks a Zcash light server for balance and transaction count. While a watched card is open it checks every 20 seconds; the box reads "Watching your public address…", then "Not yet. 0 TAZ here, 1 transaction so far." and turns green on its own.
 
-- Step 2 passes when anything has arrived.
-- Step 3 passes when the address has emptied (or moved on).
-- Step 6 passes on a new transaction after the shield, with a balance.
+Each watched step names its check:
+
+- arrive (mainnet 2, testnet 3): anything has landed on the address.
+- shield (mainnet 3, testnet 4): the address has emptied again (or moved on).
+- back (mainnet 6): a new transaction after the shield, with a balance.
+
+The box says what it sees in plain words ("Your 0.00364707 ZEC is still on this public address. Tap Shield…"), how long ago it checked, and has Check now and Use a different address.
 
 Steps 1, 4 and 5 are confirmed by the visitor: the letter is sealed, so only their wallet can prove it. Zender never claims to see the send.
 

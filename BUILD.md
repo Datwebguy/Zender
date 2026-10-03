@@ -16,7 +16,8 @@ app.js              routing /1 to /6, video, step 4 form, QR, copy
 steps.js            the six titles, sentences, video paths, external links
 zip321.js           UTF-8 to base64url memo, u1 check, URI builder
 config.js           amount 0.0001, message, Zodl link
-share.js            share card and Post on X link
+share.js            share card, Post on X link, reminder file
+motion.js           typing text, step entrances, scramble-to-sealed, opening scene
 styles.css
 vendor/qrcode.js    QR encoder, MIT, served from our origin
 videos/1.mp4 ... 6.mp4
@@ -58,7 +59,8 @@ Until a clip exists, the player area stays, with the sentence as the instruction
 - No viewing-key input.
 - Note text stays in the browser and in the QR. Do not POST it.
 - External links are only Zodl, three exchanges on step 2 (Gemini, Coinbase, Kraken, names only, no logos), and the Post on X link, all opened by the visitor.
-- localStorage holds only the step number, to resume. Never the note or the address.
+- localStorage holds only the step number, to resume, and whether the opening scene was seen. Never the letter or the address.
+- Motion is decoration. With reduce motion on, everything shows at once.
 
 ## Test before tweet
 

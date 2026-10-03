@@ -18,6 +18,18 @@
   <script type="module" src="/app.js"></script>
 </head>
 <body>
+  <div class="intro" id="intro" hidden>
+    <div class="intro-inner">
+      <p class="intro-mark">Zender</p>
+      <p class="intro-line" data-line="1"></p>
+      <p class="intro-line gold" data-line="2"></p>
+      <div class="envelope" aria-hidden="true">
+        <svg viewBox="0 0 120 84" width="120" height="84"><rect x="2" y="2" width="116" height="80" rx="10" fill="#18181b" stroke="#3f3f46" stroke-width="3"/><path d="M6 8 L60 48 L114 8" fill="none" stroke="#3f3f46" stroke-width="3"/></svg>
+        <span class="wax"><svg viewBox="0 0 24 24" width="22" height="22"><rect x="6" y="11" width="12" height="9" rx="2" fill="#1a1400"/><path d="M8.5 11V8.5a3.5 3.5 0 0 1 7 0V11" fill="none" stroke="#1a1400" stroke-width="2.4"/></svg></span>
+      </div>
+      <p class="intro-tap">Tap to begin</p>
+    </div>
+  </div>
   <div class="app">
     <header class="top">
       <div class="bar">
@@ -39,14 +51,15 @@
       <div class="stage" id="stage">
         <div class="sealed" id="sealed" hidden>
           <div class="panel mine">
+            <span class="wax small" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16"><rect x="6" y="11" width="12" height="9" rx="2" fill="#1a1400"/><path d="M8.5 11V8.5a3.5 3.5 0 0 1 7 0V11" fill="none" stroke="#1a1400" stroke-width="2.4"/></svg></span>
             <p class="plabel">You see</p>
             <p class="pnote" id="mynote">Your letter</p>
           </div>
           <div class="panel theirs">
             <p class="plabel">Everyone else sees</p>
-            <p class="prow"><span>Sender</span><b>hidden</b></p>
-            <p class="prow"><span>Amount</span><b>hidden</b></p>
-            <p class="prow"><span>Letter</span><b>sealed</b></p>
+            <p class="prow"><span>Sender</span><b data-final="hidden">hidden</b></p>
+            <p class="prow"><span>Amount</span><b data-final="hidden">hidden</b></p>
+            <p class="prow"><span>Letter</span><b data-final="sealed">sealed</b></p>
           </div>
         </div>
         <div class="media" id="media">

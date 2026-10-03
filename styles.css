@@ -301,3 +301,58 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--yellow); outlin
 .offscreen { position: fixed; left: -9999px; top: 0; }
 
 .noscript { padding: 16px; text-align: center; color: var(--muted); }
+
+/* ---------- Motion ---------- */
+
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes slide-r { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+@keyframes slide-l { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+@keyframes pop { 0% { opacity: 0; transform: scale(0.92); } 70% { opacity: 1; transform: scale(1.02); } 100% { transform: none; } }
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes materialise { from { opacity: 0; filter: blur(8px); transform: scale(0.9); } to { opacity: 1; filter: none; transform: none; } }
+@keyframes stamp { 0% { opacity: 0; transform: scale(2.4) rotate(-25deg); } 60% { opacity: 1; transform: scale(0.9) rotate(6deg); } 100% { opacity: 1; transform: scale(1) rotate(-8deg); } }
+@keyframes nudge { 0%, 100% { transform: none; } 30% { transform: scale(1.04); } 60% { transform: scale(0.98); } }
+@keyframes glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(244, 183, 40, 0); } 50% { box-shadow: 0 0 0 8px rgba(244, 183, 40, 0.18); } }
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes drop { from { opacity: 0; transform: translateY(-40px); } to { opacity: 1; transform: none; } }
+
+main.enter h1 { animation: rise 0.4s ease-out both; }
+main.enter.from-right .stage { animation: slide-r 0.45s 0.08s ease-out both; }
+main.enter.from-left .stage { animation: slide-l 0.45s 0.08s ease-out both; }
+main.enter .extras { animation: rise 0.4s 0.2s ease-out both; }
+main.enter .media { animation: pop 0.5s 0.1s ease-out both; }
+
+.typing::after { content: ""; display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -2px; background: var(--yellow); animation: blink 0.8s step-end infinite; }
+
+.ticks li { transform-origin: left; }
+.ticks li.current { animation: fill 0.5s ease-out both; }
+
+.qr:not([hidden]) svg { animation: materialise 0.5s ease-out both; }
+
+.next.nudge { animation: nudge 0.6s ease-in-out 2, glow 1.2s ease-in-out 2; }
+
+/* Finish: a wax seal stamps onto the letter. */
+.panel.mine { position: relative; }
+.wax { display: grid; place-items: center; border-radius: 50%; background: var(--yellow); box-shadow: 0 0 0 4px rgba(244, 183, 40, 0.18); }
+.wax.small { position: absolute; top: -12px; right: -10px; width: 36px; height: 36px; opacity: 0; }
+.sealed.stamped .wax.small { animation: stamp 0.5s ease-out both; }
+.prow b { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 600; letter-spacing: 0.02em; }
+
+/* Opening scene, once per phone. */
+.intro { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px; background: #000; cursor: pointer; }
+.intro.leaving { animation: fade-out 0.4s ease-in both; }
+.intro-inner { width: 100%; max-width: 360px; text-align: center; }
+.intro-mark { margin: 0 0 28px; font-size: 22px; font-weight: 700; letter-spacing: 0.02em; animation: rise 0.5s ease-out both; }
+.intro-line { min-height: 1.3em; margin: 0 0 8px; font-size: 26px; font-weight: 700; line-height: 1.25; }
+.intro-line.gold { color: var(--yellow); }
+.envelope { position: relative; width: 120px; height: 84px; margin: 36px auto 0; opacity: 0; animation: drop 0.6s 2.4s ease-out both; }
+.envelope .wax { position: absolute; left: 50%; top: 48px; width: 44px; height: 44px; margin: -22px 0 0 -22px; opacity: 0; }
+.intro.stamped .envelope .wax { animation: stamp 0.5s ease-out both; }
+.intro-tap { margin: 36px 0 0; color: var(--muted); font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0; }
+.intro.ready .intro-tap { animation: rise 0.4s ease-out both, blink 1.6s 0.4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .wax.small { opacity: 1; }
+}

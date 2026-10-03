@@ -107,6 +107,15 @@ Two panels: "You see" with the letter (kept in memory only), and "Everyone else 
 
 Buttons: Post on X (yellow, full width), then Share image (a card drawn on the phone) and Remind me (a calendar file for one year from today, titled "Open your Zcash letter"). The card and the reminder never contain the letter or an address. Start over returns to /1.
 
+## Motion
+
+- Opening scene, once per phone: "Zender", then "The blockchain is public." types out, then "Your letter isn't." in yellow, an envelope drops and a wax seal stamps it. Tap to begin.
+- Each step: the title rises, the sentence types itself, the video pops in, buttons rise. Forward slides from the right, back from the left.
+- Step 4: the QR materialises. When a clip ends, Next nudges.
+- Finish: "hidden, hidden, sealed" unscramble from random characters, then a wax seal stamps the letter.
+- Clip captions type out.
+- Reduce motion turns all of it off.
+
 ## Progress
 
 The last step reached is saved on the phone (localStorage, step number only). Opening the site at / resumes there.

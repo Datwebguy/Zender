@@ -3,12 +3,16 @@ import { STEPS } from "./steps.js";
 import { AMOUNT, MESSAGE } from "./config.js";
 import { MAX_MEMO_BYTES, utf8Bytes, buildUri, isUnifiedAddress } from "./zip321.js";
 import { postUrl, shareImage, saveReminder } from "./share.js";
+import { typeText, enter, scramble, after, intro, stopAll } from "./motion.js";
 
 const $ = (id) => document.getElementById(id);
 
 // The note and address live only in these variables. They are never stored or sent.
 let note = "";
 let address = "";
+
+// Last step shown, to slide the next one in from the right side.
+let lastStep = 0;
 
 // What the media area shows: "video", "qr" or "link".
 let view = "video";
@@ -69,6 +73,9 @@ function render() {
   }
   saveProgress(n);
   document.body.dataset.step = String(n);
+  stopAll();
+  enter($("main"), n >= lastStep ? 1 : -1);
+  lastStep = n;
   if (n === DONE) return renderDone();
   $("sealed").hidden = true;
   $("media").hidden = false;
@@ -77,7 +84,7 @@ function render() {
   document.title = `${step.title} · Zender`;
   $("count").textContent = `Step ${n} of 6`;
   $("title").textContent = step.title;
-  $("sentence").textContent = step.sentence;
+  typeText($("sentence"), step.sentence, { delay: 120 });
 
   [...$("ticks").children].forEach((li, i) => {
     li.className = i + 1 < n ? "done" : i + 1 === n ? "current" : "";
@@ -107,7 +114,10 @@ function renderDone() {
   document.title = "Sealed for a year · Zender";
   $("count").textContent = "Finished";
   $("title").textContent = "Sealed for a year.";
-  $("sentence").textContent = "Only you can open it. Keep your recovery phrase and it stays yours.";
+  typeText($("sentence"), "Only you can open it. Keep your recovery phrase and it stays yours.", { delay: 120 });
+  document.querySelectorAll("#sealed [data-final]").forEach((b, i) => scramble(b, b.dataset.final, 500 + i * 260));
+  $("sealed").classList.remove("stamped");
+  after(1500, () => $("sealed").classList.add("stamped"));
   [...$("ticks").children].forEach((li) => {
     li.className = "done";
     li.removeAttribute("aria-current");
@@ -380,8 +390,15 @@ video.addEventListener("error", () => {
   video.dataset.missing = "1";
   showView();
 });
-video.addEventListener("ended", showView);
+video.addEventListener("ended", () => {
+  showView();
+  const next = $("next");
+  next.classList.remove("nudge");
+  void next.offsetWidth;
+  next.classList.add("nudge");
+});
 video.addEventListener("play", showView);
 $("replay").addEventListener("click", replay);
 
 render();
+intro($("intro"));

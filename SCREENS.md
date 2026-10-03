@@ -45,7 +45,7 @@ Footer: Testnet, Mainnet, Share on X, Source. Built for ZECATHON · Not affiliat
 | # | Testnet (Zingo) | Mainnet (Zodl) | Action |
 |---|---|---|---|
 | 1 | Set up a testnet wallet: gear → Server → Network Testnet, Custom `https://testnet.zec.rocks:443`, Create New Wallet, sync. Tips: Am I on testnet? / Back to mainnet later | Set up Zodl: install, Create New Wallet, back up the phrase on paper, sync | I'm ready |
-| 2 | Get test ZEC: the fauzec faucet sends to your **utest1** address (shielded only; it doesn't take tm yet) | Get a little ZEC: exchange withdrawal to your t1 (Gemini, Coinbase, Kraken links; OKX, Bybit, Binance, THORChain named) | Testnet: "It's in my Zingo". Mainnet: paste t1 once, watched on chain, or "I used Swap in Zodl instead" |
+| 2 | Get test ZEC: paste your **utest1** address, tap **Send me test ZEC**. Zender's `/api/faucet` claims 1 TAZ from fauzec.com (shielded only, one per address a day) and shows Queued → On its way → Sent, in a block, with the tx link. Faucet site link as a fallback | Get a little ZEC: exchange withdrawal to your t1 (Gemini, Coinbase, Kraken links; OKX, Bybit, Binance, THORChain named) | Testnet: "It's in my Zingo". Mainnet: paste t1 once, watched on chain, or "I used Swap in Zodl instead" |
 | 3 | Move some to your public address: send 0.002 to your own tm (an unshield) | Shield it | Watched on chain (testnet: paste tm once) |
 | 4 | Shield it back | Seal a letter: Send → own u1 → 0.0001 → Message | Testnet: watched on chain. Mainnet: letter box, Copy letter, optional Show QR, then I sent it |
 | 5 | Seal a practice letter: Send → own utest1 → 0.0001 → Memo | Read it back. Tips: what everyone sees / what you see | Letter box then I sent it / I can read my letter |

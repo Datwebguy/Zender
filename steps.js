@@ -38,16 +38,14 @@ export const ROUNDS = {
       },
       {
         title: "Get test ZEC",
-        sub: "A free faucet · lands in your shielded balance",
-        lead: "On mainnet you'd buy ZEC on an exchange. Here a free faucet sends you test ZEC, straight into your **shielded** balance.",
+        sub: "Our faucet button · lands in your shielded balance",
+        lead: "On mainnet you'd buy ZEC on an exchange. Here, tap one button and 1 free test ZEC goes straight into your **shielded** balance.",
         list: [
           "In Zingo, tap **Receive** (the download button, bottom right). Under **Shielded Address**, tap the copy icon. It starts with **utest1**.",
-          "Open the faucet, paste it, pass the quick check and ask for test ZEC.",
-          "Wait for it to show in Zingo. Usually a few minutes.",
+          "Paste it below and tap **Send me test ZEC**.",
+          "Watch it go out. It shows in Zingo after the next block, a few minutes at most.",
         ],
-        links: [{ label: "Open faucet", href: FAUCET_URL }],
-        note: "The faucet only sends to shielded addresses, so paste your **utest1** address there, not tm.",
-        kind: "confirm",
+        kind: "faucet",
         confirm: "It's in my Zingo",
       },
       {

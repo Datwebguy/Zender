@@ -1,7 +1,7 @@
 import qrcode from "./vendor/qrcode.js";
 import { ROUNDS, FAQ } from "./steps.js";
 import { CHECKS, check, tip, isPublicAddress, zec } from "./verify.js";
-import { AMOUNT, MESSAGE } from "./config.js";
+import { AMOUNT, MESSAGE, FAUCET_URL } from "./config.js";
 import { MAX_MEMO_BYTES, utf8Bytes, buildUri, isUnifiedAddress } from "./zip321.js";
 import { postUrl, postText, drawCard, shareImage, saveReminder } from "./share.js";
 import { typeText, scramble, after, stopAll, calm } from "./motion.js";
@@ -97,6 +97,7 @@ function route() {
 function render() {
   stopAll();
   clearTimeout(pollTimer);
+  clearTimeout(faucetTimer);
   clearInterval(tickTimer);
   net = route();
   const canonical = net ? ROUNDS[net].path : "/";
@@ -438,7 +439,8 @@ function fillBody(body, step, i) {
   if (step.video) body.append(clip(step.video));
   if (step.kind === "letter") body.append(letterForm());
   if (step.kind === "verify") body.append(verifyBlock(step, i));
-  if (step.kind === "confirm" || step.kind === "letter") {
+  if (step.kind === "faucet") body.append(faucetBlock(i));
+  if (step.kind === "confirm" || step.kind === "letter" || step.kind === "faucet") {
     const b = el("button", { type: "button", class: "btn ink" }, state.done[i] ? "Done" : step.confirm);
     b.disabled = state.done[i];
     b.addEventListener("click", () => complete(i));
@@ -621,6 +623,115 @@ function schedulePoll(ms) {
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden && net) schedulePoll(400);
 });
+
+/* Our faucet button. Test ZEC comes from fauzec.com through Zender's /api/faucet. */
+
+let faucetTimer = null;
+
+function faucetBlock(i) {
+  const wrap = el("div", { class: "faucet" });
+  const claim = state.faucet || null;
+  const done = state.done[i];
+  const ready = el("p", { class: "fine" }, "Faucet: checking…");
+  fetch("/api/faucet").then((r) => r.json()).then((f) => {
+    ready.textContent = f.ready
+      ? `Faucet ready · ${zec(f.dripZat || 1e8)} test ZEC per address per day · ${Math.floor((f.availableZat || 0) / 1e8).toLocaleString("en-US")} left to give`
+      : "The faucet says it's busy right now. Try again shortly, or use the faucet site.";
+  }).catch(() => (ready.textContent = ""));
+
+  if (!claim || claim.error) {
+    const input = el("input", {
+      type: "text",
+      class: "field",
+      spellcheck: "false",
+      autocomplete: "off",
+      autocapitalize: "none",
+      autocorrect: "off",
+      "aria-label": "Your shielded testnet address, starts with utest1",
+      placeholder: "utest1…",
+    });
+    input.value = (claim && claim.address) || "";
+    const err = el("p", { class: "status bad", "aria-live": "polite" }, (claim && claim.error) || "");
+    const go = el("button", { type: "button", class: "btn ink" }, "Send me test ZEC");
+    const send = async () => {
+      const address = input.value.trim();
+      if (!/^(utest1|ztestsapling1)/i.test(address)) {
+        err.textContent = /^tm/i.test(address)
+          ? "That's your transparent address. The faucet needs the shielded one, starting with utest1."
+          : /^u1/i.test(address)
+            ? "That's a mainnet address. Switch Zingo to testnet first (step 1)."
+            : "Paste the address that starts with utest1 from Zingo's Receive screen.";
+        return;
+      }
+      go.disabled = true;
+      go.textContent = "Asking the faucet…";
+      err.textContent = "";
+      try {
+        const r = await fetch("/api/faucet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ address }) });
+        const d = await r.json().catch(() => ({}));
+        state.faucet = d.id && !d.error ? { id: d.id, state: d.state, txid: d.txid } : { error: d.error || "The faucet couldn't send right now.", address };
+      } catch {
+        state.faucet = { error: "Couldn't reach the faucet. Try again in a moment.", address };
+      }
+      save();
+      renderCard(i);
+      pollFaucet(i);
+    };
+    go.addEventListener("click", send);
+    input.addEventListener("keydown", (e) => e.key === "Enter" && send());
+    wrap.append(el("label", { class: "field-label" }, "Your shielded testnet address (starts with ", el("code", {}, "utest1"), ")"), input, err, el("div", { class: "row" }, go));
+  } else {
+    const words = {
+      pending: ["Queued at the faucet…", "It goes out in a moment."],
+      broadcasting: ["On its way…", "Sent to the network. It lands in the next block, about 75 seconds."],
+      confirmed: ["Sent. It's in a block.", "Open Zingo. Your test ZEC is in your shielded balance (pull down to refresh)."],
+      failed: ["The faucet couldn't send it.", "Try again, or use the faucet site below."],
+    }[claim.state] || ["Asking the faucet…", ""];
+    const box = el("div", { class: `watch${claim.state === "confirmed" ? " ok" : ""}`, "aria-live": "polite" },
+      el("b", {}, claim.state === "confirmed" ? "" : el("i", { class: "dot pulse" }), words[0]),
+      el("p", {}, words[1]),
+    );
+    if (claim.txid) {
+      box.append(el("p", { class: "watch-addr" }, externalLink(`tx ${claim.txid.slice(0, 10)}…${claim.txid.slice(-6)}${claim.height ? ` · block ${claim.height.toLocaleString("en-US")}` : ""}`, `https://zexplorer.app/testnet/tx/${claim.txid}`, "")));
+    }
+    wrap.append(box);
+    if (!done) {
+      const again = el("button", { type: "button", class: "link" }, "Use a different address");
+      again.addEventListener("click", () => {
+        state.faucet = null;
+        save();
+        clearTimeout(faucetTimer);
+        renderCard(i);
+      });
+      wrap.append(el("p", {}, again));
+    }
+  }
+  wrap.append(ready, el("p", { class: "fine" }, "Test ZEC comes from fauzec.com, the free public testnet faucet. Your utest1 address is passed to it, nothing else."));
+  if (!done) {
+    const site = el("p", { class: "fine" }, "Button not working? ", externalLink("Use the faucet site", FAUCET_URL, ""), " and tap below once it's in Zingo.");
+    wrap.append(site);
+  }
+  if (claim && !claim.error && claim.state !== "confirmed" && claim.state !== "failed") pollFaucet(i);
+  return wrap;
+}
+
+function pollFaucet(i) {
+  clearTimeout(faucetTimer);
+  const claim = state.faucet;
+  if (!net || net !== "test" || !claim || !claim.id || claim.state === "confirmed" || claim.state === "failed") return;
+  faucetTimer = setTimeout(async () => {
+    try {
+      const d = await (await fetch(`/api/faucet?id=${encodeURIComponent(claim.id)}`)).json();
+      if (state.faucet && state.faucet.id === claim.id && d.state) {
+        state.faucet = { ...state.faucet, state: d.state, txid: d.txid || state.faucet.txid, height: d.height || null };
+        if (d.state === "failed") state.faucet = { error: d.error || "The faucet couldn't send it." };
+        save();
+        if (state.open === i) renderCard(i);
+      }
+    } catch {}
+    if (state.faucet && state.faucet.state !== "confirmed") pollFaucet(i);
+  }, 5000);
+}
 
 /* The letter */
 

@@ -60,6 +60,7 @@ Live: https://tryzender.vercel.app · Track: Wildcard
 - The page talks to one place only, its own `/api/check` (CSP `connect-src 'self'`). No analytics, no third-party scripts, fonts or media. Clips are served from the same origin.
 - The chain checks (steps 2, 3, 6) send only the visitor's public transparent address (t1 or tm), once the visitor pastes it. `/api/check` asks a Zcash light server (zec.rocks, the kind of server wallets use) for that address's balance and transaction count and returns just those numbers. It holds no keys, never sees the letter, stores and logs nothing.
 - Progress (which steps are done, their times) and the public t1/tm address are saved in this browser only, so a reload or a trip to the wallet app doesn't lose your place. Start over clears them. The letter is never saved.
+- Testnet only: Send me test ZEC passes the visitor's utest1 address to fauzec.com (the public testnet faucet) through `/api/faucet`, and reads back the claim's progress. No keys, nothing stored.
 - The share card is drawn on the phone and never includes the letter or an address.
 - The reminder is a calendar file made on the phone. It has the date and "Open your Zcash letter", never the letter.
 

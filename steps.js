@@ -57,7 +57,7 @@ export const ROUNDS = {
           "Paste it below, so this page can watch it.",
           "Tap **Send**, paste the same tm address, send `0.002`.",
         ],
-        note: "Not enough to send yet? Faucet coins need a few blocks before you can spend them. Give it a few minutes.",
+        note: "**Spendable: TAZ 0**? Zingo is still syncing (the % at the top) or the coins are still new. Wait until the sync reaches 100% and Spendable shows your TAZ, usually a few minutes.",
         kind: "verify",
         check: "arrive",
         ask: true,

@@ -9,7 +9,7 @@ Zender. Zero to a shielded testnet send.
 
 Wallet, faucet, shield, send, receive, unshield. A guide video on each step.
 
-https://YOUR-URL
+https://tryzender.vercel.app
 
 @zksnarks_
 ```

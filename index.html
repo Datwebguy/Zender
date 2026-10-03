@@ -30,17 +30,16 @@
       <p class="intro-tap">Tap to begin</p>
     </div>
   </div>
-  <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-label="Cheat sheet">
+  <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-label="Envelopes and postcards">
     <div class="sheet-card">
-      <p class="plabel">Cheat sheet</p>
+      <p class="plabel">Envelopes and postcards</p>
       <dl>
-        <div><dt>Get ZEC</dt><dd>Exchange: buy, then withdraw to your t1. On-chain: swap on THORChain. Or Swap in Zodl, or get paid by a friend.</dd></div>
-        <div><dt>u1…</dt><dd>Shielded. Private. Give this one out.</dd></div>
-        <div><dt>t1…</dt><dd>Transparent. Public. Some exchanges need it.</dd></div>
-        <div><dt>Shield</dt><dd>t1 to u1. Do it once, then stay shielded.</dd></div>
-        <div><dt>Unshield</dt><dd>u1 to t1. Only when you must.</dd></div>
-        <div><dt>Message</dt><dd>A private note on a shielded send. 512 max.</dd></div>
-        <div><dt>Receive</dt><dd>Share your u1, or its QR in Zodl.</dd></div>
+        <div><dt>u1…</dt><dd>Your envelope address. What arrives is sealed. Safe to share.</dd></div>
+        <div><dt>t1…</dt><dd>Your postcard address. Anyone can read what arrives.</dd></div>
+        <div><dt>Shield</dt><dd>Move ZEC from postcard to envelope.</dd></div>
+        <div><dt>Unshield</dt><dd>Back to postcard, for places that only take t1.</dd></div>
+        <div><dt>Letter</dt><dd>The note inside a shielded send. Up to 512 characters.</dd></div>
+        <div><dt>ZEC</dt><dd>Swap in Zodl, or buy on an exchange and withdraw to your t1.</dd></div>
       </dl>
       <button type="button" class="pill secondary" data-close>Got it</button>
     </div>
@@ -49,7 +48,7 @@
     <header class="top">
       <div class="bar">
         <button type="button" class="wordmark" id="wordmark" aria-label="Play the Zender intro">Zender</button>
-        <button type="button" class="cheat" id="cheat" aria-label="Cheat sheet">
+        <button type="button" class="cheat" id="cheat" aria-label="Envelopes and postcards: Zcash in plain words">
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.9" r="1.1" fill="currentColor"/></svg>
         </button>
         <a class="close" href="/1" data-nav aria-label="Close, back to step 1">

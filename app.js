@@ -392,7 +392,7 @@ video.addEventListener("ended", () => {
 video.addEventListener("play", showView);
 $("replay").addEventListener("click", replay);
 
-// Cheat sheet: the six ideas the steps teach, one tap away.
+// Envelopes and postcards: the ideas the steps teach, in plain words, one tap away.
 const sheet = $("sheet");
 $("cheat").addEventListener("click", () => {
   sheet.hidden = false;

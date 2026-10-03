@@ -41,7 +41,7 @@ Buttons: Gemini, Coinbase, Kraken. Names only, no logos. Each opens that exchang
 
 Sentence: "Tap Swap in Zodl, or buy a dollar or two on an exchange." Under the buttons, one line, no links: "Withdraw to your t1. Also OKX, Bybit, Binance, or swap on THORChain."
 
-Cheat sheet (the ? in the header): Get ZEC, u1, t1, Shield, Unshield, Message, Receive. One line each.
+Plain words (the ? in the header), "Envelopes and postcards": u1 is your envelope address (sealed), t1 your postcard address (readable by anyone), Shield moves ZEC into the envelope, Unshield back to postcard, the letter is the note inside, and how to get ZEC. One line each, in our own words.
 
 ZEC was about $1,368 on 3 Oct 2026. The send is 0.0001 ZEC (about $0.14) and comes back. Fees are about 0.0001 ZEC per transaction (ZIP 317 minimum), so shield, send and unshield cost about $0.40 in all.
 

@@ -17,7 +17,9 @@ function clean(value){
   return value;
 }
 function same(a,b){const aa=Buffer.from(a||''),bb=Buffer.from(b||'');return aa.length===bb.length&&timingSafeEqual(aa,bb);}
-export function createApp({store,provider,ownerToken}){
+export function createApp({store,provider,ownerToken,publicOrigin=null}){
+  const published=publicOrigin?new URL(publicOrigin):null;
+  if(published&&published.protocol!=='https:')throw new Error('Public workspaces require HTTPS.');
   const engine=new Engine(store,provider);engine.recoverInterrupted();
   const sessions=new Map();const logins=new Map();
   const send=(res,status,data)=>{res.writeHead(status,{'content-type':'application/json; charset=utf-8'});res.end(JSON.stringify(clean(data)));};
@@ -26,8 +28,9 @@ export function createApp({store,provider,ownerToken}){
     res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
     try{
       const host=req.headers.host||'';
-      if(!/^(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/.test(host))throw new Fault('Use the local Zender address.',403,'INVALID_HOST');
-      if(req.headers.origin){let origin;try{origin=new URL(req.headers.origin);}catch{throw new Fault('Invalid origin.',403);}if(origin.host!==host||origin.protocol!=='http:')throw new Fault('Cross-origin requests are refused.',403);}
+      const local=/^(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/.test(host);
+      if(!local&&host!==published?.host)throw new Fault('Use the configured Zender address.',403,'INVALID_HOST');
+      if(req.headers.origin){let origin;try{origin=new URL(req.headers.origin);}catch{throw new Fault('Invalid origin.',403);}if(origin.host!==host||origin.origin!==(local?`http://${host}`:published?.origin))throw new Fault('Cross-origin requests are refused.',403);}
       const path=new URL(req.url,'http://localhost').pathname;
       if(path==='/api/health')return send(res,200,{ok:true,mode:provider.mode});
       if(!path.startsWith('/api/')){
@@ -49,7 +52,7 @@ export function createApp({store,provider,ownerToken}){
         if(++window.count>10)throw new Fault('Too many sign-in attempts. Try again in a minute.',429);logins.set(address,window);
         if(!same(body.token,ownerToken))throw new Fault('Owner key is incorrect.',401,'UNAUTHORIZED');
         const session=randomBytes(32).toString('hex');sessions.set(session,Date.now()+8*3600000);
-        res.setHeader('Set-Cookie',`zender_session=${session}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800`);return send(res,200,{ok:true});
+        res.setHeader('Set-Cookie',`zender_session=${session}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800${published?'; Secure':''}`);return send(res,200,{ok:true});
       }
       const bearer=(req.headers.authorization||'').replace(/^Bearer /,'');
       const cookie=(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith('zender_session='))?.slice(15);
@@ -88,7 +91,7 @@ export function start(){
   const data=resolve(process.env.ZENDER_DATA_DIR||resolve(root,'.zender'));mkdirSync(data,{recursive:true,mode:0o700});chmodSync(data,0o700);
   const keyFile=resolve(data,'owner.key');
   if(!existsSync(keyFile))writeFileSync(keyFile,randomBytes(32).toString('hex'),{mode:0o600,flag:'wx'});
-  const ownerToken=readFileSync(keyFile,'utf8').trim();if(ownerToken.length<32)throw new Error('Owner key must contain at least 32 characters.');
+  const ownerToken=process.env.ZENDER_OWNER_TOKEN||readFileSync(keyFile,'utf8').trim();if(ownerToken.length<32)throw new Error('Owner key must contain at least 32 characters.');
   const store=new Store(resolve(data,'expenses.sqlite'));
   let provider;
   if(process.env.ZENDER_WALLET_MODE==='testnet'){
@@ -96,9 +99,10 @@ export function start(){
     provider=new ZipherProvider({binary:process.env.ZENDER_WALLET_BIN||'zipher-cli',dataDir:process.env.ZENDER_WALLET_DIR,server:process.env.ZENDER_LIGHTWALLETD,services});
   }else if(process.env.ZENDER_WALLET_MODE&&process.env.ZENDER_WALLET_MODE!=='sandbox')throw new Error('Only sandbox and testnet modes are supported.');
   else provider=new SandboxProvider(store);
-  const app=createApp({store,provider,ownerToken});
+  const app=createApp({store,provider,ownerToken,publicOrigin:process.env.ZENDER_PUBLIC_URL||null});
   const port=Number(process.env.PORT||4310);
-  app.server.listen(port,'127.0.0.1',()=>console.log(`Zender · ${provider.name}\nhttp://127.0.0.1:${port}\nOwner sign-in: node bin/zender.mjs owner-key\nNo mainnet spending is enabled.`));
+  app.server.on('error',error=>{console.error(`Zender could not start: ${error.message}`);process.exitCode=1;});
+  app.server.listen(port,process.env.ZENDER_PUBLIC_URL?'0.0.0.0':'127.0.0.1',()=>console.log(`Zender · ${provider.name}\n${process.env.ZENDER_PUBLIC_URL||`http://127.0.0.1:${port}`}\nOwner sign-in is required. No mainnet spending is enabled.`));
   return app;
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url))start();

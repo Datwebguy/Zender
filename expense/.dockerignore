@@ -1,0 +1,5 @@
+.zender
+node_modules
+tests
+*.sqlite*
+.env*

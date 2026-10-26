@@ -1,3 +1,5 @@
+> **Agent task expenses:** The new local expense-account application lives in [expense/](expense/README.md). Run `npm run expenses` with Node.js 24+. It includes budgets, approvals, recovery, CLI and MCP tools. Payments are simulated in this release; live broadcasting is gated. The original tutorial is documented below.
+
 <div align="center">
 
 <img src="favicon.svg" width="88" height="88" alt="Zender">
@@ -172,3 +174,4 @@ npm test
 <br>
 <sub>Not affiliated with any wallet, exchange or Zcash organisation.</sub>
 </div>
+

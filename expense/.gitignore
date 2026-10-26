@@ -1,0 +1,3 @@
+.zender/
+*.sqlite*
+.env

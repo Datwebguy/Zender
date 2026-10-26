@@ -9,7 +9,7 @@ export class Engine {
   constructor(store,provider){this.store=store;this.provider=provider;}
   requireTask(id){const t=this.store.getTask(id);if(!t)throw new Fault('Task not found.',404,'NOT_FOUND');return t;}
   requirePurchase(id){const p=this.store.getPurchase(id);if(!p)throw new Fault('Purchase not found.',404,'NOT_FOUND');return p;}
-  assertActive(t){if(t.status!=='active')throw new Fault('Task authorization is closed.',409,'TASK_CLOSED');if(Date.parse(t.expiresAt)<=Date.now())throw new Fault('Task authorization expired.',409,'TASK_EXPIRED');}
+  assertActive(t){if(t.mode!==this.provider.mode)throw new Fault('This task belongs to a different payment environment.',409,'NETWORK_MISMATCH');if(t.status!=='active')throw new Fault('Task authorization is closed.',409,'TASK_CLOSED');if(Date.parse(t.expiresAt)<=Date.now())throw new Fault('Task authorization expired.',409,'TASK_EXPIRED');}
   totals(id){
     let spentZat=0,reservedZat=0;
     for(const p of this.store.purchases(id)){
@@ -117,6 +117,6 @@ export class Engine {
   recoverInterrupted(){for(const t of this.store.tasks())for(const p of this.store.purchases(t.id))if(p.status==='executing'){p.status='uncertain';p.error='Service restarted during payment. Reconcile before any further spend.';this.store.putPurchase(p);}}
   receipt(id,{details=false}={}){
     const t=this.view(id);
-    return {schema:'zender.task-expenses/v1',taskId:t.id,title:t.title,mode:t.mode,status:t.status,budgetZat:t.budgetZat,spentZat:t.spentZat,reservedZat:t.reservedZat,exportedAt:new Date().toISOString(),purchases:t.purchases.map(p=>({id:p.id,service:p.serviceName,status:p.status,amountZat:p.amountZat,feeZat:p.actualFeeZat,resultHash:p.resultHash||null,...(details?{reason:p.reason,recipient:p.recipient,txid:p.txid||null,input:p.input,result:p.result}: {})})),disclosure:details?'Detailed export includes recipients, transaction identifiers, task inputs and results.':'Recipients, transaction identifiers, task inputs and results omitted. Task title and expense amounts remain visible.'};
+    return {schema:'zender.task-expenses/v1',taskId:t.id,title:t.title,mode:t.mode,status:t.status,budgetZat:t.budgetZat,spentZat:t.spentZat,reservedZat:t.reservedZat,exportedAt:new Date().toISOString(),purchases:t.purchases.map(p=>({id:p.id,service:p.serviceName,status:p.status,amountZat:p.amountZat,feeZat:p.actualFeeZat,resultHash:p.resultHash||null,...(details?{reason:p.reason,recipient:p.recipient,txid:p.txid||null,input:p.input,result:p.result,evidence:p.evidence}: {})})),disclosure:details?'Detailed export includes recipients, transaction identifiers, task inputs and results.':'Recipients, transaction identifiers, task inputs and results omitted. Task title and expense amounts remain visible.'};
   }
 }

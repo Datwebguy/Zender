@@ -1,10 +1,12 @@
 import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { mkdirSync, existsSync, readFileSync, chmodSync } from 'node:fs';
+import { mkdirSync, existsSync, readFileSync, writeFileSync, chmodSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { CATALOG, resultFor } from './providers.mjs';
-const exec=promisify(execFile);
+const exec=(binary,args,options)=>new Promise((resolve,reject)=>{
+  const child=execFile(binary,args,options,(error,stdout,stderr)=>error?reject(error):resolve({stdout,stderr}));
+  child.stdin?.end();
+});
 const hash=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
 const unsent=message=>Object.assign(new Error(message),{definitelyNotSent:true});
 
@@ -36,6 +38,7 @@ export class FixedPcztProvider {
       for(const [dir,name]of[[this.sender,'Zender agent'],[this.receiver,'Zender services']]){
         mkdirSync(dir,{recursive:true,mode:0o700});
         if(!existsSync(join(dir,'keys.toml')))await this.run(['wallet','-w',dir,'init','--name',name,'--identity',join(dir,'identity.txt'),'--network','test','--server',this.server]);
+        chmodSync(join(dir,'identity.txt'),0o600);
       }
       const addresses=await this.run(['wallet','-w',this.receiver,'list-addresses']);
       this.recipient=addresses.match(/utest1[0-9a-z]{60,}/)?.[0];
@@ -91,8 +94,22 @@ export class FixedPcztProvider {
   }
   async status(){
     if(!this.ready)return{ready:false,mode:'testnet',error:this.startupError||null};
+    return this.serial(async()=>{
+    await this.run(['wallet','-w',this.sender,'sync','--server',this.server]);
     const balance=await this.run(['wallet','-w',this.sender,'balance']);
     const addresses=await this.run(['wallet','-w',this.sender,'list-addresses']);
     return {ready:true,mode:'testnet',balance,address:addresses.match(/utest1[0-9a-z]{60,}/)?.[0]||null};
+    });
+  }
+  async fund(){
+    if(!this.ready)throw new Error('Wallet initialization is still in progress.');
+    const path=join(this.dataDir,'faucet-claim.json');
+    if(existsSync(path))return JSON.parse(readFileSync(path,'utf8'));
+    const addresses=await this.run(['wallet','-w',this.sender,'list-addresses']);
+    const address=addresses.match(/utest1[0-9a-z]{60,}/)?.[0];if(!address)throw new Error('No testnet funding address is available.');
+    const response=await fetch('https://faucet.testnet.valargroup.dev/api/claim',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({address}),signal:AbortSignal.timeout(30000)});
+    const body=await response.json();if(!response.ok)throw new Error(body.error||'The testnet faucet is unavailable or rate-limited.');
+    const claim={id:body.id,status:body.status,address,requestedAt:new Date().toISOString(),network:'testnet'};
+    writeFileSync(path,JSON.stringify(claim),{mode:0o600});return claim;
   }
 }

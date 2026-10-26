@@ -66,6 +66,7 @@ export function createApp({store,provider,ownerToken,publicOrigin=null}){
       if(path==='/api/session'&&req.method==='DELETE'){if(cookie)sessions.delete(cookie);res.setHeader('Set-Cookie','zender_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0');return send(res,200,{ok:true});}
       if(path==='/api/workspace'&&req.method==='GET')return send(res,200,{mode:provider.mode,provider:provider.name,liveBroadcastEnabled:provider.broadcastEnabled===true,owner,services:provider.mode==='sandbox'?CATALOG:provider.services.map(({resultUrl,...s})=>s),tasks:owner?engine.list():[engine.view(agentTask)]});
       if(path==='/api/wallet'&&req.method==='GET'){needOwner();return send(res,200,provider.status?await provider.status():{mode:'sandbox',ready:true});}
+      if(path==='/api/wallet/faucet'&&req.method==='POST'){needOwner();if(!provider.fund)throw new Fault('Funding is available only in live testnet mode.');return send(res,200,await provider.fund());}
       if(path==='/api/tasks'&&req.method==='POST'){needOwner();return send(res,201,engine.createTask(body));}
       let m=path.match(/^\/api\/tasks\/([a-z0-9-]+)(?:\/(credentials|close|receipt|purchases))?$/);
       if(m){const [,id,action]=m;scope(id);
@@ -98,7 +99,7 @@ export function start(){
   let provider;
   if(process.env.ZENDER_WALLET_MODE==='pczt-testnet'){
     provider=new FixedPcztProvider({dataDir:process.env.ZENDER_WALLET_DIR||resolve(data,'wallets'),binary:process.env.ZENDER_WALLET_BIN||'zcash-devtool',inspector:process.env.ZENDER_INSPECTOR_BIN||'zender-inspect',server:process.env.ZENDER_LIGHTWALLETD||'zecrocks'});
-    provider.initialize().catch(error=>{provider.startupError=error.message;console.error('Testnet wallet setup failed; spending is unavailable.');});
+    provider.initialize().then(()=>provider.fund().catch(()=>console.error('Testnet faucet not available; funding can be requested from the workspace.'))).catch(error=>{provider.startupError=error.message;console.error('Testnet wallet setup failed; spending is unavailable.');});
   }else if(process.env.ZENDER_WALLET_MODE==='testnet'){
     const services=JSON.parse(readFileSync(process.env.ZENDER_SERVICES_FILE,'utf8'));
     provider=new ZipherProvider({binary:process.env.ZENDER_WALLET_BIN||'zipher-cli',dataDir:process.env.ZENDER_WALLET_DIR,server:process.env.ZENDER_LIGHTWALLETD,services});

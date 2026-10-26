@@ -17,7 +17,7 @@ async function refresh(){
   workspace=await api('/api/workspace');$('#login').classList.add('hidden');$('#workspace').classList.remove('hidden');
   const sandbox=workspace.mode==='sandbox';$('#mode-label').textContent=workspace.provider;$('#mode-sidebar').textContent=sandbox?'Sandbox · no real funds':'Zcash testnet';
   $('#notice').classList.remove('hidden');$('#fault-label').classList.toggle('hidden',!sandbox);
-  if(!sandbox){$('#notice strong').textContent='Testnet integration preview';$('#notice div>span').textContent='Wallet proposals can be checked. Automatic broadcasting is disabled pending exact-proposal signing.';$('#walkthrough').classList.add('hidden');}
+  if(!sandbox){$('#notice strong').textContent=workspace.liveBroadcastEnabled?'Live testnet workspace':'Testnet integration preview';$('#notice div>span').textContent=workspace.liveBroadcastEnabled?'Real shielded payments using valueless test ZEC. Each purchase is verified by a separate receiving wallet.':'Wallet proposals can be checked. Automatic broadcasting is disabled pending exact-proposal signing.';$('#walkthrough').classList.add('hidden');}
   $('#task-count').textContent=workspace.tasks.length;
   const details=await Promise.all(workspace.tasks.map(t=>api(`/api/tasks/${t.id}`)));
   const approvals=details.flatMap(t=>t.purchases.filter(p=>p.status==='awaiting_approval').map(p=>({...p,taskTitle:t.title,taskExpired:t.expired,taskClosed:t.status==='closed'})));

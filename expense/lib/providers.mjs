@@ -9,7 +9,7 @@ export const CATALOG = [
   { id:'supplier-compare', name:'Supplier comparison', description:'Compare the quotes you supply by delivered cost.', priceZat:25000, feeZat:1000, category:'Research' },
   { id:'report-export', name:'Report export', description:'Package supplied findings into a Markdown report.', priceZat:45000, feeZat:1000, category:'Reports' },
 ];
-function resultFor(service, input) {
+export function resultFor(service, input) {
   if (service === 'document-extract') {
     const text = String(input.text || '');
     if (!text.trim()) throw new Error('Provide text to extract.');

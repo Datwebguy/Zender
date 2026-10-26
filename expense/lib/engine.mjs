@@ -81,7 +81,12 @@ export class Engine {
     if(this.inflight?.has(id))return this.requirePurchase(id);
     this.inflight??=new Set();this.inflight.add(id);
     // Executing rows from a prior process are recovered on startup, never replayed.
-    try{const payment=await this.provider.pay(p);return this.recordPayment(p,payment);}
+    try{const payment=await this.provider.pay(p,async prepared=>{
+      if(!/^[a-f0-9]{64}$/.test(prepared.txid)||!Number.isSafeInteger(prepared.feeZat)||prepared.feeZat<0||prepared.feeZat>p.feeZat)throw new Fault('Prepared transaction exceeds its authorization.');
+      const current=this.requirePurchase(id);this.assertActive(this.requireTask(p.taskId));
+      current.txid=prepared.txid;current.actualFeeZat=prepared.feeZat;current.pcztHash=prepared.pcztHash;
+      this.store.transaction(()=>{this.store.putPurchase(current);this.store.event(p.taskId,'payment.prepared',{purchaseId:id,txid:prepared.txid});});
+    });return this.recordPayment(p,payment);}
     catch(error){
       const current=this.requirePurchase(id);current.status=error.definitelyNotSent===true?'ready':'uncertain';current.error=String(error.message||error).slice(0,500);
       this.store.transaction(()=>{this.store.putPurchase(current);this.store.event(p.taskId,error.definitelyNotSent===true?'payment.not_sent':'payment.uncertain',{purchaseId:id});});return current;
@@ -93,6 +98,7 @@ export class Engine {
     const delivered=payment.confirmed===true&&Object.hasOwn(payment,'result')&&payment.result!==undefined;
     p.status=delivered?'delivered':'broadcast';p.error=null;
     if(delivered){p.result=payment.result;p.resultHash=digest(JSON.stringify(payment.result));p.deliveredAt=new Date().toISOString();}
+    if(payment.evidence)p.evidence=payment.evidence;
     this.store.transaction(()=>{this.store.putPurchase(p);this.store.event(p.taskId,delivered?'purchase.delivered':'payment.broadcast',{purchaseId:p.id,txid:p.txid});});return p;
   }
   async recover(id){

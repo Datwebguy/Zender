@@ -6,6 +6,7 @@ import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { Store } from './lib/store.mjs';
 import { Engine, Fault } from './lib/engine.mjs';
 import { SandboxProvider, ZipherProvider, CATALOG } from './lib/providers.mjs';
+import { FixedPcztProvider } from './lib/pczt-provider.mjs';
 const root=dirname(fileURLToPath(import.meta.url));
 function clean(value){
   if(Array.isArray(value))return value.map(clean);
@@ -27,12 +28,12 @@ export function createApp({store,provider,ownerToken,publicOrigin=null}){
     res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');
     res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
     try{
+      const path=new URL(req.url,'http://localhost').pathname;
+      if(path==='/api/health'&&req.method==='GET')return send(res,200,{ok:true,mode:provider.mode});
       const host=req.headers.host||'';
       const local=/^(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/.test(host);
       if(!local&&host!==published?.host)throw new Fault('Use the configured Zender address.',403,'INVALID_HOST');
       if(req.headers.origin){let origin;try{origin=new URL(req.headers.origin);}catch{throw new Fault('Invalid origin.',403);}if(origin.host!==host||origin.origin!==(local?`http://${host}`:published?.origin))throw new Fault('Cross-origin requests are refused.',403);}
-      const path=new URL(req.url,'http://localhost').pathname;
-      if(path==='/api/health')return send(res,200,{ok:true,mode:provider.mode});
       if(!path.startsWith('/api/')){
         if(req.method!=='GET'&&req.method!=='HEAD')throw new Fault('Method not allowed.',405);
         const files={'/':'index.html','/app.js':'app.js','/style.css':'style.css'};
@@ -63,7 +64,8 @@ export function createApp({store,provider,ownerToken,publicOrigin=null}){
       const needOwner=()=>{if(!owner)throw new Fault('Only the owner can change permissions or approve spending.',403,'OWNER_REQUIRED');};
       const scope=id=>{if(!owner&&agentTask!==id)throw new Fault('This credential belongs to another task.',403,'TASK_SCOPE');};
       if(path==='/api/session'&&req.method==='DELETE'){if(cookie)sessions.delete(cookie);res.setHeader('Set-Cookie','zender_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0');return send(res,200,{ok:true});}
-      if(path==='/api/workspace'&&req.method==='GET')return send(res,200,{mode:provider.mode,provider:provider.name,liveBroadcastEnabled:false,owner,services:provider.mode==='sandbox'?CATALOG:provider.services.map(({resultUrl,...s})=>s),tasks:owner?engine.list():[engine.view(agentTask)]});
+      if(path==='/api/workspace'&&req.method==='GET')return send(res,200,{mode:provider.mode,provider:provider.name,liveBroadcastEnabled:provider.broadcastEnabled===true,owner,services:provider.mode==='sandbox'?CATALOG:provider.services.map(({resultUrl,...s})=>s),tasks:owner?engine.list():[engine.view(agentTask)]});
+      if(path==='/api/wallet'&&req.method==='GET'){needOwner();return send(res,200,provider.status?await provider.status():{mode:'sandbox',ready:true});}
       if(path==='/api/tasks'&&req.method==='POST'){needOwner();return send(res,201,engine.createTask(body));}
       let m=path.match(/^\/api\/tasks\/([a-z0-9-]+)(?:\/(credentials|close|receipt|purchases))?$/);
       if(m){const [,id,action]=m;scope(id);
@@ -94,7 +96,10 @@ export function start(){
   const ownerToken=process.env.ZENDER_OWNER_TOKEN||readFileSync(keyFile,'utf8').trim();if(ownerToken.length<32)throw new Error('Owner key must contain at least 32 characters.');
   const store=new Store(resolve(data,'expenses.sqlite'));
   let provider;
-  if(process.env.ZENDER_WALLET_MODE==='testnet'){
+  if(process.env.ZENDER_WALLET_MODE==='pczt-testnet'){
+    provider=new FixedPcztProvider({dataDir:process.env.ZENDER_WALLET_DIR||resolve(data,'wallets'),binary:process.env.ZENDER_WALLET_BIN||'zcash-devtool',inspector:process.env.ZENDER_INSPECTOR_BIN||'zender-inspect',server:process.env.ZENDER_LIGHTWALLETD||'zecrocks'});
+    provider.initialize().catch(error=>{provider.startupError=error.message;console.error('Testnet wallet setup failed; spending is unavailable.');});
+  }else if(process.env.ZENDER_WALLET_MODE==='testnet'){
     const services=JSON.parse(readFileSync(process.env.ZENDER_SERVICES_FILE,'utf8'));
     provider=new ZipherProvider({binary:process.env.ZENDER_WALLET_BIN||'zipher-cli',dataDir:process.env.ZENDER_WALLET_DIR,server:process.env.ZENDER_LIGHTWALLETD,services});
   }else if(process.env.ZENDER_WALLET_MODE&&process.env.ZENDER_WALLET_MODE!=='sandbox')throw new Error('Only sandbox and testnet modes are supported.');

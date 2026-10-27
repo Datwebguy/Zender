@@ -22,7 +22,7 @@ try{
   await page.getByLabel('Findings',{exact:true}).fill('Verified supplier comparison.');
   await page.getByRole('button',{name:'Check permissions & request'}).click();
   await page.getByRole('button',{name:'Approve exact purchase'}).click();
-  await page.getByRole('button',{name:'Run sandbox purchase'}).click();
+  await page.getByRole('button',{name:'Try purchase'}).click();
   await page.getByText('Delivered',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Request purchase'}).click();
   await page.locator('#purchase-service').selectOption('document-extract');
@@ -31,7 +31,7 @@ try{
   await page.getByText('Test recovery',{exact:true}).click();
   await page.getByLabel('Simulate a lost response after payment').check();
   await page.getByRole('button',{name:'Check permissions & request'}).click();
-  await page.getByRole('button',{name:'Run sandbox purchase'}).click();
+  await page.getByRole('button',{name:'Try purchase'}).click();
   await page.getByRole('button',{name:'Check payment'}).click();
   await page.waitForFunction(()=>document.querySelectorAll('.badge.delivered').length===2);
   const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'Expense record'}).click();await(await downloadPromise).saveAs(`${out}/expenses.json`);

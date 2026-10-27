@@ -28,7 +28,7 @@ export class FixedPcztProvider {
     if(!Number.isSafeInteger(confirmations)||confirmations<1)throw new Error('Confirmations must be a positive integer.');
     this.mode=network;this.confirmations=confirmations;this.name=network==='mainnet'?'Zcash mainnet':'Zcash testnet';this.broadcastEnabled=true;this.ready=false;
     this.dataDir=resolve(dataDir);this.binary=binary;this.inspector=inspector;this.server=server;this.runner=runner;this.queue=Promise.resolve();
-    this.sender=join(this.dataDir,'payer');this.receiver=join(this.dataDir,'merchant');this.identity=join(this.sender,'identity.txt');
+    this.sender=join(this.dataDir,'payer');this.receiver=join(this.dataDir,'merchant');this.identity=join(this.sender,'identity.txt');this.viewingKey=join(this.dataDir,'payer-viewing-key.txt');
     this.services=CATALOG.map(s=>({...s,feeZat:20000}));
     mkdirSync(this.dataDir,{recursive:true,mode:0o700});chmodSync(this.dataDir,0o700);
   }
@@ -51,6 +51,10 @@ export class FixedPcztProvider {
         const info=JSON.parse(await this.run(['wallet','-w',dir,'get-info','--server',this.server]));
         if(info.chain_name!==(this.mode==='mainnet'?'main':'test'))throw new Error('This wallet is connected to the wrong network.');
       }
+      const accounts=await this.run(['wallet','-w',this.sender,'list-accounts']);
+      const viewing=accounts.match(/UFVK:\s+(uviewtest1[0-9a-z]+|uview1[0-9a-z]+)/)?.[1];
+      if(!viewing)throw new Error('The paying wallet could not verify its change addresses.');
+      writeFileSync(this.viewingKey,viewing,{mode:0o600});
       const addresses=await this.run(['wallet','-w',this.receiver,'list-addresses','--receiver','orchard']);
       this.recipient=this.addressFrom(addresses);
       if(!this.recipient)throw new Error('The receiving wallet address is unavailable.');
@@ -66,7 +70,7 @@ export class FixedPcztProvider {
     resultFor(id,input);
     return {...service,result:null};
   }
-  async inspect(path){return JSON.parse(await this.run([path],{binary:this.inspector,timeout:30000}));}
+  async inspect(path){return JSON.parse(await this.run([path,this.viewingKey,this.mode],{binary:this.inspector,timeout:30000}));}
   async pay(p,onPrepared){
     return this.serial(async()=>{
       if(!this.ready)throw unsent('Your wallet is getting ready. Try again shortly.');
@@ -104,7 +108,11 @@ export class FixedPcztProvider {
       if(info.chain_tip_height-tx.mined_height+1<this.confirmations)return null;
       const outputs=(tx.outputs||[]).filter(o=>o.incoming&&!o.change&&o.valueZat===p.amountZat&&o.memo===`Zender ${p.id}`&&!String(o.pool).includes('Transparent'));
       if(outputs.length!==1)throw new Error('The receiving wallet did not verify the expected shielded amount and purchase memo.');
-      const output=outputs[0];if(output.address&&output.address!==p.recipient)throw new Error('Receiving address differs from this purchase.');
+      const output=outputs[0];
+      if(output.address&&output.address!==p.recipient){
+        const check=JSON.parse(await this.run(['--match-address',this.mode,output.pool,p.recipient,output.address],{binary:this.inspector,timeout:30000}));
+        if(check.matches!==true)throw new Error('Receiving address differs from this purchase.');
+      }
       return {txid:p.txid,amountZat:p.amountZat,feeZat:p.actualFeeZat,confirmed:true,simulation:false,result:resultFor(p.serviceId,p.input),evidence:{network:this.mode,confirmations:info.chain_tip_height-tx.mined_height+1,height:tx.mined_height,pool:output.pool,amountZat:output.valueZat,memo:output.memo,verifiedBy:'separate receiving wallet'}};
     });
   }

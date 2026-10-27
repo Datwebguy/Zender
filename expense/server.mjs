@@ -108,6 +108,15 @@ export function start(){
   }else if(process.env.ZENDER_WALLET_MODE&&process.env.ZENDER_WALLET_MODE!=='sandbox')throw new Error('Choose sandbox, pczt-testnet or pczt-mainnet.');
   else provider=new SandboxProvider(store);
   const app=createApp({store,provider,ownerToken,publicOrigin:process.env.ZENDER_PUBLIC_URL||null});
+  let checkingReceipts=false;
+  const receiptTimer=provider.broadcastEnabled?setInterval(async()=>{
+    if(checkingReceipts||!provider.ready)return;
+    checkingReceipts=true;
+    try{for(const task of store.tasks().filter(t=>t.mode===provider.mode))for(const purchase of store.purchases(task.id).filter(p=>['broadcast','uncertain'].includes(p.status)))await app.engine.recover(purchase.id);}
+    catch{console.error('Payment receipt check will resume on the next pass.');}
+    finally{checkingReceipts=false;}
+  },15000):null;
+  receiptTimer?.unref();app.server.on('close',()=>clearInterval(receiptTimer));
   const port=Number(process.env.PORT||4310);
   app.server.on('error',error=>{console.error(`Zender could not start: ${error.message}`);process.exitCode=1;});
   app.server.listen(port,process.env.ZENDER_PUBLIC_URL?'0.0.0.0':'127.0.0.1',()=>console.log(`Zender · ${provider.name}\n${process.env.ZENDER_PUBLIC_URL||`http://127.0.0.1:${port}`}\nOwner sign-in is required.`));

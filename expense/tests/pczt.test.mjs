@@ -47,7 +47,28 @@ test('a changed signed transaction is rejected before broadcast',async()=>{
 });
 test('submission response loss is uncertain rather than safe to pay again',async()=>{
   const f=signerFixture({sendFailure:true});try{
-    await assert.rejects(f.provider.pay(f.p,async()=>{}),e=>!e.definitelyNotSent&&/response lost/.test(e.message));
+    await assert.rejects(f.provider.pay(f.p,async()=>{}),e=>!e.definitelyNotSent&&/response lost/.test(e.cause?.message));
     assert.equal(f.calls.filter(x=>x==='send').length,1);
   }finally{f.cleanup();}
+});
+
+
+test('mainnet and testnet use their own address formats and mainnet has no faucet',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'zender-network-'));
+ try{
+  const main=new FixedPcztProvider({dataDir:join(dir,'mainnet'),network:'mainnet'});
+  const testnet=new FixedPcztProvider({dataDir:join(dir,'testnet'),network:'testnet'});
+  assert.equal(main.mode,'mainnet');assert.equal(main.confirmations,10);
+  assert.equal(main.addressFrom('Receiver(orchard): u1'+'q'.repeat(80)),'u1'+'q'.repeat(80));
+  assert.equal(main.addressFrom('utest1'+'q'.repeat(80)),null);
+  assert.equal(testnet.addressFrom('u1'+'q'.repeat(80)),null);
+  await assert.rejects(main.fund(),/mainnet address/);
+ }finally{rmSync(dir,{recursive:true,force:true});}
+});
+test('wallet errors give actionable messages without process arguments',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'zender-errors-'));
+ try{
+ const provider=new FixedPcztProvider({dataDir:dir,runner:async()=>{throw new Error('Command failed: wallet --identity secret-path: Insufficient balance');}});
+ await assert.rejects(provider.run(['wallet']),e=>/Add ZEC/.test(e.message)&&!e.message.includes('secret-path'));
+ }finally{rmSync(dir,{recursive:true,force:true});}
 });

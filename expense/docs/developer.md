@@ -28,7 +28,7 @@ docker build -f expense/Dockerfile --build-arg ZENDER_WALLET_SOURCE --build-arg 
 
 ## Agent connections
 
-Issue a task credential from the owner workspace. Set `ZENDER_URL` to the HTTPS workspace address and `ZENDER_AGENT_TOKEN` to that credential in the agent process.
+Issue a task credential from the owner workspace. Set `ZENDER_URL` to the HTTPS workspace address and `ZENDER_AGENT_TOKEN` to that credential in the agent process. Remote clients use the workspace API route automatically; set `ZENDER_API_PREFIX` to override it.
 
 ```json
 {

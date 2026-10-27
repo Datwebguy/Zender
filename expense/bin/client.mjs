@@ -9,6 +9,7 @@ export async function api(path,{method='GET',body,agent=false}={}){
   const base=process.env.ZENDER_URL||'http://127.0.0.1:4310';const url=new URL(base);
   const local=['localhost','127.0.0.1','[::1]'].includes(url.hostname);
   if(url.protocol!=='https:'&&!(local&&url.protocol==='http:'))throw new Error('Remote workspaces require HTTPS.');
-  const response=await fetch(new URL(path,base),{method,redirect:'error',headers:{Authorization:`Bearer ${token}`,'content-type':'application/json'},body:body?JSON.stringify(body):undefined});
+  const prefix=process.env.ZENDER_API_PREFIX||(local?'/api':'/api/expenses');
+  const response=await fetch(new URL(path.replace(/^\/api(?=\/|$)/,prefix),base),{method,redirect:'error',headers:{Authorization:`Bearer ${token}`,'content-type':'application/json'},body:body?JSON.stringify(body):undefined});
   const result=await response.json();if(!response.ok)throw new Error(result.error||'Request failed.');return result;
 }

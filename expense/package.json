@@ -1,0 +1,10 @@
+{
+  "name": "zender-expenses",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Private expense accounts for agent tasks",
+  "engines": { "node": ">=24" },
+  "bin": { "zender": "bin/zender.mjs", "zender-mcp": "bin/mcp.mjs" },
+  "scripts": { "start": "node server.mjs", "test": "node --test tests/*.test.mjs", "demo": "node bin/zender.mjs demo" }
+}

@@ -1,0 +1,8 @@
+.zender
+node_modules
+tests
+*.sqlite*
+.env*
+
+__pycache__
+*.pyc

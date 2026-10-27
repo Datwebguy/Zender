@@ -1,0 +1,13 @@
+{
+  "network": "testnet",
+  "txid": "c543a4b9f135d9aae40618699068e20dfa3eae5d0b14efbe35371f91a2bc233b",
+  "height": 4546439,
+  "confirmationsAtVerification": 1,
+  "pool": "Shielded(Ironwood)",
+  "amountZat": 12000,
+  "feeZat": 10000,
+  "status": "delivered",
+  "verification": "Separate receiving wallet matched the mined transaction, amount, shielded receiver and purchase memo.",
+  "execution": "Automatic construction, inspection, signing, proving, submission, receipt recovery and result delivery.",
+  "retry": "Repeated execution returned the same delivered transaction without another payment."
+}

@@ -67,3 +67,7 @@ Standard exports omit recipients, transaction IDs, inputs and results. Detailed 
 ## Deployment
 
 The public application belongs to the existing `tryzender` Vercel project. Verify the project, commit, preview and API behavior before promoting a release. Wallet signing requires durable state and serialization across runtime instances; deployment changes must preserve both.
+
+## Payment verification
+
+The [testnet payment record](testnet-payment.json) records an automatic signed purchase, mined receiving confirmation, delivered result and idempotent retry.

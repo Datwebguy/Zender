@@ -2,7 +2,7 @@
 
 Private expense accounts for agent tasks. Give a task a budget, choose permitted services, approve larger purchases, and keep a record of what was paid for and delivered.
 
-This is an executable local sandbox release. It includes a durable spending engine, web workspace, CLI, MCP server and agent skill. Sandbox purchases use simulated payments and real computation over supplied inputs. They do not move ZEC. There is no mainnet support.
+This release includes a hosted owner workspace, a local sandbox and an implemented testnet signer awaiting funded verification. It includes a durable spending engine, web workspace, CLI, MCP server and agent skill. Sandbox purchases use simulated payments and real computation over supplied inputs. They do not move ZEC. There is no mainnet support.
 
 ## Run
 
@@ -19,7 +19,7 @@ Open `http://127.0.0.1:4310`. In another terminal, get the workspace owner key:
 node bin/zender.mjs owner-key
 ```
 
-Paste it into the sign-in page. The key is generated on first startup and stored with mode 0600 in `.zender/owner.key`. It is not printed by server startup. The service binds only to loopback, refuses unrecognized hosts and cross-origin requests, and uses an HttpOnly same-site session cookie for the browser. This release is intended for one trusted owner on one machine, not shared hosting.
+Paste it into the sign-in page. The key is generated on first startup and stored with mode 0600 in `.zender/owner.key`. It is not printed by server startup. The service binds only to loopback, refuses unrecognized hosts and cross-origin requests, and uses an HttpOnly same-site session cookie for the browser. The hosted deployment uses HTTPS, an owner credential and a persistent volume. It supports one owner.
 
 ## Complete a task
 
@@ -77,13 +77,15 @@ The stdio server exposes `zender_task`, `zender_request_purchase`, `zender_execu
 
 The same credential works with the CLI. Always supply a stable `--key` for a purchase and reuse it for identical retries. Changing a purchase while reusing its key is rejected.
 
-## Zcash adapter status
+## Zcash signing
 
-The testnet adapter checks wallet proposal output through an installed Zipher CLI. It always selects testnet and uses a dedicated wallet directory. It does not bundle third-party wallet code or require seed phrases through the Zender interface.
+`ZENDER_WALLET_MODE=pczt-testnet` enables the fixed-PCZT testnet integration. The container builds the pinned wallet and Zender inspector. It creates separate paying and receiving wallets on the persistent volume; signing keys are never exposed to agents. The payer needs test ZEC before a purchase can execute.
 
-**Automatic live broadcasting is disabled.** The inspected CLI rebuilds a proposal during confirmation, so comparing a preliminary quote is insufficient to bind signing to the approved outputs and maximum fee. A compatible fixed-proposal signing adapter and funded testnet verification are required before live agent spending can be enabled. Do not represent this release as a working on-chain agent wallet.
+The adapter checks recipient, amount, shielded outputs and maximum fee, records the transaction identity before signing, then checks it again before broadcast. The receiving wallet must find a mined transaction with the purchase amount and memo before Zender releases the computed result. Recovery never sends another payment.
 
-See [wallet integration](docs/wallet-integration.md) for the exact boundary and release gates. The original Zender tutorial remains separate from this application.
+**Public-testnet payment confirmation remains unverified.** The wallet binaries build and initialize, but the tested faucet rejected funding. Queued funding is not payment proof. The included signing tests use controlled runner fixtures; they do not substitute for a funded transaction. No mainnet is enabled.
+
+See [wallet integration](docs/wallet-integration.md) for configuration and limits.
 
 ## Privacy and trust
 
@@ -99,7 +101,7 @@ Shielded transactions hide selected on-chain information. They do not hide purch
 npm test
 ```
 
-Tests cover budget reservations, approval enforcement, cross-task access, idempotency, concurrent execution, response-loss recovery, persistence across restart, revocation, expiry, redacted exports, CLI and MCP flows, and wallet proposal validation. HTTP handler integration tests use an in-process transport so they run without a listening port. Browser rendering and live blockchain payments are separate verification gates.
+Tests cover budget reservations, approval enforcement, cross-task access, idempotency, concurrent execution, response-loss recovery, persistence across restart, revocation, expiry, redacted exports, CLI and MCP flows, and wallet proposal validation. HTTP handler integration tests use an in-process transport so they run without a listening port. The hosted sandbox browser journey passed on desktop and mobile. Funded blockchain confirmation is still a separate, incomplete verification gate.
 
 ## Layout
 

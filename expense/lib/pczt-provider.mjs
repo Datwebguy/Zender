@@ -13,6 +13,7 @@ const unsent=message=>Object.assign(new Error(message),{definitelyNotSent:true})
 export function authorizeEffects(effects,purchase){
   if(!/^[a-f0-9]{64}$/.test(effects.txid)||!Number.isSafeInteger(effects.feeZat)||effects.feeZat<0||effects.feeZat>purchase.feeZat)throw unsent('Transaction fee or identity does not match this authorization.');
   if(!Array.isArray(effects.outputs))throw unsent('Transaction outputs are unavailable.');
+  if(effects.outputs.some(o=>!Number.isSafeInteger(o.valueZat)||o.valueZat<0||!['transparent','sapling','orchard','ironwood'].includes(o.pool)))throw unsent('Invalid transaction output.');
   const positive=effects.outputs.filter(o=>o.valueZat>0);
   if(positive.some(o=>!Number.isSafeInteger(o.valueZat)||o.valueZat<0||o.pool==='transparent'))throw unsent('Only shielded outputs are authorized.');
   const payments=positive.filter(o=>o.address===purchase.recipient);
@@ -40,7 +41,7 @@ export class FixedPcztProvider {
         if(!existsSync(join(dir,'keys.toml')))await this.run(['wallet','-w',dir,'init','--name',name,'--identity',join(dir,'identity.txt'),'--network','test','--server',this.server]);
         chmodSync(join(dir,'identity.txt'),0o600);
       }
-      const addresses=await this.run(['wallet','-w',this.receiver,'list-addresses']);
+      const addresses=await this.run(['wallet','-w',this.receiver,'list-addresses','--receiver','orchard']);
       this.recipient=addresses.match(/utest1[0-9a-z]{60,}/)?.[0];
       if(!this.recipient)throw new Error('The receiving wallet did not expose a testnet Unified Address.');
       this.services=this.services.map(s=>({...s,recipient:this.recipient}));this.ready=true;
@@ -72,6 +73,7 @@ export class FixedPcztProvider {
         await this.run(['pczt','-w',this.sender,'prove',signed,'--output',proven],{timeout:600000});
         const final=authorizeEffects(await this.inspect(proven),p);
         if(final.txid!==approved.txid||final.feeZat!==approved.feeZat)throw unsent('The signed transaction differs from its authorization.');
+        await onPrepared({txid:approved.txid,feeZat:approved.feeZat,pcztHash:createdHash});
         sent=true;
         const output=await this.run(['pczt','-w',this.sender,'send',proven,'--server',this.server]);
         if(!output.includes(approved.txid))throw new Error('Transaction submission needs reconciliation.');
@@ -97,15 +99,25 @@ export class FixedPcztProvider {
     return this.serial(async()=>{
     await this.run(['wallet','-w',this.sender,'sync','--server',this.server]);
     const balance=await this.run(['wallet','-w',this.sender,'balance']);
-    const addresses=await this.run(['wallet','-w',this.sender,'list-addresses']);
+    const addresses=await this.run(['wallet','-w',this.sender,'list-addresses','--receiver','orchard']);
     return {ready:true,mode:'testnet',balance,address:addresses.match(/utest1[0-9a-z]{60,}/)?.[0]||null};
     });
   }
   async fund(){
     if(!this.ready)throw new Error('Wallet initialization is still in progress.');
     const path=join(this.dataDir,'faucet-claim.json');
-    if(existsSync(path))return JSON.parse(readFileSync(path,'utf8'));
-    const addresses=await this.run(['wallet','-w',this.sender,'list-addresses']);
+    if(existsSync(path)){
+      const claim=JSON.parse(readFileSync(path,'utf8'));
+      if(claim.id){
+        const response=await fetch(`https://faucet.testnet.valargroup.dev/api/claim/${encodeURIComponent(claim.id)}`,{signal:AbortSignal.timeout(15000)});
+        if(!response.ok)throw new Error('The testnet faucet status is unavailable.');
+        const current=await response.json();
+        Object.assign(claim,{status:current.status,message:current.message||null,txid:current.txid||null});
+        writeFileSync(path,JSON.stringify(claim),{mode:0o600});
+      }
+      return claim;
+    }
+    const addresses=await this.run(['wallet','-w',this.sender,'list-addresses','--receiver','orchard']);
     const address=addresses.match(/utest1[0-9a-z]{60,}/)?.[0];if(!address)throw new Error('No testnet funding address is available.');
     const response=await fetch('https://faucet.testnet.valargroup.dev/api/claim',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({address}),signal:AbortSignal.timeout(30000)});
     const body=await response.json();if(!response.ok)throw new Error(body.error||'The testnet faucet is unavailable or rate-limited.');

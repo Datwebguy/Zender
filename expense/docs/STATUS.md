@@ -1,28 +1,20 @@
 # Release status
 
-## Working
+## Working and verified
 
-- Local owner workspace with task creation, purchase review, approvals, credential issue, recovery, close and expense export.
-- SQLite persistence; integer zatoshi accounting; budget reservations include fee caps.
-- Task-scoped agent credentials stored as hashes, expiration and revocation.
-- Stable request idempotency; changed-payload rejection; one durable execution claim; conservative recovery after restart.
-- CLI and five-tool stdio MCP interface using the same API and policy engine.
-- Bundled agent skill explaining purchase, approval and recovery behavior.
-- Three sandbox services operate on supplied inputs: extraction, quote comparison and Markdown export.
-- Testnet wallet proposal adapter with explicit broadcast gate.
+- Hosted single-owner HTTPS workspace with persistent SQLite data.
+- Budgets, fee reservations, exact approvals, task credentials, revocation and idempotent recovery.
+- CLI, MCP tools and bundled agent skill use the same policy engine.
+- Original repository tests and five expense test files pass.
+- Hosted sandbox browser journey passed: sign-in, task creation, approval, execution, response-loss recovery, expense download and mobile layout.
+- Pinned Rust wallet and transaction inspector compile successfully, including in the production Docker build. Separate testnet wallets initialize and synchronize.
 
-## Verification completed
+## Implemented, awaiting funded verification
 
-Original repository tests and all four expense test files pass. Expense tests exercise 16 scenarios across the spending engine, API authorization, CLI/MCP flow and wallet proposal adapter. HTTP requests are tested through the actual handler using an in-process transport; no external service is mocked into a successful live blockchain claim. The wallet command runner uses controlled JSON fixtures and is not a funded wallet test.
+Fixed PCZT construction, authorization inspection, pre-signing transaction persistence, signing, proving, broadcast and separate receiving-wallet confirmation are implemented. Runner-fixture tests cover sequence enforcement, final transaction drift and uncertain submission. These tests are not a real on-chain payment.
 
-The MCP executable was also checked through its actual stdin/stdout interface. JavaScript syntax checks and whitespace checks pass.
+The public-testnet faucet rejected full Unified, Orchard-only and transparent funding addresses with `the wallet cannot pay this address`. No funded transaction, transaction ID or receiving confirmation has been verified. Funding requests report their actual status; a queued request is not proof of funding.
 
-## Not verified or not implemented
+## Remaining limits
 
-- Browser rendering: the execution sandbox denies Chromium's required socket operations. HTML/CSS and browser JavaScript are implemented, but visual and interactive browser QA has not run.
-- Listening HTTP server: the execution sandbox denies binding a local TCP port. The server's request handlers and state flow are verified without a socket.
-- Live Zcash payments: no funded wallet is configured, and automatic broadcasting is deliberately disabled until signing binds to the approved fixed proposal.
-- External paid-service integration: the result contract is defined, but no third-party provider has been exercised end to end.
-- Hosted deployment, multi-user accounts, encrypted storage and mainnet support.
-
-This release is a working local sandbox foundation, not a completed on-chain hackathon submission. The next acceptance gate is a fixed-proposal signer plus a receiving testnet service proving amount, memo, confirmation and result delivery.
+One owner; no mainnet; no encrypted database; no third-party paid service integration. The three included services compute useful results from supplied inputs, but are operated within this application. Reorg handling and service-provider settlement need further work before production funds are appropriate.

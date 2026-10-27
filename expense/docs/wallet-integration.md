@@ -1,62 +1,34 @@
-# Wallet integration boundary
+# Wallet integration
 
-## Current state
+## Fixed transaction path
 
-Sandbox payments are durable simulations. The testnet integration can check wallet proposals but cannot broadcast. No live payment has been verified for this release.
+`ZENDER_WALLET_MODE=pczt-testnet` selects the fixed-PCZT provider. The Docker build compiles a pinned wallet revision plus Zender's transaction inspector. Source location is a platform build argument; mandatory wallet licenses are installed in the image.
 
-The wallet executable, dedicated data directory, network connection and test funds are external prerequisites. The owner provisions the wallet outside the agent runtime. No wallet keys pass through MCP or HTTP arguments.
+The provider creates separate payer and merchant wallets. It constructs one transaction, inspects recipient, amount, shielded outputs and fee, and persists its transaction ID and file hash before signing. It signs and proves that file, inspects the final effects again, rechecks task authorization, then submits it. Submission uncertainty retains the transaction ID and budget reservation. Recovery only scans the merchant wallet; it never submits another transaction.
+
+Delivery requires a mined transaction with the exact ID and an incoming shielded output matching the purchase amount and memo. The included services produce their result only after this check. One confirmation is required; reorg rollback is not implemented. Both wallets are hosted by the same operator, so this is wallet-level independent receipt verification, not an independent merchant organization.
 
 ## Configuration
 
-The server accepts these settings for integration development:
-
-| Setting | Meaning |
+| Variable | Meaning |
 | --- | --- |
-| `ZENDER_WALLET_MODE` | `sandbox` (default) or `testnet`; other values fail |
-| `ZENDER_WALLET_BIN` | Absolute path to installed wallet CLI, default `zipher-cli` |
-| `ZENDER_WALLET_DIR` | Dedicated wallet data directory |
-| `ZENDER_LIGHTWALLETD` | Testnet lightwallet server URL |
-| `ZENDER_SERVICES_FILE` | Path to owner-configured service JSON |
-| `ZENDER_DATA_DIR` | Local database and owner key directory |
-| `PORT` | Local HTTP port, default 4310 |
+| `ZENDER_WALLET_MODE` | `sandbox` by default; `pczt-testnet` enables this integration |
+| `ZENDER_WALLET_BIN` | Wallet executable, default `zcash-devtool` |
+| `ZENDER_INSPECTOR_BIN` | Inspector executable, default `zender-inspect` |
+| `ZENDER_WALLET_DIR` | Private wallet storage, defaults below the data directory |
+| `ZENDER_LIGHTWALLETD` | Wallet server alias, default `zecrocks` |
+| `ZENDER_DATA_DIR` | Persistent SQLite and owner-key directory |
+| `ZENDER_OWNER_TOKEN` | Private owner sign-in credential |
+| `ZENDER_PUBLIC_URL` | Public HTTPS origin; enables public binding and Secure cookies |
+| `ZENDER_WALLET_SOURCE` | Docker build argument for the pinned wallet source |
+| `ZENDER_WALLET_REVISION` | Pinned source revision, `0b3436bb8d235c67cd36b800cb45a7b1b489c415` |
 
-A testnet service entry has `id`, `name`, integer `priceZat`, integer `feeZat` (maximum fee reserve), `recipient` (testnet Unified Address) and HTTPS `resultUrl`. Service destinations are configured by the owner, never supplied by an agent. This interface is Zender's service contract, not a claim of generic x402 or MPP compatibility.
+Funding uses valueless public-testnet coins. The free faucet is an external dependency and may reject a request. Its status is displayed without treating a queued request as funding. Mainnet is unsupported.
 
-## Proposal check
+The older `testnet` proposal adapter remains gated and cannot broadcast, because its confirmation command can rebuild the transaction.
 
-The adapter invokes the wallet without a shell:
+## Verification boundary
 
-```text
-zipher-cli --testnet --data-dir DIRECTORY --server SERVER send propose --to ADDRESS --amount ZATOSHIS --memo "Zender PURCHASE_ID" --context-id PURCHASE_ID
-```
+The binaries build, wallets initialize and synchronize, and controlled-runner authorization tests pass. Public-testnet funding was rejected by the faucet; signing through confirmed receipt has not yet been demonstrated with funded coins. Do not describe this as a verified on-chain release until a transaction ID, mined height and matching receiving output are recorded.
 
-It checks the JSON envelope and `address`, `send_amount`, and `fee` fields. A mismatched amount or destination, invalid response, or fee above the authorization is refused. A wallet-directory lock prevents concurrent proposal modification by this adapter. The directory must not be shared with unrelated wallet tools.
-
-The existing `send confirm` operation can rebuild its proposal. It is deliberately not called: validating one quote does not enforce the contents of a later transaction. This gate must be replaced by fixed-proposal construction and verification before enabling automatic spending.
-
-## Delivery contract
-
-After an independently verified payment backend is added, a configured result endpoint receives:
-
-```json
-{ "purchaseId": "PURCHASE_ID", "txid": "TRANSACTION_ID", "input": {} }
-```
-
-It must verify receipt in its own wallet, match the recipient, amount and purchase memo, prevent replay, and return:
-
-```json
-{ "purchaseId": "PURCHASE_ID", "txid": "TRANSACTION_ID", "status": "delivered", "result": {} }
-```
-
-HTTP 202 or another non-delivered result does not close the purchase. Redirects are refused. Recovery uses a recorded transaction; it does not send again. If signing may have broadcast but no transaction ID was recorded, the purchase stays uncertain for operator reconciliation.
-
-## Required before live spending
-
-- Bind authorization to a fixed set of transaction outputs, memo and maximum total fee. Re-check that authorization immediately before signing.
-- Keep signer material and policy mutation outside the agent's OS authority.
-- Persist transaction construction identity before broadcast; reconcile interrupted submissions without re-signing or duplicate payment.
-- Prove confirmation and memo/amount matching through a receiving testnet wallet, including lost responses and duplicate provider requests.
-- Verify fee changes, insufficient funds, expiration during signing, reorgs, service outage, and restart recovery.
-- Record the tested wallet version, network, confirmation policy and known limitations.
-
-Mainnet, hosted multi-user authentication, encrypted local storage, wallet provisioning, and universal paid-service discovery are outside this release.
+Keys and purchase records remain plaintext on a filesystem-protected persistent volume. Agents receive task-scoped API credentials, never wallet keys. Agents with access to the server OS could bypass these boundaries. Multi-user tenancy, encrypted storage, reorg reconciliation and external merchant operation are not implemented.

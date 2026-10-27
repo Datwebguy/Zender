@@ -95,7 +95,7 @@ document.addEventListener('click',async e=>{
       $('#copy-credential').onclick=async()=>{try{await navigator.clipboard.writeText(credential.token);toast('Credential copied.');}catch{toast('Select and copy the credential above.');}};
     }
     if(b.id==='open-wallet'){ $('#wallet-dialog').showModal();$('#wallet-balance').textContent='Syncing the testnet wallet…';const wallet=await api('/api/wallet');$('#wallet-balance').textContent=wallet.ready?wallet.balance:'Wallet setup is in progress. Try again shortly.';}
-    if(b.id==='fund-testnet'){b.disabled=true;const claim=await post('/api/wallet/faucet');$('#wallet-funding').textContent='Faucet request '+claim.status+'. Wait for confirmation, then reopen the wallet to refresh its balance.';}
+    if(b.id==='fund-testnet'){b.disabled=true;const claim=await post('/api/wallet/faucet');$('#wallet-funding').textContent='Faucet request: '+claim.status+'. '+(claim.message||'Reopen the wallet after confirmation to refresh its balance.');}
     if(b.id==='logout'){await api('/api/session',{method:'DELETE',body:{}});location.reload();}
     if(b.id==='walkthrough'){
       b.disabled=true;

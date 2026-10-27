@@ -136,7 +136,8 @@ function renderHome() {
     el("h1", {}, l1, l2),
     el("p", { class: "lede" }, "Write to yourself, one year from now. It lives on a public blockchain, and only your wallet can open it."),
     el("div", { class: "cta" },
-      el("a", { href: "/testnet", class: "btn ink", "data-nav": true }, "Practice free", arrow()),
+      el("a", { href: "/tasks", class: "btn ink" }, "Open task accounts", arrow()),
+      el("a", { href: "/testnet", class: "btn line", "data-nav": true }, "Practice free"),
       el("a", { href: "/mainnet", class: "btn line", "data-nav": true }, "Send it for real"),
     ),
     el("p", { class: "hand note-hand" }, "about 15 minutes ↗"),
@@ -1121,3 +1122,4 @@ document.addEventListener("keydown", (e) => {
 });
 
 render();
+

@@ -1,6 +1,22 @@
 {
   "rewrites": [
     {
+      "source": "/tasks",
+      "destination": "/expense/public/index.html"
+    },
+    {
+      "source": "/tasks.js",
+      "destination": "/expense/public/app.js"
+    },
+    {
+      "source": "/tasks.css",
+      "destination": "/expense/public/style.css"
+    },
+    {
+      "source": "/api/expenses/:path*",
+      "destination": "/api/expenses?path=:path*"
+    },
+    {
       "source": "/:p(testnet|mainnet)",
       "destination": "/index.html"
     }
@@ -11,7 +27,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+          "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
         },
         {
           "key": "Referrer-Policy",
@@ -34,6 +50,9 @@
     },
     "api/check.js": {
       "maxDuration": 20
+    },
+    "api/expenses.js": {
+      "maxDuration": 300
     }
   }
 }

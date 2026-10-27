@@ -28,7 +28,8 @@ export function createApp({store,provider,ownerToken,publicOrigin=null}){
     res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');
     res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
     try{
-      const path=new URL(req.url,'http://localhost').pathname;
+      let path=new URL(req.url,'http://localhost').pathname;
+      path=path.replace(/^\/api\/expenses(?=\/|$)/,'/api');
       if(path==='/api/health'&&req.method==='GET')return send(res,200,{ok:true,mode:provider.mode});
       const host=req.headers.host||'';
       const local=/^(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/.test(host);
@@ -36,9 +37,9 @@ export function createApp({store,provider,ownerToken,publicOrigin=null}){
       if(req.headers.origin){let origin;try{origin=new URL(req.headers.origin);}catch{throw new Fault('Invalid origin.',403);}if(origin.host!==host||origin.origin!==(local?`http://${host}`:published?.origin))throw new Fault('Cross-origin requests are refused.',403);}
       if(!path.startsWith('/api/')){
         if(req.method!=='GET'&&req.method!=='HEAD')throw new Fault('Method not allowed.',405);
-        const files={'/':'index.html','/app.js':'app.js','/style.css':'style.css'};
+        const files={'/':'index.html','/tasks':'index.html','/app.js':'app.js','/tasks.js':'app.js','/style.css':'style.css','/tasks.css':'style.css','/styles.css':'../styles.css','/theme.js':'../theme.js','/favicon.svg':'../favicon.svg','/fonts/fraunces.woff2':'../fonts/fraunces.woff2','/fonts/courier-prime.woff2':'../fonts/courier-prime.woff2','/fonts/courier-prime-bold.woff2':'../fonts/courier-prime-bold.woff2','/fonts/caveat.woff2':'../fonts/caveat.woff2'};
         const file=files[path];if(!file)throw new Fault('Not found.',404);
-        const data=readFileSync(resolve(root,'public',file));res.writeHead(200,{'content-type':({'.html':'text/html','.js':'text/javascript','.css':'text/css'})[extname(file)]+'; charset=utf-8'});return res.end(req.method==='HEAD'?undefined:data);
+        const data=readFileSync(file.startsWith('../')?resolve(root,file):resolve(root,'public',file));res.writeHead(200,{'content-type':({'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.woff2':'font/woff2'})[extname(file)]+'; charset=utf-8'});return res.end(req.method==='HEAD'?undefined:data);
       }
       let body={};
       if(['POST','PUT','PATCH','DELETE'].includes(req.method)){
@@ -97,18 +98,28 @@ export function start(){
   const ownerToken=process.env.ZENDER_OWNER_TOKEN||readFileSync(keyFile,'utf8').trim();if(ownerToken.length<32)throw new Error('Owner key must contain at least 32 characters.');
   const store=new Store(resolve(data,'expenses.sqlite'));
   let provider;
-  if(process.env.ZENDER_WALLET_MODE==='pczt-testnet'){
-    provider=new FixedPcztProvider({dataDir:process.env.ZENDER_WALLET_DIR||resolve(data,'wallets'),binary:process.env.ZENDER_WALLET_BIN||'zcash-devtool',inspector:process.env.ZENDER_INSPECTOR_BIN||'zender-inspect',server:process.env.ZENDER_LIGHTWALLETD||'zecrocks'});
-    provider.initialize().then(()=>provider.fund().catch(()=>console.error('Testnet faucet not available; funding can be requested from the workspace.'))).catch(error=>{provider.startupError=error.message;console.error('Testnet wallet setup failed; spending is unavailable.');});
+  if(['pczt-testnet','pczt-mainnet','mainnet'].includes(process.env.ZENDER_WALLET_MODE)){
+    const network=process.env.ZENDER_WALLET_MODE==='pczt-testnet'?'testnet':'mainnet';
+    provider=new FixedPcztProvider({network,confirmations:Number(process.env.ZENDER_CONFIRMATIONS||(network==='mainnet'?10:1)),dataDir:process.env.ZENDER_WALLET_DIR||resolve(data,network==='mainnet'?'wallets-mainnet':'wallets'),binary:process.env.ZENDER_WALLET_BIN||'zcash-devtool',inspector:process.env.ZENDER_INSPECTOR_BIN||'zender-inspect',server:process.env.ZENDER_LIGHTWALLETD||'zecrocks'});
+    provider.initialize().then(()=>network==='testnet'?provider.fund().catch(()=>console.error('Testnet faucet not available; funding can be requested from the workspace.')):undefined).catch(error=>{provider.startupError=error.message;console.error('Testnet wallet setup failed; spending is unavailable.');});
   }else if(process.env.ZENDER_WALLET_MODE==='testnet'){
     const services=JSON.parse(readFileSync(process.env.ZENDER_SERVICES_FILE,'utf8'));
     provider=new ZipherProvider({binary:process.env.ZENDER_WALLET_BIN||'zipher-cli',dataDir:process.env.ZENDER_WALLET_DIR,server:process.env.ZENDER_LIGHTWALLETD,services});
-  }else if(process.env.ZENDER_WALLET_MODE&&process.env.ZENDER_WALLET_MODE!=='sandbox')throw new Error('Only sandbox and testnet modes are supported.');
+  }else if(process.env.ZENDER_WALLET_MODE&&process.env.ZENDER_WALLET_MODE!=='sandbox')throw new Error('Choose sandbox, pczt-testnet or pczt-mainnet.');
   else provider=new SandboxProvider(store);
   const app=createApp({store,provider,ownerToken,publicOrigin:process.env.ZENDER_PUBLIC_URL||null});
+  let checkingReceipts=false;
+  const receiptTimer=provider.broadcastEnabled?setInterval(async()=>{
+    if(checkingReceipts||!provider.ready)return;
+    checkingReceipts=true;
+    try{for(const task of store.tasks().filter(t=>t.mode===provider.mode))for(const purchase of store.purchases(task.id).filter(p=>['broadcast','uncertain'].includes(p.status)))await app.engine.recover(purchase.id);}
+    catch{console.error('Payment receipt check will resume on the next pass.');}
+    finally{checkingReceipts=false;}
+  },15000):null;
+  receiptTimer?.unref();app.server.on('close',()=>clearInterval(receiptTimer));
   const port=Number(process.env.PORT||4310);
   app.server.on('error',error=>{console.error(`Zender could not start: ${error.message}`);process.exitCode=1;});
-  app.server.listen(port,process.env.ZENDER_PUBLIC_URL?'0.0.0.0':'127.0.0.1',()=>console.log(`Zender · ${provider.name}\n${process.env.ZENDER_PUBLIC_URL||`http://127.0.0.1:${port}`}\nOwner sign-in is required. No mainnet spending is enabled.`));
+  app.server.listen(port,process.env.ZENDER_PUBLIC_URL?'0.0.0.0':'127.0.0.1',()=>console.log(`Zender · ${provider.name}\n${process.env.ZENDER_PUBLIC_URL||`http://127.0.0.1:${port}`}\nOwner sign-in is required.`));
   return app;
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url))start();

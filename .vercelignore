@@ -1,3 +1,14 @@
 tests
 *.md
 .github
+
+expense/.zender
+expense/lib
+expense/wallet
+expense/tests
+expense/bin
+expense/skills
+expense/Dockerfile
+expense/package.json
+*.sqlite*
+.env*

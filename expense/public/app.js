@@ -94,7 +94,7 @@ document.addEventListener('click',async e=>{
       $('#credential-result').innerHTML=`<div class="credential"><strong>Copy once. Keep it private.</strong><p>This credential grants spending access within the selected task’s rules.</p><code>${escape(credential.token)}</code><button type="button" class="button" id="copy-credential">Copy credential</button></div>`;
       $('#copy-credential').onclick=async()=>{try{await navigator.clipboard.writeText(credential.token);toast('Credential copied.');}catch{toast('Select and copy the credential above.');}};
     }
-    if(b.id==='open-wallet'){ $('#wallet-dialog').showModal();$('#wallet-balance').textContent='Syncing the testnet wallet…';const wallet=await api('/api/wallet');$('#wallet-balance').textContent=wallet.ready?wallet.balance:'Wallet setup is in progress. Try again shortly.';}
+    if(b.id==='open-wallet'){ $('#wallet-dialog').showModal();$('#wallet-balance').textContent='Syncing the testnet wallet…';const wallet=await api('/api/wallet');$('#wallet-balance').textContent=wallet.ready?`${money(wallet.balance.total)} test ZEC total · ${money(wallet.balance.orchard_spendable+wallet.balance.sapling_spendable+wallet.balance.ironwood_spendable)} shielded and spendable.\nTestnet funding address: ${wallet.address}`:'Wallet setup is in progress. Try again shortly.';}
     if(b.id==='fund-testnet'){b.disabled=true;const claim=await post('/api/wallet/faucet');$('#wallet-funding').textContent='Faucet request: '+claim.status+'. '+(claim.message||'Reopen the wallet after confirmation to refresh its balance.');}
     if(b.id==='logout'){await api('/api/session',{method:'DELETE',body:{}});location.reload();}
     if(b.id==='walkthrough'){

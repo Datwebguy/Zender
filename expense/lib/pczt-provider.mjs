@@ -98,7 +98,7 @@ export class FixedPcztProvider {
     if(!this.ready)return{ready:false,mode:'testnet',error:this.startupError||null};
     return this.serial(async()=>{
     await this.run(['wallet','-w',this.sender,'sync','--server',this.server]);
-    const balance=await this.run(['wallet','-w',this.sender,'balance']);
+    const balance=JSON.parse(await this.run(['wallet','-w',this.sender,'balance','--json']));
     const addresses=await this.run(['wallet','-w',this.sender,'list-addresses','--receiver','orchard']);
     return {ready:true,mode:'testnet',balance,address:addresses.match(/utest1[0-9a-z]{60,}/)?.[0]||null};
     });

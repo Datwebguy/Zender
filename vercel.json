@@ -15,10 +15,6 @@
     {
       "source": "/api/expenses/:path*",
       "destination": "/api/expenses?path=:path*"
-    },
-    {
-      "source": "/:p(testnet|mainnet)",
-      "destination": "/index.html"
     }
   ],
   "headers": [
@@ -54,5 +50,12 @@
     "api/expenses.js": {
       "maxDuration": 300
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/:p(testnet|mainnet)",
+      "destination": "/",
+      "permanent": false
+    }
+  ]
 }

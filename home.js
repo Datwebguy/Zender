@@ -1,0 +1,1 @@
+document.getElementById('theme').addEventListener('click',()=>{const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;try{localStorage.setItem('zender:theme',t);}catch{}});

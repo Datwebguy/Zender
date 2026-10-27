@@ -10,7 +10,7 @@ const page=await context.newPage();const errors=[];page.on('pageerror',error=>er
 const out=process.env.ZENDER_SCREENSHOT_DIR||'/tmp/zender-browser';mkdirSync(out,{recursive:true});
 try{
   await page.goto(base);await page.getByLabel('Owner key',{exact:true}).fill(token);await page.getByRole('button',{name:'Open workspace'}).click();
-  await page.getByRole('heading',{name:'Every task has its limits.'}).waitFor();
+  await page.getByRole('heading',{name:'A job. A budget.'}).waitFor();
   await page.getByRole('button',{name:'New task account'}).click();
   await page.getByLabel('Task name',{exact:true}).fill('Browser verification');
   await page.getByLabel('Total budget · ZEC').fill('0.002');await page.getByLabel('Ask me above · ZEC').fill('0.0003');
@@ -18,6 +18,8 @@ try{
   await page.getByRole('button',{name:'Request purchase'}).click();
   await page.locator('#purchase-service').selectOption('report-export');
   await page.getByLabel('Why is this needed?').fill('Verify approval before spending.');
+  await page.getByLabel('Report title').fill('Supplier decision');
+  await page.getByLabel('Findings',{exact:true}).fill('Verified supplier comparison.');
   await page.getByRole('button',{name:'Check permissions & request'}).click();
   await page.getByRole('button',{name:'Approve exact purchase'}).click();
   await page.getByRole('button',{name:'Run sandbox purchase'}).click();
@@ -25,16 +27,19 @@ try{
   await page.getByRole('button',{name:'Request purchase'}).click();
   await page.locator('#purchase-service').selectOption('document-extract');
   await page.getByLabel('Why is this needed?').fill('Verify lost-response recovery.');
+  await page.getByLabel('Document text').fill('Supplier quote $42.');
+  await page.getByText('Test recovery',{exact:true}).click();
   await page.getByLabel('Simulate a lost response after payment').check();
   await page.getByRole('button',{name:'Check permissions & request'}).click();
   await page.getByRole('button',{name:'Run sandbox purchase'}).click();
-  await page.getByRole('button',{name:'Recover purchase'}).click();
+  await page.getByRole('button',{name:'Check payment'}).click();
   await page.waitForFunction(()=>document.querySelectorAll('.badge.delivered').length===2);
   const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'Expense record'}).click();await(await downloadPromise).saveAs(`${out}/expenses.json`);
   await page.screenshot({path:`${out}/desktop.png`,fullPage:true});
   await page.setViewportSize({width:390,height:844});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Mobile layout overflows');
   await page.screenshot({path:`${out}/mobile.png`,fullPage:true});
+  const before=await page.locator('html').getAttribute('data-theme');await page.getByRole('button',{name:'Switch light or dark mode'}).click();assert.notEqual(await page.locator('html').getAttribute('data-theme'),before);
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({passed:['owner sign-in','task creation','purchase approval','sandbox execution','response-loss recovery','expense download','mobile layout'],screenshots:out}));
 }finally{await browser.close();}

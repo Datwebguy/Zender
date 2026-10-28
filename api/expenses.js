@@ -4,7 +4,7 @@ module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   if (!guard(req, res)) return;
   const path = String(req.query.path || '');
-  if (!/^(health|session|workspace|wallet(?:\/faucet)?|tasks(?:\/[a-z0-9-]+(?:\/(?:credentials|close|receipt|purchases))?)?|purchases\/[a-z0-9-]+(?:\/(?:approve|reject|execute|recover))?)$/.test(path)) return res.status(404).json({error:'Not found.'});
+  if (!/^(health|session|password|workspace|wallet(?:\/faucet)?|tasks(?:\/[a-z0-9-]+(?:\/(?:credentials|close|receipt|purchases))?)?|purchases\/[a-z0-9-]+(?:\/(?:approve|reject|execute|recover))?)$/.test(path)) return res.status(404).json({error:'Not found.'});
   try {
     const url = new URL('/api/' + path, BASE);
     if (req.query.details === 'true') url.searchParams.set('details', 'true');

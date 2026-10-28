@@ -2,7 +2,7 @@ import http from 'node:http';
 import { readFileSync, existsSync, mkdirSync, writeFileSync, chmodSync } from 'node:fs';
 import { resolve, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { randomBytes, timingSafeEqual, scryptSync } from 'node:crypto';
 import { Store } from './lib/store.mjs';
 import { Engine, Fault } from './lib/engine.mjs';
 import { SandboxProvider, ZipherProvider, CATALOG } from './lib/providers.mjs';
@@ -18,7 +18,7 @@ function clean(value){
   return value;
 }
 function same(a,b){const aa=Buffer.from(a||''),bb=Buffer.from(b||'');return aa.length===bb.length&&timingSafeEqual(aa,bb);}
-export function createApp({store,provider,ownerToken,publicOrigin=null}){
+export function createApp({store,provider,ownerToken,publicOrigin=null,passwordFile=null}){
   const published=publicOrigin?new URL(publicOrigin):null;
   if(published&&published.protocol!=='https:')throw new Error('Public workspaces require HTTPS.');
   const engine=new Engine(store,provider);engine.recoverInterrupted();
@@ -52,18 +52,29 @@ export function createApp({store,provider,ownerToken,publicOrigin=null}){
         const address=req.socket.remoteAddress;const window=logins.get(address)||{count:0,until:Date.now()+60000};
         if(window.until<Date.now()){window.count=0;window.until=Date.now()+60000;}
         if(++window.count>10)throw new Fault('Too many sign-in attempts. Try again in a minute.',429);logins.set(address,window);
-        if(!same(body.token,ownerToken))throw new Fault('Owner key is incorrect.',401,'UNAUTHORIZED');
+        let valid=(!passwordFile||!existsSync(passwordFile))&&same(body.token,ownerToken);
+        if(!valid&&typeof body.password==='string'&&body.password.length<=1024&&passwordFile&&existsSync(passwordFile)){
+          const record=JSON.parse(readFileSync(passwordFile,'utf8'));const derived=scryptSync(body.password,Buffer.from(record.salt,'hex'),32);valid=same(derived.toString('hex'),record.hash);
+        }
+        if(!valid)throw new Fault('Sign-in details are incorrect.',401,'UNAUTHORIZED');
         const session=randomBytes(32).toString('hex');sessions.set(session,Date.now()+8*3600000);
         res.setHeader('Set-Cookie',`zender_session=${session}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800${published?'; Secure':''}`);return send(res,200,{ok:true});
       }
       const bearer=(req.headers.authorization||'').replace(/^Bearer /,'');
       const cookie=(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith('zender_session='))?.slice(15);
       const sessionValid=cookie&&(sessions.get(cookie)||0)>Date.now();
-      const owner=same(bearer,ownerToken)||!!sessionValid;
+      const owner=((!passwordFile||!existsSync(passwordFile))&&same(bearer,ownerToken))||!!sessionValid;
       let agentTask=null;
       if(!owner){if(!bearer)throw new Fault('Sign in to your local workspace.',401,'UNAUTHORIZED');agentTask=engine.authenticateAgent(bearer);}
       const needOwner=()=>{if(!owner)throw new Fault('Only the owner can change permissions or approve spending.',403,'OWNER_REQUIRED');};
       const scope=id=>{if(!owner&&agentTask!==id)throw new Fault('This credential belongs to another task.',403,'TASK_SCOPE');};
+      if(path==='/api/password'&&req.method==='POST'){
+        if(!owner)throw new Fault('Sign in first.',403,'OWNER_REQUIRED');
+        if(!passwordFile)throw new Fault('Password setup is unavailable.',503);
+        if(typeof body.password!=='string'||body.password.length<12||body.password.length>1024)throw new Fault('Choose a password of at least 12 characters.');
+        const salt=randomBytes(16),hash=scryptSync(body.password,salt,32);
+        writeFileSync(passwordFile,JSON.stringify({salt:salt.toString('hex'),hash:hash.toString('hex')}),{mode:0o600});return send(res,200,{ok:true});
+      }
       if(path==='/api/session'&&req.method==='DELETE'){if(cookie)sessions.delete(cookie);res.setHeader('Set-Cookie','zender_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0');return send(res,200,{ok:true});}
       if(path==='/api/workspace'&&req.method==='GET')return send(res,200,{mode:provider.mode,provider:provider.name,liveBroadcastEnabled:provider.broadcastEnabled===true,owner,services:provider.mode==='sandbox'?CATALOG:provider.services.map(({resultUrl,...s})=>s),tasks:owner?engine.list():[engine.view(agentTask)]});
       if(path==='/api/wallet'&&req.method==='GET'){needOwner();return send(res,200,provider.status?await provider.status():{mode:'sandbox',ready:true});}
@@ -107,7 +118,7 @@ export function start(){
     provider=new ZipherProvider({binary:process.env.ZENDER_WALLET_BIN||'zipher-cli',dataDir:process.env.ZENDER_WALLET_DIR,server:process.env.ZENDER_LIGHTWALLETD,services});
   }else if(process.env.ZENDER_WALLET_MODE&&process.env.ZENDER_WALLET_MODE!=='sandbox')throw new Error('Choose sandbox, pczt-testnet or pczt-mainnet.');
   else provider=new SandboxProvider(store);
-  const app=createApp({store,provider,ownerToken,publicOrigin:process.env.ZENDER_PUBLIC_URL||null});
+  const app=createApp({store,provider,ownerToken,publicOrigin:process.env.ZENDER_PUBLIC_URL||null,passwordFile:resolve(data,'password.json')});
   let checkingReceipts=false;
   const receiptTimer=provider.broadcastEnabled?setInterval(async()=>{
     if(checkingReceipts||!provider.ready)return;

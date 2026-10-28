@@ -97,7 +97,8 @@ function paymentError(message){
  return message;
 }
 $('#purchase-service').addEventListener('change',updateSample);
-$('#login-form').addEventListener('submit',async e=>{e.preventDefault();try{await post('/api/session',{token:new FormData(e.target).get('token')});e.target.reset();await refresh();}catch(error){$('#login-error').textContent=error.message;}});
+$('#login-form').addEventListener('submit',async e=>{e.preventDefault();try{await post('/api/session',{password:new FormData(e.target).get('password')});e.target.reset();await refresh();}catch(error){$('#login-error').textContent=error.message;}});
+$('#password-form').addEventListener('submit',async e=>{e.preventDefault();try{await post('/api/password',{password:new FormData(e.target).get('password')});e.target.reset();$('#password-dialog').close();toast('Password saved.');}catch(error){$('#password-error').textContent=error.message;}});
 $('#task-form').addEventListener('submit',async e=>{
   e.preventDefault();const b=e.submitter;b.disabled=true;
   try{const f=new FormData(e.target);const t=await post('/api/tasks',{title:f.get('title'),notes:f.get('notes'),budgetZec:f.get('budgetZec'),approvalZec:f.get('approvalZec'),expiresInHours:Number(f.get('expiresInHours')),services:f.getAll('services')});$('#task-dialog').close();e.target.reset();selectedTask=t.id;await refresh();navigate('detail');toast('Task account created.');}
@@ -113,6 +114,7 @@ document.addEventListener('click',async e=>{
   try{
     if(b.dataset.nav)navigate(b.dataset.nav);
     if(b.dataset.close)$('#'+b.dataset.close).close();
+    if(b.id==='change-password'){$('#password-error').textContent='';$('#password-dialog').showModal();}
     if(b.id==='new-task'||b.hasAttribute('data-new-task'))openTaskDialog();
     if(b.dataset.filter){filter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('selected',x===b));renderTasks();}
     if(b.dataset.task){selectedTask=b.dataset.task;taskDetail=await api(`/api/tasks/${selectedTask}`);renderDetail(taskDetail);navigate('detail');}

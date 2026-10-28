@@ -163,7 +163,7 @@ document.addEventListener('click',async e=>{
     if(b.dataset.onboarding==='tasks')navigate('tasks');
     if(b.dataset.onboarding==='open-wallet')$('#open-wallet').click();
     if(b.dataset.close)$('#'+b.dataset.close).close();
-    if(b.id==='bind-wallet'){b.disabled=true;await walletSignature('bind');await refresh();toast('Wallet connected. Use it to sign in next time.');}
+    if(b.id==='bind-wallet'){if(!confirm('After connecting, you will need this wallet to sign in to your account. Continue?'))return;b.disabled=true;await walletSignature('bind');await refresh();toast('Wallet connected. Use it to sign in next time.');}
     if(b.id==='change-password'){$('#password-error').textContent='';$('#password-dialog').showModal();}
     if(b.id==='new-task'||b.hasAttribute('data-new-task'))openTaskDialog();
     if(b.dataset.filter){filter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('selected',x===b));renderTasks();}

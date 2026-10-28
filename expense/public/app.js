@@ -27,6 +27,7 @@ async function refresh(){
   const details=await Promise.all(workspace.tasks.map(t=>api(`/api/tasks/${t.id}`)));
   const approvals=details.flatMap(t=>t.purchases.filter(p=>p.status==='awaiting_approval').map(p=>({...p,taskTitle:t.title,taskExpired:t.expired,taskClosed:t.status==='closed'})));
   $('#approval-count').textContent=approvals.length;
+  renderOnboarding(details);
   renderTasks();$('#approval-list').innerHTML=approvals.length?approvals.map(p=>`<article class="approval-card">${purchaseCard(p,true,p.taskExpired||p.taskClosed)}</article>`).join(''):empty('Nothing waiting on you.','Purchases above a task’s approval threshold will appear here.');
   if(selectedTask){taskDetail=details.find(t=>t.id===selectedTask);if(taskDetail)renderDetail(taskDetail);}
 
@@ -34,6 +35,21 @@ async function refresh(){
   $('#connect-task').innerHTML='<option value="">Select a task account</option>'+workspace.tasks.filter(t=>t.status==='active'&&!t.expired).map(t=>`<option value="${t.id}">${escape(t.title)}</option>`).join('');
   if(previous)$('#connect-task').value=previous;
 }
+function renderOnboarding(details){
+  const current=details.filter(t=>t.mode===workspace.mode);
+  const created=current.length>0;
+  const issued=current.some(t=>t.events.some(e=>e.kind==='agent.connected'));
+  const delivered=current.some(t=>t.purchases.some(p=>p.status==='delivered'));
+  const walletSupported=workspace.liveBroadcastEnabled===true;
+  const steps=[
+    {done:created,label:'Create a task',description:'Choose a budget and permitted services.',action:'new-task',button:created?'Create another':'Create task'},
+    {done:walletSnapshot?.ready&&walletSnapshot.balance?.total>0,label:'Fund your wallet',description:workspace.mode==='sandbox'?'Practice mode does not need funds.':walletSnapshot?'Check the balance and receive address.':'Check your balance and receive address.',action:'open-wallet',button:walletSnapshot?'View wallet':'Check wallet',hidden:!walletSupported,unknown:!walletSnapshot},
+    {done:issued,label:'Issue an agent credential',description:'Give an agent access to one task.',action:'connect',button:'Connect agent'},
+    {done:delivered,label:'Complete a purchase',description:'Review spending and receive a result.',action:'tasks',button:'View tasks'}
+  ];
+  $('#onboarding-steps').innerHTML=steps.filter(s=>!s.hidden).map((s,i)=>`<div class="onboarding-step"><span class="onboarding-number ${s.done?'complete':''}" aria-hidden="true">${s.done?'✓':String(i+1).padStart(2,'0')}</span><div><strong>${s.label}</strong><p>${s.description}</p><small>${s.done?'Complete':s.unknown?'Not checked':'Next step'}</small></div><button type="button" class="text-button" data-onboarding="${s.action}">${s.button} ↗</button></div>`).join('');
+}
+let walletSnapshot=null;
 function empty(title,text,button=''){return `<div class="empty"><span class="privacy-mark">◒</span><h2>${title}</h2><p>${text}</p>${button}</div>`;}
 function stat(label,value,caption,unit=''){return `<div><span class="stat-label">${label}</span><div class="stat-value">${escape(value)}${unit?`<small>${unit}</small>`:''}</div><div class="stat-caption">${caption}</div></div>`;}
 function renderTasks(){
@@ -113,6 +129,10 @@ document.addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b)return;
   try{
     if(b.dataset.nav)navigate(b.dataset.nav);
+    if(b.dataset.onboarding==='new-task')openTaskDialog();
+    if(b.dataset.onboarding==='connect')navigate('connect');
+    if(b.dataset.onboarding==='tasks')navigate('tasks');
+    if(b.dataset.onboarding==='open-wallet')$('#open-wallet').click();
     if(b.dataset.close)$('#'+b.dataset.close).close();
     if(b.id==='change-password'){$('#password-error').textContent='';$('#password-dialog').showModal();}
     if(b.id==='new-task'||b.hasAttribute('data-new-task'))openTaskDialog();
@@ -131,7 +151,7 @@ document.addEventListener('click',async e=>{
       $('#credential-result').innerHTML=`<div class="credential"><strong>Copy once. Keep it private.</strong><p>This credential grants spending access within the selected task’s rules.</p><code>${escape(credential.token)}</code><button type="button" class="button" id="copy-credential">Copy credential</button></div>`;
       $('#copy-credential').onclick=async()=>{try{await navigator.clipboard.writeText(credential.token);toast('Credential copied.');}catch{toast('Select and copy the credential above.');}};
     }
-    if(b.id==='open-wallet'){ $('#wallet-dialog').showModal();$('#wallet-balance').textContent='Updating your balance…';const wallet=await api('/api/wallet');$('#wallet-balance').textContent=wallet.ready?`${money(wallet.balance.total)} ${workspace.mode==='mainnet'?'ZEC':'test ZEC'} total · ${money(wallet.balance.orchard_spendable+wallet.balance.sapling_spendable+wallet.balance.ironwood_spendable)} shielded and spendable.\nReceive address: ${wallet.address}`:'Wallet setup is in progress. Try again shortly.';}
+    if(b.id==='open-wallet'){ $('#wallet-dialog').showModal();$('#wallet-balance').textContent='Updating your balance…';const wallet=await api('/api/wallet');walletSnapshot=wallet;await refresh();$('#wallet-balance').textContent=wallet.ready?`${money(wallet.balance.total)} ${workspace.mode==='mainnet'?'ZEC':'test ZEC'} total · ${money(wallet.balance.orchard_spendable+wallet.balance.sapling_spendable+wallet.balance.ironwood_spendable)} shielded and spendable.\nReceive address: ${wallet.address}`:'Wallet setup is in progress. Try again shortly.';}
     if(b.id==='fund-testnet'){b.disabled=true;const claim=await post('/api/wallet/faucet');$('#wallet-funding').textContent=claim.status==='failed'?'Free test coins are unavailable right now. You can receive test ZEC at your wallet address.':claim.status==='queued'?'Your test coins have been requested. Check your balance shortly.':claim.status==='sent'||claim.txid?'Test coins sent. Check your balance after confirmation.':'Your funding request is being checked.';}
     if(b.id==='logout'){await api('/api/session',{method:'DELETE',body:{}});location.reload();}
     if(b.id==='walkthrough'){

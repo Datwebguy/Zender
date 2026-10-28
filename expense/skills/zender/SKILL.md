@@ -1,12 +1,12 @@
 ---
 name: zender
-description: Buy approved tools and data within a task's private expense account. Request a purchase, execute authorized payments, recover interrupted delivery, and inspect remaining budget.
+description: Request shielded Zcash payments within a task's private expense account. Request a purchase, execute authorized payments, recover interrupted delivery, and inspect remaining budget.
 ---
 
 Use the Zender MCP tools with a task-scoped credential supplied by the owner. The owner creates the task, funds its dedicated wallet, selects services, sets the budget and issues your credential. Never ask for an owner key, seed phrase, spending key or wallet directory.
 
 1. Call `zender_task_context` to discover your task and its permitted services. Check remaining budget and expiration before making purchases. Use `zender_task` to refresh the task when needed.
-2. Call `zender_request_purchase` with the service ID, the actual input, a plain explanation, and a unique stable idempotency key. Persist that key with the task so identical retries reuse it.
+2. For a shielded payment, call `zender_request_purchase` with service ID `shielded-payment`, an input object containing `recipient` (a Zcash unified address) and `amountZec` (a decimal string), a plain explanation, and a unique stable idempotency key. Persist that key so identical retries reuse it.
 3. If `awaiting_approval`, tell the owner what is needed and wait. Never split purchases to evade approval, change service IDs, or create another request to bypass policy.
 4. If `ready`, call `zender_execute_purchase`. If `blocked`, stop and explain the returned decision.
 5. If `uncertain` or `broadcast`, call `zender_recover_purchase`. Never issue another payment to resolve a timeout. If the outcome remains unknown, ask the owner to reconcile it.

@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { mkdirSync, existsSync, readFileSync, writeFileSync, chmodSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { createHash, randomBytes } from 'node:crypto';
-import { CATALOG, resultFor } from './providers.mjs';
+import { CATALOG, resultFor, directPayment } from './providers.mjs';
 const exec=(binary,args,options)=>new Promise((resolve,reject)=>{
   const child=execFile(binary,args,options,(error,stdout,stderr)=>error?reject(error):resolve({stdout,stderr}));
   child.stdin?.end();
@@ -29,7 +29,7 @@ export class FixedPcztProvider {
     this.mode=network;this.confirmations=confirmations;this.name=network==='mainnet'?'Zcash mainnet':'Zcash testnet';this.broadcastEnabled=true;this.ready=false;
     this.dataDir=resolve(dataDir);this.binary=binary;this.inspector=inspector;this.server=server;this.runner=runner;this.queue=Promise.resolve();
     this.sender=join(this.dataDir,'payer');this.receiver=join(this.dataDir,'merchant');this.identity=join(this.sender,'identity.txt');this.viewingKey=join(this.dataDir,'payer-viewing-key.txt');
-    this.services=CATALOG.map(s=>({...s,feeZat:20000}));
+    this.services=CATALOG.filter(s=>s.id==='shielded-payment').map(s=>({...s,feeZat:20000}));
     mkdirSync(this.dataDir,{recursive:true,mode:0o700});chmodSync(this.dataDir,0o700);
   }
   async run(args,{binary=this.binary,timeout=300000}={}){
@@ -58,7 +58,7 @@ export class FixedPcztProvider {
       const addresses=await this.run(['wallet','-w',this.receiver,'list-addresses','--receiver','orchard']);
       this.recipient=this.addressFrom(addresses);
       if(!this.recipient)throw new Error('The receiving wallet address is unavailable.');
-      this.services=this.services.map(s=>({...s,recipient:this.recipient}));this.ready=true;
+      this.services=this.services.map(s=>s.id==='shielded-payment'?s:{...s,recipient:this.recipient});this.ready=true;
       return {ready:true,mode:this.mode};
     });
   }
@@ -66,6 +66,7 @@ export class FixedPcztProvider {
   quote(id,input){
     if(!this.ready)throw new Error('Your wallet is getting ready. Try again shortly.');
     const service=this.services.find(s=>s.id===id);if(!service)throw new Error('Unknown service.');
+    if(id==='shielded-payment')return {...service,...directPayment(input,this.mode),result:null};
     // Validate the tool input now; compute the delivered output only after receipt verification.
     resultFor(id,input);
     return {...service,result:null};
@@ -99,14 +100,16 @@ export class FixedPcztProvider {
   async recover(p){
     return this.serial(async()=>{
       if(!p.txid)return null;
-      await this.run(['wallet','-w',this.receiver,'sync','--server',this.server]);
-      await this.run(['wallet','-w',this.receiver,'enhance','--server',this.server]);
-      const txs=JSON.parse(await this.run(['wallet','-w',this.receiver,'list-tx','--json']));
+      const wallet=p.serviceId==='shielded-payment'?this.sender:this.receiver;
+      await this.run(['wallet','-w',wallet,'sync','--server',this.server]);
+      await this.run(['wallet','-w',wallet,'enhance','--server',this.server]);
+      const txs=JSON.parse(await this.run(['wallet','-w',wallet,'list-tx','--json']));
       const tx=txs.find(t=>t.txid===p.txid&&t.mined_height>0);
       if(!tx)return null;
-      const info=JSON.parse(await this.run(['wallet','-w',this.receiver,'get-info','--server',this.server]));
+      const info=JSON.parse(await this.run(['wallet','-w',wallet,'get-info','--server',this.server]));
       if(info.chain_name!==(this.mode==='mainnet'?'main':'test'))throw new Error('The receiving wallet is connected to the wrong network.');
       if(info.chain_tip_height-tx.mined_height+1<this.confirmations)return null;
+      if(p.serviceId==='shielded-payment')return {txid:p.txid,amountZat:p.amountZat,feeZat:p.actualFeeZat,confirmed:true,simulation:false,result:resultFor(p.serviceId,p.input),evidence:{network:this.mode,confirmations:info.chain_tip_height-tx.mined_height+1,height:tx.mined_height,verifiedBy:'sending wallet and authorized transaction'}};
       const outputs=(tx.outputs||[]).filter(o=>o.incoming&&!o.change&&o.valueZat===p.amountZat&&o.memo===`Zender ${p.id}`&&!String(o.pool).includes('Transparent'));
       if(outputs.length!==1)throw new Error('The receiving wallet did not verify the expected shielded amount and purchase memo.');
       const output=outputs[0];

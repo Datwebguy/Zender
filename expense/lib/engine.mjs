@@ -54,7 +54,7 @@ export class Engine {
       if(quote.priceZat<=0)throw new Fault('Service price must be positive.');
       const total=quote.priceZat+quote.feeZat;integer(total);
       const available=this.totals(taskId).availableZat;
-      const status=!allowed||total>available?'blocked':total>t.approvalZat?'awaiting_approval':'ready';
+      const status=!allowed||total>available?'blocked':(quote.alwaysApproval||total>t.approvalZat)?'awaiting_approval':'ready';
       const decision=!allowed?'Service is outside this task’s permissions.':total>available?'Purchase and fee exceed the remaining task budget.':status==='awaiting_approval'?'This purchase needs your approval.':'Within the task’s budget and permissions.';
       const p={id:randomUUID(),taskId,serviceId,serviceName:quote.name,recipient:quote.recipient,amountZat:quote.priceZat,feeZat:quote.feeZat,actualFeeZat:null,input,reason:reason.trim(),status,decision,idempotencyKey,fingerprint,createdAt:new Date().toISOString(),quoteResult:quote.result,simulateResponseLoss:!!simulateResponseLoss,mode:this.provider.mode};
       this.store.putPurchase(p);this.store.event(taskId,'purchase.'+status,{purchaseId:p.id,serviceId,totalZat:total});return p;

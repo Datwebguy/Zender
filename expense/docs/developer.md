@@ -47,6 +47,8 @@ Issue a task credential from the owner workspace. Set `ZENDER_URL` to the HTTPS 
 
 Tools: `zender_task_context` (discovers the assigned task and its permitted services), `zender_task`, `zender_request_purchase`, `zender_execute_purchase`, `zender_recover_purchase`, `zender_receipt`. Owner approvals and budget changes use owner authentication. Keep wallet files outside agent access.
 
+For a shielded payment, request service `shielded-payment` with `input` containing `recipient` (a Zcash unified address for the active network) and `amountZec` (an exact decimal string). The owner approves each payment before execution. The amount and network fee count toward the task budget.
+
 ## CLI
 
 ```sh

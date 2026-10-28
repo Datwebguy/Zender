@@ -60,7 +60,7 @@ test('mainnet and testnet use their own address formats and mainnet has no fauce
   const testnet=new FixedPcztProvider({dataDir:join(dir,'testnet'),network:'testnet'});
   assert.equal(main.mode,'mainnet');assert.equal(main.confirmations,10);
   assert.equal(main.addressFrom('Receiver(orchard): u1'+'q'.repeat(80)),'u1'+'q'.repeat(80));
-  assert.equal(main.addressFrom('utest1'+'q'.repeat(80)),null);
+  assert.equal(main.addressFrom('utest10t56q4744d9ygg4l7uku7wzgp4kqhxpdajuf8vrgqn7pj6rpecpjfg3f56z95vkvc79tm3kqem0mx27dwp9arkkft56v9duyluqdw5az'),null);
   assert.equal(testnet.addressFrom('u1'+'q'.repeat(80)),null);
   await assert.rejects(main.fund(),/mainnet address/);
  }finally{rmSync(dir,{recursive:true,force:true});}
@@ -89,5 +89,19 @@ test('receipt verification checks confirmations and equivalent shielded receiver
   tip=101;const receipt=await provider.recover(p);assert.equal(receipt.confirmed,true);assert.equal(receipt.evidence.confirmations,2);assert.equal(receipt.result.wordCount,2);
   matches=false;await assert.rejects(provider.recover(p),/Receiving address differs/);
   matches=true;memo='Zender another-purchase';await assert.rejects(provider.recover(p),/purchase memo/);
+ }finally{rmSync(dir,{recursive:true,force:true});}
+});
+
+test('external shielded payment uses exact network, amount and sender confirmation',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'zender-direct-'));let height=99;const txid='e'.repeat(64),address='utest10t56q4744d9ygg4l7uku7wzgp4kqhxpdajuf8vrgqn7pj6rpecpjfg3f56z95vkvc79tm3kqem0mx27dwp9arkkft56v9duyluqdw5az';
+ const provider=new FixedPcztProvider({dataDir:dir,confirmations:2,runner:async(_binary,args)=>{
+  if(args.includes('list-tx'))return {stdout:JSON.stringify([{txid,mined_height:100}])};
+  if(args.includes('get-info'))return {stdout:JSON.stringify({chain_name:'test',chain_tip_height:height})};return {stdout:''};
+ }});provider.ready=true;
+ try{
+  const quote=provider.quote('shielded-payment',{recipient:address,amountZec:'0.01'});assert.equal(quote.recipient,address);assert.equal(quote.priceZat,1000000);assert.equal(quote.alwaysApproval,true);
+  assert.throws(()=>provider.quote('shielded-payment',{recipient:'u1'+'q'.repeat(80),amountZec:'0.01'}),/current Zcash network/);
+  const p={id:'direct-p',txid,recipient:address,amountZat:1000000,actualFeeZat:10000,serviceId:'shielded-payment',input:{recipient:address,amountZec:'0.01'}};
+  assert.equal(await provider.recover(p),null);height=100;assert.equal(await provider.recover(p),null);height=101;const confirmed=await provider.recover(p);assert.equal(confirmed.confirmed,true);assert.equal(confirmed.evidence.confirmations,2);assert.equal(confirmed.result.recipient,address);
  }finally{rmSync(dir,{recursive:true,force:true});}
 });

@@ -74,3 +74,12 @@ test('redacted exports omit identifiers, inputs and results',async()=>{
   for(const key of ['input','result','recipient','txid','reason'])assert.equal(Object.hasOwn(item,key),false);
   assert.equal(e.receipt(t.id,{details:true}).purchases[0].result.wordCount,2);
 });
+
+test('shielded payments require approval and reserve the exact amount and fee',async()=>{
+ const{engine:e}=setup(),address='utest10t56q4744d9ygg4l7uku7wzgp4kqhxpdajuf8vrgqn7pj6rpecpjfg3f56z95vkvc79tm3kqem0mx27dwp9arkkft56v9duyluqdw5az';const t=task(e,{services:['shielded-payment'],budgetZec:'0.001',approvalZec:'0.001'});
+ const p=request(e,t,'direct_pay_01',{serviceId:'shielded-payment',input:{recipient:address,amountZec:'0.0001'}});
+ assert.equal(p.status,'awaiting_approval');assert.equal(p.recipient,address);assert.equal(p.amountZat,10000);assert.equal(e.totals(t.id).reservedZat,11000);
+ await assert.rejects(e.execute(p.id),/approval/);e.decide(p.id,true);const complete=await e.execute(p.id);assert.equal(complete.status,'delivered');assert.equal(complete.simulation,true);assert.equal(complete.result.status,'simulated');assert.equal(complete.result.recipient,address);
+ assert.throws(()=>request(e,t,'direct_pay_02',{serviceId:'shielded-payment',input:{recipient:'not-an-address',amountZec:'0.1'}}),/address/);
+ assert.throws(()=>request(e,t,'direct_pay_03',{serviceId:'shielded-payment',input:{recipient:address,amountZec:'1e-4'}}),/amount/);
+});

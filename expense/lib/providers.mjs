@@ -1,15 +1,26 @@
 import { createHash } from 'node:crypto';
+import { zats } from './money.mjs';
+import { isUnifiedAddress } from './address.mjs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { mkdirSync, openSync, closeSync, unlinkSync } from 'node:fs';
 import { resolve } from 'node:path';
 const exec = promisify(execFile);
 export const CATALOG = [
+  { id:'shielded-payment', name:'Shielded payment', description:'Send ZEC to a shielded address with your approval.', variablePrice:true, alwaysApproval:true, feeZat:1000, category:'Payments', inputSchema:{type:'object',properties:{recipient:{type:'string',description:'Recipient unified address'},amountZec:{type:'string',description:'Exact ZEC amount as a decimal string'}},required:['recipient','amountZec'],additionalProperties:false} },
   { id:'document-extract', name:'Document extraction', description:'Turn your supplied text into structured facts.', priceZat:12000, feeZat:1000, category:'Documents' },
   { id:'supplier-compare', name:'Supplier comparison', description:'Compare the quotes you supply by delivered cost.', priceZat:25000, feeZat:1000, category:'Research' },
   { id:'report-export', name:'Report export', description:'Package supplied findings into a Markdown report.', priceZat:45000, feeZat:1000, category:'Reports' },
 ];
+export function directPayment(input,network){
+  if(typeof input.recipient!=='string'||input.recipient.length>512)throw new Error('Enter a Zcash unified address.');
+  const valid=network==='mainnet'?isUnifiedAddress(input.recipient,'u'):network==='testnet'?isUnifiedAddress(input.recipient,'utest'):isUnifiedAddress(input.recipient,'u')||isUnifiedAddress(input.recipient,'utest');
+  if(!valid)throw new Error('Enter a valid unified address for the current Zcash network.');
+  if(Object.keys(input).some(k=>!['recipient','amountZec'].includes(k)))throw new Error('Unexpected payment details.');
+  return {recipient:input.recipient,priceZat:zats(input.amountZec)};
+}
 export function resultFor(service, input) {
+  if(service==='shielded-payment')return {status:'confirmed',recipient:input.recipient,amountZec:input.amountZec};
   if (service === 'document-extract') {
     const text = String(input.text || '');
     if (!text.trim()) throw new Error('Provide text to extract.');
@@ -30,6 +41,7 @@ export class SandboxProvider {
   constructor(store) { this.store=store; this.mode='sandbox'; this.name='Local sandbox'; }
   quote(serviceId,input) {
     const s=CATALOG.find(s=>s.id===serviceId); if(!s) throw new Error('Unknown service.');
+    if(serviceId==='shielded-payment'){const payment=directPayment(input,'sandbox');return {...s,...payment,result:{...resultFor(serviceId,input),status:'simulated'}};}
     const result=resultFor(serviceId,input);
     return {...s,recipient:`sandbox:${serviceId}`,result};
   }

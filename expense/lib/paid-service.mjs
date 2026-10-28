@@ -22,8 +22,8 @@ export async function fetchService(value,{paymentSignature,resolveHost=lookup,re
   return new Promise((resolve,reject)=>{
     const req=requestFn(url,{method:'GET',family:4,lookup:(_host,_options,cb)=>cb(null,target.address,4),headers:{accept:'application/json, text/plain',...(paymentSignature?{'payment-signature':paymentSignature}:{})}},res=>{
       const chunks=[];let bytes=0;res.on('data',chunk=>{bytes+=chunk.length;if(bytes>262144){req.destroy(new Error('Service response is too large.'));return;}chunks.push(chunk);});
-      res.on('end',()=>resolve({status:res.statusCode,headers:res.headers,body:Buffer.concat(chunks).toString('utf8')}));res.on('error',reject);
-    });req.setTimeout(15000,()=>req.destroy(new Error('Service request timed out.')));req.on('error',reject);req.end();
+      res.on('end',()=>{clearTimeout(deadline);resolve({status:res.statusCode,headers:res.headers,body:Buffer.concat(chunks).toString('utf8')});});res.on('error',error=>{clearTimeout(deadline);reject(error);});
+    });const deadline=setTimeout(()=>req.destroy(new Error('Service request timed out.')),15000);req.on('error',error=>{clearTimeout(deadline);reject(error);});req.end();
   });
 }
 export function paymentRequirement(response,network){

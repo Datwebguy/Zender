@@ -15,7 +15,7 @@ let toastTimer;
 function toast(text){$('#toast').textContent=text;$('#toast').classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.add('hidden'),5000);}
 function age(date){return new Date(date).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}
 async function refresh(){
-  workspace=await api('/api/workspace');$('#login').classList.add('hidden');$('#workspace').classList.remove('hidden');const walletAuth=await api('/api/wallet-auth/status');$('#bind-wallet').classList.toggle('hidden',walletAuth.bound);
+  workspace=await api('/api/workspace');$('#login').classList.add('hidden');$('#workspace').classList.remove('hidden');const walletAuth=await api('/api/wallet-auth/status').catch(()=>({bound:true}));$('#bind-wallet').classList.toggle('hidden',walletAuth.bound);
   const sandbox=workspace.mode==='sandbox',mainnet=workspace.mode==='mainnet';$('#mode-label').textContent=sandbox?'Practice':mainnet?'Mainnet':'Testnet';$('#mode-sidebar').textContent=sandbox?'Sandbox · no real funds':mainnet?'Zcash mainnet':'Zcash testnet';
   $('#notice').classList.remove('hidden');$('#fault-controls').classList.toggle('hidden',!sandbox);$('#open-wallet').classList.toggle('hidden',sandbox||!workspace.liveBroadcastEnabled);
   $('#notice strong').textContent=sandbox?'Practice workspace':mainnet?'Mainnet':'Testnet';
@@ -140,7 +140,7 @@ async function walletSignature(purpose){
   const signed=await provider.request({method:'zcash_signMessage',params:[challenge.message,{signingMode:'derived'}]});
   await post(purpose==='bind'?'/api/wallet-auth/bind':'/api/wallet-auth/session',{nonce:challenge.nonce,pubkey:signed?.pubkey,signature:signed?.signature});
 }
-async function loginOptions(){try{const status=await api('/api/wallet-auth/status');$('#login-form').classList.toggle('hidden',status.bound);$('#wallet-login').classList.toggle('hidden',!status.bound);}catch{}}
+async function loginOptions(){try{const status=await api('/api/wallet-auth/status');$('#login-form').classList.toggle('hidden',status.bound);$('#wallet-login').classList.toggle('hidden',!status.bound);}catch{$('#login-form').classList.remove('hidden');$('#wallet-login').classList.add('hidden');}}
 $('#wallet-login').addEventListener('click',async e=>{e.currentTarget.disabled=true;$('#login-error').textContent='';try{await walletSignature('login');await refresh();}catch(error){$('#login-error').textContent=error.message;}finally{e.currentTarget.disabled=false;}});
 $('#login-form').addEventListener('submit',async e=>{e.preventDefault();try{await post('/api/session',{password:new FormData(e.target).get('password')});e.target.reset();await refresh();}catch(error){$('#login-error').textContent=error.message;}});
 $('#password-form').addEventListener('submit',async e=>{e.preventDefault();try{await post('/api/password',{password:new FormData(e.target).get('password')});e.target.reset();$('#password-dialog').close();toast('Password saved.');}catch(error){$('#password-error').textContent=error.message;}});

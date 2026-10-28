@@ -2,7 +2,7 @@ import http from 'node:http';
 import { readFileSync, existsSync, mkdirSync, writeFileSync, chmodSync } from 'node:fs';
 import { resolve, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomBytes, timingSafeEqual, scryptSync } from 'node:crypto';
+import { randomBytes, timingSafeEqual, scryptSync, createHash, createPublicKey, verify } from 'node:crypto';
 import { Store } from './lib/store.mjs';
 import { Engine, Fault } from './lib/engine.mjs';
 import { SandboxProvider, ZipherProvider, CATALOG } from './lib/providers.mjs';
@@ -22,7 +22,27 @@ export function createApp({store,provider,ownerToken,publicOrigin=null,passwordF
   const published=publicOrigin?new URL(publicOrigin):null;
   if(published&&published.protocol!=='https:')throw new Error('Public workspaces require HTTPS.');
   const engine=new Engine(store,provider);engine.recoverInterrupted();
-  const sessions=new Map();const logins=new Map();
+  const sessions=new Map();const logins=new Map();const challenges=new Map();
+  const walletFile=passwordFile?resolve(dirname(passwordFile),'owner-wallet.json'):null;
+  const walletBound=()=>!!walletFile&&existsSync(walletFile);
+  function newChallenge(purpose,session){
+    for(const [key,item] of challenges)if(item.expires<Date.now())challenges.delete(key);
+    if(challenges.size>=500)throw new Fault('Please try again shortly.',429);
+    const nonce=randomBytes(32).toString('hex'),issued=new Date(),expires=new Date(issued.getTime()+300000);
+    const message=`${published?.host||'localhost'} wants you to ${purpose==='bind'?'connect your wallet to Zender':'sign in to Zender'}.\n\nThis request does not authorize a transaction.\nNonce: ${nonce}\nIssued: ${issued.toISOString()}\nExpires: ${expires.toISOString()}`;
+    challenges.set(nonce,{message,purpose,session,expires:expires.getTime()});return {nonce,message};
+  }
+  function verifyWallet(nonce,result,purpose,session){
+    const challenge=challenges.get(nonce);challenges.delete(nonce);
+    if(!challenge||challenge.purpose!==purpose||challenge.expires<Date.now()||(purpose==='bind'&&challenge.session!==session))throw new Fault('This request expired. Try again.',401);
+    const pubkey=result?.pubkey,signature=result?.signature;
+    if(typeof pubkey!=='string'||!/^04[0-9a-f]{128}$/i.test(pubkey)||typeof signature!=='string'||!/^1[b-e][0-9a-f]{128}$/i.test(signature))throw new Fault('Wallet signature is invalid.',401);
+    const prefix=Buffer.from('Zcash Signed Message:\n');const msg=Buffer.from(challenge.message);
+    function compact(n){if(n<253)return Buffer.from([n]);if(n<=65535){const b=Buffer.alloc(3);b[0]=253;b.writeUInt16LE(n,1);return b;}throw new Error('Message too long');}
+    const first=createHash('sha256').update(Buffer.concat([compact(prefix.length),prefix,compact(msg.length),msg])).digest();
+    try{const key=createPublicKey({key:Buffer.concat([Buffer.from('3056301006072a8648ce3d020106052b8104000a034200','hex'),Buffer.from(pubkey,'hex')]),format:'der',type:'spki'});if(!verify('sha256',first,{key,dsaEncoding:'ieee-p1363'},Buffer.from(signature.slice(2),'hex')))throw new Error('Invalid signature');}catch{throw new Fault('Wallet signature is invalid.',401);}
+    return pubkey.toLowerCase();
+  }
   const send=(res,status,data)=>{res.writeHead(status,{'content-type':'application/json; charset=utf-8'});res.end(JSON.stringify(clean(data)));};
   async function handler(req,res){
     res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');
@@ -48,7 +68,20 @@ export function createApp({store,provider,ownerToken,publicOrigin=null,passwordF
         try{body=JSON.parse(Buffer.concat(chunks).toString()||'{}');}catch{throw new Fault('Invalid JSON.');}
         if(!body||typeof body!=='object'||Array.isArray(body))throw new Fault('Send a JSON object.');
       }
+      if(path==='/api/wallet-auth/status'&&req.method==='GET')return send(res,200,{bound:walletBound()});
+      if(path==='/api/wallet-auth/challenge'&&req.method==='POST'){
+        if(!walletBound())throw new Fault('Connect the owner wallet from your account first.',403);
+        return send(res,200,newChallenge('login',null));
+      }
+      if(path==='/api/wallet-auth/session'&&req.method==='POST'){
+        if(!walletBound())throw new Fault('No owner wallet is connected.',403);
+        const key=verifyWallet(body.nonce,body,'login',null);const owner=JSON.parse(readFileSync(walletFile,'utf8'));
+        if(!same(key,owner.pubkey))throw new Fault('This wallet is not connected to this account.',401);
+        const session=randomBytes(32).toString('hex');sessions.set(session,Date.now()+8*3600000);
+        res.setHeader('Set-Cookie',`zender_session=${session}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800${published?'; Secure':''}`);return send(res,200,{ok:true});
+      }
       if(path==='/api/session'&&req.method==='POST'){
+        if(walletBound())throw new Fault('Connect your wallet to sign in.',401);
         const address=req.socket.remoteAddress;const window=logins.get(address)||{count:0,until:Date.now()+60000};
         if(window.until<Date.now()){window.count=0;window.until=Date.now()+60000;}
         if(++window.count>10)throw new Fault('Too many sign-in attempts. Try again in a minute.',429);logins.set(address,window);
@@ -63,12 +96,24 @@ export function createApp({store,provider,ownerToken,publicOrigin=null,passwordF
       const bearer=(req.headers.authorization||'').replace(/^Bearer /,'');
       const cookie=(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith('zender_session='))?.slice(15);
       const sessionValid=cookie&&(sessions.get(cookie)||0)>Date.now();
-      const owner=((!passwordFile||!existsSync(passwordFile))&&same(bearer,ownerToken))||!!sessionValid;
+      const owner=(!walletBound()&&(!passwordFile||!existsSync(passwordFile))&&same(bearer,ownerToken))||!!sessionValid;
       let agentTask=null;
       if(!owner){if(!bearer)throw new Fault('Sign in to your local workspace.',401,'UNAUTHORIZED');agentTask=engine.authenticateAgent(bearer);}
       const needOwner=()=>{if(!owner)throw new Fault('Only the owner can change permissions or approve spending.',403,'OWNER_REQUIRED');};
       const scope=id=>{if(!owner&&agentTask!==id)throw new Fault('This credential belongs to another task.',403,'TASK_SCOPE');};
+      if(path==='/api/wallet-auth/bind-challenge'&&req.method==='POST'){
+        if(!sessionValid||walletBound())throw new Fault('Wallet connection is unavailable.',403);
+        if(!walletFile)throw new Fault('Wallet connection is unavailable.',503);
+        return send(res,200,newChallenge('bind',cookie));
+      }
+      if(path==='/api/wallet-auth/bind'&&req.method==='POST'){
+        if(!sessionValid||walletBound())throw new Fault('Wallet connection is unavailable.',403);
+        const pubkey=verifyWallet(body.nonce,body,'bind',cookie);
+        try{writeFileSync(walletFile,JSON.stringify({pubkey}),{mode:0o600,flag:'wx'});}catch{throw new Fault('Wallet connection could not be saved.',409);}
+        return send(res,200,{ok:true});
+      }
       if(path==='/api/password'&&req.method==='POST'){
+        if(walletBound())throw new Fault('Your account uses wallet sign-in.',403);
         if(!owner)throw new Fault('Sign in first.',403,'OWNER_REQUIRED');
         if(!passwordFile)throw new Fault('Password setup is unavailable.',503);
         if(typeof body.password!=='string'||body.password.length<12||body.password.length>1024)throw new Fault('Choose a password of at least 12 characters.');

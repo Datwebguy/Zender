@@ -15,7 +15,7 @@ let toastTimer;
 function toast(text){$('#toast').textContent=text;$('#toast').classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.add('hidden'),5000);}
 function age(date){return new Date(date).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}
 async function refresh(){
-  workspace=await api('/api/workspace');$('#login').classList.add('hidden');$('#workspace').classList.remove('hidden');
+  workspace=await api('/api/workspace');$('#login').classList.add('hidden');$('#workspace').classList.remove('hidden');const walletAuth=await api('/api/wallet-auth/status');$('#bind-wallet').classList.toggle('hidden',walletAuth.bound);
   const sandbox=workspace.mode==='sandbox',mainnet=workspace.mode==='mainnet';$('#mode-label').textContent=sandbox?'Practice':mainnet?'Mainnet':'Testnet';$('#mode-sidebar').textContent=sandbox?'Sandbox · no real funds':mainnet?'Zcash mainnet':'Zcash testnet';
   $('#notice').classList.remove('hidden');$('#fault-controls').classList.toggle('hidden',!sandbox);$('#open-wallet').classList.toggle('hidden',sandbox||!workspace.liveBroadcastEnabled);
   $('#notice strong').textContent=sandbox?'Practice workspace':mainnet?'Mainnet':'Testnet';
@@ -132,6 +132,16 @@ $('#open-mobile-wallet').addEventListener('click',e=>{
   catch(error){e.preventDefault();$('#wallet-funding').textContent=error.message;}
 });
 $('#purchase-service').addEventListener('change',updateSample);
+async function walletSignature(purpose){
+  const provider=window.noirwallet?.zcash;
+  if(!provider?.request)throw new Error('Open Zender in a browser with Noir Wallet installed, then connect your wallet.');
+  await provider.request({method:'zcash_requestAccounts'});
+  const challenge=await post(purpose==='bind'?'/api/wallet-auth/bind-challenge':'/api/wallet-auth/challenge');
+  const signed=await provider.request({method:'zcash_signMessage',params:[challenge.message,{signingMode:'derived'}]});
+  await post(purpose==='bind'?'/api/wallet-auth/bind':'/api/wallet-auth/session',{nonce:challenge.nonce,pubkey:signed?.pubkey,signature:signed?.signature});
+}
+async function loginOptions(){try{const status=await api('/api/wallet-auth/status');$('#login-form').classList.toggle('hidden',status.bound);$('#wallet-login').classList.toggle('hidden',!status.bound);}catch{}}
+$('#wallet-login').addEventListener('click',async e=>{e.currentTarget.disabled=true;$('#login-error').textContent='';try{await walletSignature('login');await refresh();}catch(error){$('#login-error').textContent=error.message;}finally{e.currentTarget.disabled=false;}});
 $('#login-form').addEventListener('submit',async e=>{e.preventDefault();try{await post('/api/session',{password:new FormData(e.target).get('password')});e.target.reset();await refresh();}catch(error){$('#login-error').textContent=error.message;}});
 $('#password-form').addEventListener('submit',async e=>{e.preventDefault();try{await post('/api/password',{password:new FormData(e.target).get('password')});e.target.reset();$('#password-dialog').close();toast('Password saved.');}catch(error){$('#password-error').textContent=error.message;}});
 $('#task-form').addEventListener('submit',async e=>{
@@ -153,6 +163,7 @@ document.addEventListener('click',async e=>{
     if(b.dataset.onboarding==='tasks')navigate('tasks');
     if(b.dataset.onboarding==='open-wallet')$('#open-wallet').click();
     if(b.dataset.close)$('#'+b.dataset.close).close();
+    if(b.id==='bind-wallet'){b.disabled=true;await walletSignature('bind');await refresh();toast('Wallet connected. Use it to sign in next time.');}
     if(b.id==='change-password'){$('#password-error').textContent='';$('#password-dialog').showModal();}
     if(b.id==='new-task'||b.hasAttribute('data-new-task'))openTaskDialog();
     if(b.dataset.filter){filter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('selected',x===b));renderTasks();}
@@ -199,8 +210,8 @@ document.addEventListener('click',async e=>{
   }catch(error){toast(error.message);}finally{b.disabled=false;}
 });
 const setupToken=new URLSearchParams(location.hash.slice(1)).get('setup');
-if(setupToken){history.replaceState(null,'',location.pathname);post('/api/session',{token:setupToken}).then(async()=>{await refresh();$('#password-dialog').showModal();}).catch(error=>{$('#login').classList.remove('hidden');$('#login-error').textContent=error.message;});}
-else refresh().catch(error=>{if(!$('#login').classList.contains('hidden'))return;toast(error.message);});
+if(setupToken){history.replaceState(null,'',location.pathname);post('/api/session',{token:setupToken}).then(async()=>{await refresh();toast('Connect your wallet to secure your account.');}).catch(error=>{$('#login').classList.remove('hidden');$('#login-error').textContent=error.message;});}
+else refresh().catch(error=>{if(!$('#login').classList.contains('hidden')){loginOptions();return;}toast(error.message);});
 setInterval(()=>{if(workspace&&!document.querySelector('dialog[open]')&&!$('#workspace').classList.contains('hidden'))refresh().catch(()=>{});},7000);
 
 $('#theme').addEventListener('click',()=>{const theme=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=theme;try{localStorage.setItem('zender:theme',theme);}catch{}});

@@ -112,6 +112,25 @@ function paymentError(message){
  if(/Command failed:|pczt|sqlite|ECONN|spawn /i.test(message))return 'The payment could not be completed. Check your wallet and this purchase before trying again.';
  return message;
 }
+async function updateWallet(){
+  $('#wallet-balance').textContent='Updating your balance…';
+  const wallet=await api('/api/wallet');walletSnapshot=wallet;await refresh();
+  $('#wallet-receive').classList.toggle('hidden',!wallet.ready||!wallet.address);
+  if(!wallet.ready){$('#wallet-balance').textContent='Wallet setup is in progress.';return;}
+  const spendable=['orchard_spendable','sapling_spendable','ironwood_spendable'].reduce((sum,key)=>sum+(wallet.balance[key]||0),0);
+  $('#wallet-balance').textContent=money(spendable)+' '+(workspace.mode==='mainnet'?'ZEC':'test ZEC');
+  $('#wallet-total').textContent=money(wallet.balance.total)+' total, including funds awaiting confirmation';
+  $('#wallet-address').value=wallet.address;
+}
+function fundingAmount(){
+  const value=$('#wallet-amount').value.trim();
+  if(!/^(?:0|[1-9]\d*)(?:\.\d{1,8})?$/.test(value)||!/[1-9]/.test(value))throw new Error('Enter a positive amount with up to eight decimal places.');
+  return value;
+}
+$('#open-mobile-wallet').addEventListener('click',e=>{
+  try{const amount=fundingAmount();if(!walletSnapshot?.address)throw new Error('Wait for your receive address to load.');e.currentTarget.href='zcash:'+walletSnapshot.address+'?amount='+amount;}
+  catch(error){e.preventDefault();$('#wallet-funding').textContent=error.message;}
+});
 $('#purchase-service').addEventListener('change',updateSample);
 $('#login-form').addEventListener('submit',async e=>{e.preventDefault();try{await post('/api/session',{password:new FormData(e.target).get('password')});e.target.reset();await refresh();}catch(error){$('#login-error').textContent=error.message;}});
 $('#password-form').addEventListener('submit',async e=>{e.preventDefault();try{await post('/api/password',{password:new FormData(e.target).get('password')});e.target.reset();$('#password-dialog').close();toast('Password saved.');}catch(error){$('#password-error').textContent=error.message;}});
@@ -151,7 +170,21 @@ document.addEventListener('click',async e=>{
       $('#credential-result').innerHTML=`<div class="credential"><strong>Copy once. Keep it private.</strong><p>This credential grants spending access within the selected task’s rules.</p><code>${escape(credential.token)}</code><button type="button" class="button" id="copy-credential">Copy credential</button></div>`;
       $('#copy-credential').onclick=async()=>{try{await navigator.clipboard.writeText(credential.token);toast('Credential copied.');}catch{toast('Select and copy the credential above.');}};
     }
-    if(b.id==='open-wallet'){ $('#wallet-dialog').showModal();$('#wallet-balance').textContent='Updating your balance…';const wallet=await api('/api/wallet');walletSnapshot=wallet;await refresh();$('#wallet-balance').textContent=wallet.ready?`${money(wallet.balance.total)} ${workspace.mode==='mainnet'?'ZEC':'test ZEC'} total · ${money(wallet.balance.orchard_spendable+wallet.balance.sapling_spendable+wallet.balance.ironwood_spendable)} shielded and spendable.\nReceive address: ${wallet.address}`:'Wallet setup is in progress. Try again shortly.';}
+    if(b.id==='open-wallet'){ $('#wallet-dialog').showModal();await updateWallet();}
+    if(b.id==='copy-wallet-address'){await navigator.clipboard.writeText($('#wallet-address').value);toast('Address copied.');}
+    if(b.id==='send-from-wallet'){
+      const amount=fundingAmount();const provider=window.noirwallet?.zcash;
+      if(!provider?.request)throw new Error('Open this page in a browser with Noir Wallet installed, or use your wallet app and the receive address.');
+      b.disabled=true;try{
+        const account=await provider.request({method:'zcash_requestAccounts'});
+        const address=account?.shielded||account?.transparent;
+        const expected=workspace.mode==='mainnet'?/^(u1|zs1|t1|t3)/:/^(utest1|ztestsapling1|tm|t2)/;
+        if(!address||!expected.test(address))throw new Error('Switch your wallet to the same Zcash network as this spending wallet.');
+        const txid=await provider.request({method:'zcash_sendTransaction',params:[{to:walletSnapshot.address,amount}]});
+        if(typeof txid!=='string'||!txid)throw new Error('Your wallet did not return a transaction ID. Check your wallet before trying again.');
+        $('#wallet-funding').textContent='Payment submitted. Your balance will update after it is confirmed.';
+      }finally{b.disabled=false;}
+    }
     if(b.id==='fund-testnet'){b.disabled=true;const claim=await post('/api/wallet/faucet');$('#wallet-funding').textContent=claim.status==='failed'?'Free test coins are unavailable right now. You can receive test ZEC at your wallet address.':claim.status==='queued'?'Your test coins have been requested. Check your balance shortly.':claim.status==='sent'||claim.txid?'Test coins sent. Check your balance after confirmation.':'Your funding request is being checked.';}
     if(b.id==='logout'){await api('/api/session',{method:'DELETE',body:{}});location.reload();}
     if(b.id==='walkthrough'){

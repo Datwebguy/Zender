@@ -83,3 +83,18 @@ test('shielded payments require approval and reserve the exact amount and fee',a
  assert.throws(()=>request(e,t,'direct_pay_02',{serviceId:'shielded-payment',input:{recipient:'not-an-address',amountZec:'0.1'}}),/address/);
  assert.throws(()=>request(e,t,'direct_pay_03',{serviceId:'shielded-payment',input:{recipient:address,amountZec:'1e-4'}}),/amount/);
 });
+
+test('recipient rules allow only preapproved addresses and enforce the automatic spending limit',async()=>{
+ const {engine:e}=setup();
+ const allowed='utest10t56q4744d9ygg4l7uku7wzgp4kqhxpdajuf8vrgqn7pj6rpecpjfg3f56z95vkvc79tm3kqem0mx27dwp9arkkft56v9duyluqdw5az';
+ const other='utest10c5kutapazdnf8ztl3pu43nkfsjx89fy3uuff8tsmxm6s86j37pe7uz94z5jhkl49pqe8yz75rlsaygexk6jpaxwx0esjr8wm5ut7d5s';
+ const t=task(e,{services:['shielded-payment'],allowedRecipients:[allowed],budgetZec:'0.001',approvalZec:'0.00015'});
+ const create=(key,recipient,amountZec)=>request(e,t,key,{serviceId:'shielded-payment',input:{recipient,amountZec}});
+ const automatic=create('allowed_0001',allowed,'0.0001');assert.equal(automatic.status,'ready');
+ assert.equal((await e.execute(automatic.id)).status,'delivered');
+ const above=create('allowed_0002',allowed,'0.00015');assert.equal(above.status,'awaiting_approval');
+ const blocked=create('blocked_0001',other,'0.00001');assert.equal(blocked.status,'blocked');assert.match(blocked.decision,/Recipient/);
+ assert.equal(e.totals(t.id).reservedZat,16000);
+ assert.throws(()=>task(e,{services:['shielded-payment'],allowedRecipients:['utest1invalid']}),/valid unified/);
+ assert.throws(()=>task(e,{services:['document-extract'],allowedRecipients:[allowed]}),/Enable shielded/);
+});

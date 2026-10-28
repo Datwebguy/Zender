@@ -1,5 +1,6 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { zats, integer } from './money.mjs';
+import { isUnifiedAddress } from './address.mjs';
 export class Fault extends Error { constructor(message,status=400,code='INVALID_REQUEST'){super(message);this.status=status;this.code=code;} }
 const terminal=new Set(['delivered','rejected','blocked','cancelled']);
 const reserved=new Set(['awaiting_approval','ready','executing','uncertain','broadcast']);
@@ -20,14 +21,18 @@ export class Engine {
   }
   view(id){const t=this.requireTask(id);return{...t,...this.totals(id),expired:Date.parse(t.expiresAt)<=Date.now(),purchases:this.store.purchases(id),events:this.store.events(id)};}
   list(){return this.store.tasks().map(t=>({...t,...this.totals(t.id),expired:Date.parse(t.expiresAt)<=Date.now()}));}
-  createTask({title,notes="",budgetZec,approvalZec,services,expiresInHours=24}){
+  createTask({title,notes="",budgetZec,approvalZec,services,allowedRecipients=[],expiresInHours=24}){
     if(typeof title!=='string'||!title.trim()||title.length>120)throw new Fault('Give the task a title of up to 120 characters.');
     if(typeof notes!=='string'||notes.length>4000)throw new Fault('Task notes must be text up to 4000 characters.');
     const budgetZat=zats(budgetZec),approvalZat=zats(approvalZec);
     if(approvalZat>budgetZat)throw new Fault('The approval threshold cannot exceed the task budget.');
     if(!Array.isArray(services)||!services.length||services.length>30||services.some(s=>typeof s!=='string'||!s||s.length>80))throw new Fault('Choose at least one permitted service.');
+    if(!Array.isArray(allowedRecipients)||allowedRecipients.length>20||allowedRecipients.some(a=>typeof a!=='string'||a.length>512))throw new Fault('Choose up to 20 approved recipient addresses.');
+    if(allowedRecipients.length&&!services.includes('shielded-payment'))throw new Fault('Enable shielded payments to approve recipients.');
+    const validAddress=a=>this.provider.mode==='testnet'?isUnifiedAddress(a,'utest'):this.provider.mode==='mainnet'?isUnifiedAddress(a,'u'):isUnifiedAddress(a,'utest')||isUnifiedAddress(a,'u');
+    if(allowedRecipients.some(a=>!validAddress(a)))throw new Fault('Enter valid unified addresses for this Zcash network.');
     if(!Number.isFinite(expiresInHours)||expiresInHours<=0||expiresInHours>720)throw new Fault('Authorization must expire within 30 days.');
-    const t={id:randomUUID(),title:title.trim(),notes:notes.trim(),budgetZat,approvalZat,services:[...new Set(services)],status:'active',mode:this.provider.mode,createdAt:new Date().toISOString(),expiresAt:new Date(Date.now()+expiresInHours*3600000).toISOString()};
+    const t={id:randomUUID(),title:title.trim(),notes:notes.trim(),budgetZat,approvalZat,services:[...new Set(services)],allowedRecipients:[...new Set(allowedRecipients)],status:'active',mode:this.provider.mode,createdAt:new Date().toISOString(),expiresAt:new Date(Date.now()+expiresInHours*3600000).toISOString()};
     this.store.transaction(()=>{this.store.putTask(t);this.store.event(t.id,'task.created',{title:t.title,budgetZat});});return this.view(t.id);
   }
   issueCredential(taskId){
@@ -54,8 +59,11 @@ export class Engine {
       if(quote.priceZat<=0)throw new Fault('Service price must be positive.');
       const total=quote.priceZat+quote.feeZat;integer(total);
       const available=this.totals(taskId).availableZat;
-      const status=!allowed||total>available?'blocked':(quote.alwaysApproval||total>t.approvalZat)?'awaiting_approval':'ready';
-      const decision=!allowed?'Service is outside this task’s permissions.':total>available?'Purchase and fee exceed the remaining task budget.':status==='awaiting_approval'?'This purchase needs your approval.':'Within the task’s budget and permissions.';
+      const approvedRecipients=t.allowedRecipients||[];
+      const recipientBlocked=serviceId==='shielded-payment'&&approvedRecipients.length>0&&!approvedRecipients.includes(quote.recipient);
+      const permittedRecipient=serviceId==='shielded-payment'&&approvedRecipients.includes(quote.recipient);
+      const status=!allowed||recipientBlocked||total>available?'blocked':((quote.alwaysApproval&&!permittedRecipient)||total>t.approvalZat)?'awaiting_approval':'ready';
+      const decision=!allowed?'Service is outside this task’s permissions.':recipientBlocked?'Recipient is outside this task’s approved addresses.':total>available?'Purchase and fee exceed the remaining task budget.':status==='awaiting_approval'?'This purchase needs your approval.':'Within the task’s budget and permissions.';
       const p={id:randomUUID(),taskId,serviceId,serviceName:quote.name,recipient:quote.recipient,amountZat:quote.priceZat,feeZat:quote.feeZat,actualFeeZat:null,input,reason:reason.trim(),status,decision,idempotencyKey,fingerprint,createdAt:new Date().toISOString(),quoteResult:quote.result,simulateResponseLoss:!!simulateResponseLoss,mode:this.provider.mode};
       this.store.putPurchase(p);this.store.event(taskId,'purchase.'+status,{purchaseId:p.id,serviceId,totalZat:total});return p;
     });

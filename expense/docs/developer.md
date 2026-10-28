@@ -45,7 +45,7 @@ Issue a task credential from the owner workspace. Set `ZENDER_URL` to the HTTPS 
 }
 ```
 
-Tools: `zender_task`, `zender_request_purchase`, `zender_execute_purchase`, `zender_recover_purchase`, `zender_receipt`. Owner approvals and budget changes use owner authentication. Keep wallet files outside agent access.
+Tools: `zender_task_context` (discovers the assigned task and its permitted services), `zender_task`, `zender_request_purchase`, `zender_execute_purchase`, `zender_recover_purchase`, `zender_receipt`. Owner approvals and budget changes use owner authentication. Keep wallet files outside agent access.
 
 ## CLI
 

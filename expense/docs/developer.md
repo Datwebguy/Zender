@@ -12,6 +12,12 @@ npm test
 
 The local expense service starts on port 4310. Get its owner key with `node expense/bin/zender.mjs owner-key`. The browser exchanges the key for an HttpOnly session cookie. Hosted sessions use HTTPS and Secure cookies.
 
+## Wallet access
+
+There is no password setup or password sign-in. For initial owner pairing, open the workspace with `#setup=OWNER_SETUP_KEY` in the URL fragment, then connect the owner wallet. Keep that link private. The page removes the fragment before exchanging the key for a session. Once paired, sign in by approving a nonce-bound message in Noir Wallet; signing in does not authorize a payment. Pairing preserves the existing tasks and spending wallet.
+
+The owner wallet identity remains in `owner-wallet.json` beside the task database. Existing identity files keep working. Legacy `password.json` files are ignored; they do not block initial pairing. After pairing, the setup key cannot sign in. Agent credentials remain restricted to their assigned tasks.
+
 ## Project structure
 
 The root `index.html`, `app.js`, `styles.css`, `theme.js` and assets define Zender's application and visual identity. Root `api/` routes are Vercel Functions. Extend that application and preserve its typography, paper palette, stamp artwork and theme handling.

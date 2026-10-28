@@ -155,10 +155,8 @@ async function walletSignature(purpose){
   const signed=await provider.request({method:'zcash_signMessage',params:[challenge.message,{signingMode:'derived'}]});
   await post(purpose==='bind'?'/api/wallet-auth/bind':'/api/wallet-auth/session',{nonce:challenge.nonce,pubkey:signed?.pubkey,signature:signed?.signature});
 }
-async function loginOptions(){try{const status=await authStatus();$('#login-form').classList.toggle('hidden',status.bound);$('#wallet-login').classList.toggle('hidden',!status.bound);}catch{$('#login-form').classList.remove('hidden');$('#wallet-login').classList.add('hidden');}}
+async function loginOptions(){try{const status=await authStatus();$('#wallet-setup-note').classList.toggle('hidden',status.bound);$('#wallet-login').classList.toggle('hidden',!status.bound);}catch{$('#wallet-login').classList.add('hidden');$('#login-error').textContent='Wallet sign-in is unavailable. Try again shortly.';}}
 $('#wallet-login').addEventListener('click',async e=>{e.currentTarget.disabled=true;$('#login-error').textContent='';try{await walletSignature('login');await refresh();}catch(error){$('#login-error').textContent=error.message;}finally{e.currentTarget.disabled=false;}});
-$('#login-form').addEventListener('submit',async e=>{e.preventDefault();try{await post('/api/session',{password:new FormData(e.target).get('password')});e.target.reset();await refresh();}catch(error){$('#login-error').textContent=error.message;}});
-$('#password-form').addEventListener('submit',async e=>{e.preventDefault();try{await post('/api/password',{password:new FormData(e.target).get('password')});e.target.reset();$('#password-dialog').close();toast('Password saved.');}catch(error){$('#password-error').textContent=error.message;}});
 $('#task-form').addEventListener('submit',async e=>{
   e.preventDefault();const b=e.submitter;b.disabled=true;
   try{const f=new FormData(e.target);const t=await post('/api/tasks',{title:f.get('title'),notes:f.get('notes'),budgetZec:f.get('budgetZec'),approvalZec:f.get('approvalZec')||f.get('budgetZec'),expiresInHours:Number(f.get('expiresInHours')),services:f.getAll('services'),allowedRecipients:f.getAll('services').includes('shielded-payment')?String(f.get('allowedRecipients')||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean):[]});$('#task-dialog').close();e.target.reset();selectedTask=t.id;await refresh();navigate('detail');toast('Task account created.');}
@@ -179,7 +177,6 @@ document.addEventListener('click',async e=>{
     if(b.dataset.onboarding==='open-wallet')$('#open-wallet').click();
     if(b.dataset.close)$('#'+b.dataset.close).close();
     if(b.id==='bind-wallet'){if(!confirm('After connecting, you will need this wallet to sign in to your account. Continue?'))return;b.disabled=true;await walletSignature('bind');await refresh();toast('Wallet connected. Use it to sign in next time.');}
-    if(b.id==='change-password'){$('#password-error').textContent='';$('#password-dialog').showModal();}
     if(b.id==='new-task'||b.hasAttribute('data-new-task'))openTaskDialog();
     if(b.dataset.filter){filter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('selected',x===b));renderTasks();}
     if(b.dataset.task){selectedTask=b.dataset.task;taskDetail=await api(`/api/tasks/${selectedTask}`);renderDetail(taskDetail);navigate('detail');}

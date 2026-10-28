@@ -9,7 +9,7 @@ const context=await browser.newContext({viewport:{width:1440,height:1050}});
 const page=await context.newPage();const errors=[];page.on('pageerror',error=>errors.push(error.message));
 const out=process.env.ZENDER_SCREENSHOT_DIR||'/tmp/zender-browser';mkdirSync(out,{recursive:true});
 try{
-  await page.goto(base);await page.getByLabel('Owner key',{exact:true}).fill(token);await page.getByRole('button',{name:'Open workspace'}).click();
+  await page.goto(base+'/#setup='+encodeURIComponent(token));
   await page.getByRole('heading',{name:'A job. A budget.'}).waitFor();
   await page.getByRole('button',{name:'New task account'}).click();
   await page.getByLabel('Task name',{exact:true}).fill('Browser verification');

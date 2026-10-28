@@ -23,6 +23,7 @@ test('CLI and MCP complete the shared purchase, approval and recovery flow',asyn
   };
   const demo=await runCli(['demo']);assert.equal(demo.responseLoss,'uncertain');assert.equal(demo.recovery,'delivered');assert.equal(demo.approvalStatus,'awaiting_approval');
   const issued=await runCli(['task','token',demo.taskId]);assert.ok(issued.token.startsWith('zender_agent_'));process.env.ZENDER_AGENT_TOKEN=issued.token;
+  const context=await handleRequest({jsonrpc:'2.0',id:4,method:'tools/call',params:{name:'zender_task_context',arguments:{}}});const available=JSON.parse(context.result.content[0].text);assert.equal(available.task.id,demo.taskId);assert.ok(available.services.length);assert.ok(available.services.every(s=>available.task.services.includes(s.id)));
   const response=await handleRequest({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'zender_task',arguments:{taskId:demo.taskId}}});
   assert.equal(response.id,1);assert.equal(response.result.isError,undefined);assert.equal(JSON.parse(response.result.content[0].text).id,demo.taskId);
   await assert.rejects(runCli(['purchase','approve',demo.approvalPurchaseId]),/Only the owner/);
@@ -34,6 +35,6 @@ test('CLI and MCP complete the shared purchase, approval and recovery flow',asyn
 test('MCP exposes no owner approval or permission-changing tool',async()=>{
   const initialized=await handleRequest({jsonrpc:'2.0',id:1,method:'initialize',params:{}});assert.equal(initialized.result.serverInfo.name,'zender');
   const response=await handleRequest({jsonrpc:'2.0',id:2,method:'tools/list'});const tools=response.result.tools;
-  assert.equal(tools.length,5);assert.ok(tools.every(t=>!/(approve|create_task|close|policy)/.test(t.name)));
+  assert.equal(tools.length,6);assert.ok(tools.every(t=>!/(approve|create_task|close|policy)/.test(t.name)));
   const denied=await handleRequest({jsonrpc:'2.0',id:3,method:'tools/call',params:{name:'approve_purchase',arguments:{}}});assert.equal(denied.error.code,-32602);
 });

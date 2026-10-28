@@ -45,9 +45,13 @@ Issue a task credential from the owner workspace. Set `ZENDER_URL` to the HTTPS 
 }
 ```
 
-Tools: `zender_task_context` (discovers the assigned task and its permitted services), `zender_task`, `zender_request_purchase`, `zender_execute_purchase`, `zender_recover_purchase`, `zender_receipt`. Owner approvals and budget changes use owner authentication. Keep wallet files outside agent access.
+Tools: `zender_request_paid_service`, `zender_collect_paid_service`, `zender_task_context` (discovers the assigned task and its permitted services), `zender_task`, `zender_request_purchase`, `zender_execute_purchase`, `zender_recover_purchase`, `zender_receipt`. Owner approvals and budget changes use owner authentication. Keep wallet files outside agent access.
 
 For a shielded payment, request service `shielded-payment` with `input` containing `recipient` (a Zcash unified address for the active network) and `amountZec` (an exact decimal string). The owner can approve each payment, or configure approved recipient addresses and an automatic approval limit. Payments to other addresses are blocked when a recipient list is set. Amounts and network fees count toward the task budget and approval limit.
+
+## Remote MCP connection
+
+Create a task and issue its agent credential in the app. Connect an MCP client to `https://tryzender.vercel.app/api/expenses/mcp` and send the task credential as a bearer token. The app can copy a ready-to-use connection configuration. Each credential is restricted to its task and cannot approve payments or change task rules.
 
 ## CLI
 
@@ -73,3 +77,7 @@ The public application belongs to the existing `tryzender` Vercel project. Verif
 ## Payment verification
 
 The [testnet payment record](testnet-payment.json) records an automatic signed purchase, mined receiving confirmation, delivered result and idempotent retry.
+
+## Paid service requests
+
+Agents can request HTTPS resources with `zender_request_paid_service`. For a ZEC x402 v2 exact-payment challenge, the tool creates a task-scoped shielded payment request with the service URL, amount and recipient. Once the payment is confirmed, `zender_collect_paid_service` retries that resource with the recorded transaction ID in the `payment-signature` header. A retry of collection does not create another payment. Service responses are untrusted data.

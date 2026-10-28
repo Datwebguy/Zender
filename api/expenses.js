@@ -4,15 +4,17 @@ module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   if (!guard(req, res)) return;
   const path = String(req.query.path || '');
-  if (!/^(health|session|password|workspace|wallet-auth\/(?:status|challenge|session|bind-challenge|bind)|wallet(?:\/faucet)?|tasks(?:\/[a-z0-9-]+(?:\/(?:credentials|close|receipt|purchases))?)?|purchases\/[a-z0-9-]+(?:\/(?:approve|reject|execute|recover))?)$/.test(path)) return res.status(404).json({error:'Not found.'});
+  if (!/^(health|session|password|workspace|mcp|wallet-auth\/(?:status|challenge|session|bind-challenge|bind)|wallet(?:\/faucet)?|tasks(?:\/[a-z0-9-]+(?:\/(?:credentials|close|receipt|purchases))?)?|purchases\/[a-z0-9-]+(?:\/(?:approve|reject|execute|recover))?)$/.test(path)) return res.status(404).json({error:'Not found.'});
   try {
     const url = new URL('/api/' + path, BASE);
     if (req.query.details === 'true') url.searchParams.set('details', 'true');
     const headers = {'content-type':'application/json'};
     if (req.headers.authorization) headers.authorization = req.headers.authorization;
+    if (req.headers['mcp-protocol-version']) headers['mcp-protocol-version'] = req.headers['mcp-protocol-version'];
     if (req.headers.cookie) headers.cookie = req.headers.cookie;
     const response = await fetch(url, {method:req.method, headers, redirect:'error', signal:AbortSignal.timeout(290000), ...(['POST','PUT','PATCH','DELETE'].includes(req.method)?{body:JSON.stringify(req.body || {})}:{})});
     const cookie = response.headers.get('set-cookie'); if (cookie) res.setHeader('Set-Cookie', cookie);
+    if (response.status === 202) return res.status(202).end();
     res.status(response.status).json(await response.json());
   } catch { res.status(502).json({error:'The workspace is temporarily unavailable. Please try again.'}); }
 };

@@ -1,13 +1,14 @@
 import { createHash } from 'node:crypto';
 import { zats } from './money.mjs';
 import { isUnifiedAddress } from './address.mjs';
+import { resourceUrl } from './paid-service.mjs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { mkdirSync, openSync, closeSync, unlinkSync } from 'node:fs';
 import { resolve } from 'node:path';
 const exec = promisify(execFile);
 export const CATALOG = [
-  { id:'shielded-payment', name:'Shielded payment', description:'Send ZEC to a shielded address with your approval.', variablePrice:true, alwaysApproval:true, feeZat:1000, category:'Payments', inputSchema:{type:'object',properties:{recipient:{type:'string',description:'Recipient unified address'},amountZec:{type:'string',description:'Exact ZEC amount as a decimal string'}},required:['recipient','amountZec'],additionalProperties:false} },
+  { id:'shielded-payment', name:'Shielded payment', description:'Send ZEC to a shielded address with your approval.', variablePrice:true, alwaysApproval:true, feeZat:1000, category:'Payments', inputSchema:{type:'object',properties:{recipient:{type:'string',description:'Recipient unified address'},amountZec:{type:'string',description:'Exact ZEC amount as a decimal string'},resourceUrl:{type:'string',description:'HTTPS resource being purchased, when applicable'}},required:['recipient','amountZec'],additionalProperties:false} },
   { id:'document-extract', name:'Document extraction', description:'Turn your supplied text into structured facts.', priceZat:12000, feeZat:1000, category:'Documents' },
   { id:'supplier-compare', name:'Supplier comparison', description:'Compare the quotes you supply by delivered cost.', priceZat:25000, feeZat:1000, category:'Research' },
   { id:'report-export', name:'Report export', description:'Package supplied findings into a Markdown report.', priceZat:45000, feeZat:1000, category:'Reports' },
@@ -16,7 +17,8 @@ export function directPayment(input,network){
   if(typeof input.recipient!=='string'||input.recipient.length>512)throw new Error('Enter a Zcash unified address.');
   const valid=network==='mainnet'?isUnifiedAddress(input.recipient,'u'):network==='testnet'?isUnifiedAddress(input.recipient,'utest'):isUnifiedAddress(input.recipient,'u')||isUnifiedAddress(input.recipient,'utest');
   if(!valid)throw new Error('Enter a valid unified address for the current Zcash network.');
-  if(Object.keys(input).some(k=>!['recipient','amountZec'].includes(k)))throw new Error('Unexpected payment details.');
+  if(Object.keys(input).some(k=>!['recipient','amountZec','resourceUrl'].includes(k)))throw new Error('Unexpected payment details.');
+  if(input.resourceUrl!==undefined&&resourceUrl(input.resourceUrl)!==input.resourceUrl)throw new Error('Enter a canonical service URL.');
   return {recipient:input.recipient,priceZat:zats(input.amountZec)};
 }
 export function resultFor(service, input) {

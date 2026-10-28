@@ -32,6 +32,7 @@ async function refresh(){
   renderTasks();$('#approval-list').innerHTML=approvals.length?approvals.map(p=>`<article class="approval-card">${purchaseCard(p,true,p.taskExpired||p.taskClosed)}</article>`).join(''):empty('Nothing waiting on you.','Purchases above a task’s approval threshold will appear here.');
   if(selectedTask){taskDetail=details.find(t=>t.id===selectedTask);if(taskDetail)renderDetail(taskDetail);}
 
+  $('#mcp-url').textContent=new URL('/api/expenses/mcp',location.origin).href;
   const previous=$('#connect-task').value;
   $('#connect-task').innerHTML='<option value="">Select a task account</option>'+workspace.tasks.filter(t=>t.status==='active'&&!t.expired).map(t=>`<option value="${t.id}">${escape(t.title)}</option>`).join('');
   if(previous)$('#connect-task').value=previous;
@@ -109,7 +110,7 @@ function purchaseInput(f){
  return{quotes:f.getAll('quoteName').map((name,i)=>({name,unitCostCents:cents(prices[i]),shippingCents:cents(shipping[i])}))};
 }
 function inputSummary(service,input){
- if(service==='shielded-payment')return `<p>${escape(input.amountZec)} ZEC to</p><code>${escape(input.recipient)}</code>`;
+ if(service==='shielded-payment')return `<p>${escape(input.amountZec)} ZEC to</p><code>${escape(input.recipient)}</code>${input.resourceUrl?`<p>Service</p><code>${escape(input.resourceUrl)}</code>`:''}`;
  if(service==='document-extract')return `<pre>${escape(input.text)}</pre>`;
  if(service==='report-export')return `<h4>${escape(input.title)}</h4><pre>${escape(input.findings)}</pre>`;
  return `<ul>${(input.quotes||[]).map(q=>`<li>${escape(q.name)} · $${((q.unitCostCents+q.shippingCents)/100).toFixed(2)} including shipping</li>`).join('')}</ul>`;
@@ -192,8 +193,9 @@ document.addEventListener('click',async e=>{
     if(b.id==='issue-token'){
       const id=$('#connect-task').value;if(!id)throw new Error('Choose an active task first.');
       const credential=await post(`/api/tasks/${id}/credentials`);
-      $('#credential-result').innerHTML=`<div class="credential"><strong>Copy once. Keep it private.</strong><p>This credential grants spending access within the selected task’s rules.</p><code>${escape(credential.token)}</code><button type="button" class="button" id="copy-credential">Copy credential</button></div>`;
+      $('#credential-result').innerHTML=`<div class="credential"><strong>Copy once. Keep it private.</strong><p>This credential grants spending access within the selected task’s rules.</p><code>${escape(credential.token)}</code><div class="purchase-actions"><button type="button" class="button" id="copy-credential">Copy credential</button><button type="button" class="button dark" id="copy-mcp-config">Copy MCP configuration</button></div></div>`;
       $('#copy-credential').onclick=async()=>{try{await navigator.clipboard.writeText(credential.token);toast('Credential copied.');}catch{toast('Select and copy the credential above.');}};
+      $('#copy-mcp-config').onclick=async()=>{const config={mcpServers:{zender:{url:new URL('/api/expenses/mcp',location.origin).href,headers:{Authorization:'Bearer '+credential.token}}}};try{await navigator.clipboard.writeText(JSON.stringify(config,null,2));toast('MCP configuration copied.');}catch{toast('Copy the MCP address and credential shown above.');}};
     }
     if(b.id==='open-wallet'){ $('#wallet-dialog').showModal();await updateWallet();}
     if(b.id==='copy-wallet-address'){await navigator.clipboard.writeText($('#wallet-address').value);toast('Address copied.');}

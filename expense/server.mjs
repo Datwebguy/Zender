@@ -7,6 +7,7 @@ import { Store } from './lib/store.mjs';
 import { Engine, Fault } from './lib/engine.mjs';
 import { SandboxProvider, ZipherProvider, CATALOG } from './lib/providers.mjs';
 import { FixedPcztProvider } from './lib/pczt-provider.mjs';
+import { handleRequest as handleMcp } from './bin/mcp.mjs';
 const root=dirname(fileURLToPath(import.meta.url));
 function clean(value){
   if(Array.isArray(value))return value.map(clean);
@@ -101,6 +102,30 @@ export function createApp({store,provider,ownerToken,publicOrigin=null,passwordF
       if(!owner){if(!bearer)throw new Fault('Sign in to your local workspace.',401,'UNAUTHORIZED');agentTask=engine.authenticateAgent(bearer);}
       const needOwner=()=>{if(!owner)throw new Fault('Only the owner can change permissions or approve spending.',403,'OWNER_REQUIRED');};
       const scope=id=>{if(!owner&&agentTask!==id)throw new Fault('This credential belongs to another task.',403,'TASK_SCOPE');};
+      if(path==='/api/mcp'&&req.method==='POST'){
+        const version=req.headers['mcp-protocol-version'];if(version&&!['2025-03-26','2025-06-18'].includes(version))throw new Fault('Unsupported MCP protocol version.',400,'UNSUPPORTED_PROTOCOL');
+        if(owner||!agentTask)throw new Fault('Use a task-scoped agent credential.',403,'AGENT_REQUIRED');
+        const client=async (endpoint,{method='GET',body:payload}={})=>{
+          if(endpoint==='/api/workspace'&&method==='GET')return clean({mode:provider.mode,owner:false,services:provider.mode==='sandbox'?CATALOG:provider.services.map(({resultUrl,...s})=>s),tasks:[engine.view(agentTask)]});
+          let match=endpoint.match(/^\/api\/tasks\/([a-z0-9-]+)(?:\/(receipt|purchases))?$/);
+          if(match){const [,id,action]=match;scope(id);
+            if(method==='GET'&&!action)return clean(engine.view(id));
+            if(method==='GET'&&action==='receipt')return clean(engine.receipt(id));
+            if(method==='POST'&&action==='purchases')return clean(engine.request(id,payload));
+          }
+          match=endpoint.match(/^\/api\/purchases\/([a-z0-9-]+)(?:\/(execute|recover))?$/);
+          if(match){const [,id,action]=match,purchase=engine.requirePurchase(id);scope(purchase.taskId);
+            if(method==='GET'&&!action)return clean(purchase);
+            if(method==='POST'&&action==='execute')return clean(await engine.execute(id));
+            if(method==='POST'&&action==='recover')return clean(await engine.recover(id));
+          }
+          throw new Fault('Endpoint not available to this agent.',403,'TASK_SCOPE');
+        };
+        const message=body.method==='initialize'&&body.params?.protocolVersion==='2024-11-05'?{...body,params:{...body.params,protocolVersion:'2025-03-26'}}:body;
+        const response=await handleMcp(message,{client});
+        if(response===undefined){res.writeHead(202);return res.end();}
+        return send(res,200,response);
+      }
       if(path==='/api/wallet-auth/bind-challenge'&&req.method==='POST'){
         if(!sessionValid||walletBound())throw new Fault('Wallet connection is unavailable.',403);
         if(!walletFile)throw new Fault('Wallet connection is unavailable.',503);

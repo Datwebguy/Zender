@@ -35,6 +35,6 @@ test('CLI and MCP complete the shared purchase, approval and recovery flow',asyn
 test('MCP exposes no owner approval or permission-changing tool',async()=>{
   const initialized=await handleRequest({jsonrpc:'2.0',id:1,method:'initialize',params:{}});assert.equal(initialized.result.serverInfo.name,'zender');
   const response=await handleRequest({jsonrpc:'2.0',id:2,method:'tools/list'});const tools=response.result.tools;
-  assert.equal(tools.length,6);assert.ok(tools.every(t=>!/(approve|create_task|close|policy)/.test(t.name)));
+  assert.equal(tools.length,8);assert.ok(tools.every(t=>!/(approve|create_task|close|policy)/.test(t.name)));
   const denied=await handleRequest({jsonrpc:'2.0',id:3,method:'tools/call',params:{name:'approve_purchase',arguments:{}}});assert.equal(denied.error.code,-32602);
 });

@@ -146,7 +146,7 @@ document.addEventListener('click',async e=>{
   }catch(error){toast(error.message);}finally{b.disabled=false;}
 });
 const setupToken=new URLSearchParams(location.hash.slice(1)).get('setup');
-if(setupToken){history.replaceState(null,'',location.pathname);post('/api/session',{token:setupToken}).then(refresh).catch(error=>{$('#login').classList.remove('hidden');$('#login-error').textContent=error.message;});}
+if(setupToken){history.replaceState(null,'',location.pathname);post('/api/session',{token:setupToken}).then(async()=>{await refresh();$('#password-dialog').showModal();}).catch(error=>{$('#login').classList.remove('hidden');$('#login-error').textContent=error.message;});}
 else refresh().catch(error=>{if(!$('#login').classList.contains('hidden'))return;toast(error.message);});
 setInterval(()=>{if(workspace&&!document.querySelector('dialog[open]')&&!$('#workspace').classList.contains('hidden'))refresh().catch(()=>{});},7000);
 

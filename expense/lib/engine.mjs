@@ -20,13 +20,14 @@ export class Engine {
   }
   view(id){const t=this.requireTask(id);return{...t,...this.totals(id),expired:Date.parse(t.expiresAt)<=Date.now(),purchases:this.store.purchases(id),events:this.store.events(id)};}
   list(){return this.store.tasks().map(t=>({...t,...this.totals(t.id),expired:Date.parse(t.expiresAt)<=Date.now()}));}
-  createTask({title,budgetZec,approvalZec,services,expiresInHours=24}){
+  createTask({title,notes="",budgetZec,approvalZec,services,expiresInHours=24}){
     if(typeof title!=='string'||!title.trim()||title.length>120)throw new Fault('Give the task a title of up to 120 characters.');
+    if(typeof notes!=='string'||notes.length>4000)throw new Fault('Task notes must be text up to 4000 characters.');
     const budgetZat=zats(budgetZec),approvalZat=zats(approvalZec);
     if(approvalZat>budgetZat)throw new Fault('The approval threshold cannot exceed the task budget.');
     if(!Array.isArray(services)||!services.length||services.length>30||services.some(s=>typeof s!=='string'||!s||s.length>80))throw new Fault('Choose at least one permitted service.');
     if(!Number.isFinite(expiresInHours)||expiresInHours<=0||expiresInHours>720)throw new Fault('Authorization must expire within 30 days.');
-    const t={id:randomUUID(),title:title.trim(),budgetZat,approvalZat,services:[...new Set(services)],status:'active',mode:this.provider.mode,createdAt:new Date().toISOString(),expiresAt:new Date(Date.now()+expiresInHours*3600000).toISOString()};
+    const t={id:randomUUID(),title:title.trim(),notes:notes.trim(),budgetZat,approvalZat,services:[...new Set(services)],status:'active',mode:this.provider.mode,createdAt:new Date().toISOString(),expiresAt:new Date(Date.now()+expiresInHours*3600000).toISOString()};
     this.store.transaction(()=>{this.store.putTask(t);this.store.event(t.id,'task.created',{title:t.title,budgetZat});});return this.view(t.id);
   }
   issueCredential(taskId){
